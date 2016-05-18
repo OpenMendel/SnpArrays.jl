@@ -1,5 +1,7 @@
 module SnpArrays
 
+export SnpArray, summarysnps
+
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
   A2::BitArray{N}
@@ -10,7 +12,8 @@ Constructor a SnpArray from an array of minor allele counts {0, 1, 2}.
 # TODO: make it robust with NaN entries
 """
 function SnpArray(mac::AbstractArray)
-  SnpArray(A1 = mac .> zero(eltype(mac)), A2 = mac .> one(eltype(mac)))
+    T = eltype(mac)
+    SnpArray(mac .> zero(T), mac .> one(T))
 end
 
 # constructor from Plink binary files
@@ -52,6 +55,8 @@ function SnpArray(plinkFile::AbstractString)
 end
 
 typealias SnpLike{N} Union{SnpArray{N}, SubArray{Tuple{Bool, Bool}, N, SnpArray{N}}}
+typealias SnpMatrix SnpArray{2}
+typealias SnpVector SnpArray{1}
 
 #---------------------------------------------------------------------------# methods
 # Julia docs on methods required for AbstractArray:
@@ -89,9 +94,9 @@ end
 
 function Base.setindex!(A::SnpArray, v::Real, i::Int, j::Int)
   if isnan(v)
-    setindex!(A, (false, true), i)
+    setindex!(A, (false, true), i, j)
   else
-    setindex!(A, (v > zero(eltype(v)), v > one(eltype(v))), i)
+    setindex!(A, (v > zero(eltype(v)), v > one(eltype(v))), i, j)
   end
 end
 
@@ -253,3 +258,6 @@ function summarysnps(A::SnpLike{2})
   return nmialcol, nmisscol, mafcol, nmialrow, nmissrow, mafrow
 end
 end # module
+
+
+S = SnpArrays
