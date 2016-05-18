@@ -54,6 +54,7 @@ function SnpArray(plinkFile::AbstractString)
   SnpArray(A1, A2)
 end
 
+# SnpArray or a view of a SnpArray
 typealias SnpLike{N} Union{SnpArray{N}, SubArray{Tuple{Bool, Bool}, N, SnpArray{N}}}
 typealias SnpMatrix SnpArray{2}
 typealias SnpVector SnpArray{1}
@@ -146,13 +147,13 @@ Convert a SNP matrix to a numeric matrix according to specified SNP model. If
 `impute == true`, missing entries are imputed according to (column) minor allele
 frequencies.
 """
-function Base.convert{T, N}(t::Type{Array{T, N}}, A::SnpLike{N};
+function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false)
   B = similar(A, T)
-  convert!(B, A; model = model, impute = impute)
+  copy!(B, A; model = model, impute = impute)
 end
 
-function convert!{T, N}(B::Array{T, N}, A::SnpLike{N};
+function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false)
   @assert size(B) == size(A) "Dimensions do not match"
   nanT = convert(T, NaN)
