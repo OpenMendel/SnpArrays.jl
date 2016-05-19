@@ -1,6 +1,6 @@
 module SnpArrays
 
-export SnpArray, summarysnps, kinship
+export SnpArray, summarysnps, kinship, impute!
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -276,6 +276,11 @@ Base.isnan(A::SnpArray) = !A.A1 & A.A2
 #   !pA.A1[pidx] & pA.A2[pidx]
 # end
 
+# TODO:
+function impute!(A::SnpLike{2})
+
+end
+
 """
 Computes the number of minor alleles, number of missing genotypes, and minor
 allele frequencies (MAF) along each row and column. Calculation of MAF takes
@@ -311,12 +316,20 @@ Computes empirical kinship matrix from a SnpMatrix.
 # TODO: implement MoM method
 """
 function kinship(A::SnpLike{2}; method::Symbol = :GRM)
+  if method == :GRM
+    return grm(A::SnpLike{2})
+  elseif method == :MoM
+    return mom(A::SnpLike{2})
+  end
+end
+
+function grm(A::SnpLike{2})
   n, p = size(A)
   Φ = zeros(n, n)
   if 8.0n * p < 1e9 # take no more than 1GB memory
     snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true,
       center = true, scale = true)
-    BLAS.syrk!('U', 'N', 0.5/p, snpchunk, 1.0, Φ)
+    BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
   else
     # chunsize is chosen to have intermediate matrix taking upto 1GB memory
     chunksize = ceil(Int, 1e9 / 8.0n)
@@ -325,7 +338,7 @@ function kinship(A::SnpLike{2}; method::Symbol = :GRM)
       J = ((chunk - 1) * chunksize + 1):chunk * chunksize
       copy!(snpchunk, sub(A, :, J); model = :additive,
         impute = true, center = true, scale = true)
-      BLAS.syrk!('U', 'N', 1.0, snpchunk, 1.0, Φ)
+      BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
@@ -334,6 +347,45 @@ function kinship(A::SnpLike{2}; method::Symbol = :GRM)
     BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
   end
   LinAlg.copytri!(Φ, 'U')
+  return Φ
+end
+
+function mom(A::SnpLike{2})
+  n, p = size(A)
+  _, _, mafcol = summarysnps(A)
+  c = 0.0
+  @inbounds @simd for j in eachindex(mafcol)
+    c += mafcol[j]^2 + (1.0 - mafcol[j])^2
+  end
+  Φ = zeros(n, n)
+  if 8.0n * p < 1e9 # take no more than 1GB memory
+    snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true)
+    for i in eachindex(snpchunk)
+      snpchunk[i] -= 1.0
+    end
+    BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
+  else
+    # chunsize is chosen to have intermediate matrix taking upto 1GB memory
+    chunksize = ceil(Int, 1e9 / 8.0n)
+    snpchunk = zeros(n, chunksize)
+    for chunk = 1:floor(Int, p / chunksize)
+      J = ((chunk - 1) * chunksize + 1):chunk * chunksize
+      copy!(snpchunk, sub(A, :, J); model = :additive, impute = true)
+      for i in eachindex(snpchunk)
+        snpchunk[i] -= 1.0
+      end
+      BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
+    end
+    # last chunk
+    J = (p - rem(p, chunksize) + 1):p
+    snpchunk = convert(Matrix{Float64}, sub(A, :, J); model = :additive, impute = true)
+    BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
+  end
+  LinAlg.copytri!(Φ, 'U')
+  @inbounds @simd for i in eachindex(Φ)
+    Φ[i] += 0.5p - c
+    Φ[i] /= p - c
+  end
   return Φ
 end
 
