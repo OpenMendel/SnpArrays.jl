@@ -1,0 +1,53 @@
+
+@----------------------------------------------------------@
+|        PLINK!       |     v1.07      |   10/Aug/2009     |
+|----------------------------------------------------------|
+|  (C) 2009 Shaun Purcell, GNU General Public License, v2  |
+|----------------------------------------------------------|
+|  For documentation, citation & bug-report instructions:  |
+|        http://pngu.mgh.harvard.edu/purcell/plink/        |
+@----------------------------------------------------------@
+
+Web-based version check ( --noweb to skip )
+Connecting to web...  OK, v1.07 is current
+
++++ PLINK 1.9 is now available! See above website for details +++ 
+
+Writing this text to log file [ chr3-map4-geno.log ]
+Analysis started: Thu May 15 21:41:58 2014
+
+Options in effect:
+	--bfile ../../datasets/mergedgeno_jzhou/merge-geno
+	--chr 3
+	--from-kb 47892
+	--to-kb 48131
+	--make-bed
+	--out chr3-map4-geno
+
+Reading map (extended format) from [ ../../datasets/mergedgeno_jzhou/merge-geno.bim ] 
+8348674 markers to be included from [ ../../datasets/mergedgeno_jzhou/merge-geno.bim ]
+Scan region on chromosome 3 from [ 3-47892183 ] to [ 3-48130991 ]
+Reading pedigree information from [ ../../datasets/mergedgeno_jzhou/merge-geno.fam ] 
+959 individuals read from [ ../../datasets/mergedgeno_jzhou/merge-geno.fam ] 
+4 individuals with nonmissing phenotypes
+Assuming a disease phenotype (1=unaff, 2=aff, 0=miss)
+Missing phenotype value is also -9
+2 cases, 2 controls and 955 missing
+399 males, 560 females, and 0 of unspecified sex
+Reading genotype bitfile from [ ../../datasets/mergedgeno_jzhou/merge-geno.bed ] 
+Detected that binary PED file is v1.00 SNP-major mode
+Before frequency and genotyping pruning, there are 896 SNPs
+117 founders and 842 non-founders found
+Total genotyping rate in remaining individuals is 0.999746
+0 SNPs failed missingness test ( GENO > 1 )
+0 SNPs failed frequency test ( MAF < 0 )
+After frequency and genotyping pruning, there are 896 SNPs
+After filtering, 2 cases, 2 controls and 955 missing
+After filtering, 399 males, 560 females, and 0 of unspecified sex
+Writing pedigree information to [ chr3-map4-geno.fam ] 
+Writing map (extended format) information to [ chr3-map4-geno.bim ] 
+Writing genotype bitfile to [ chr3-map4-geno.bed ] 
+Using (default) SNP-major mode
+
+Analysis finished: Thu May 15 21:43:31 2014
+
