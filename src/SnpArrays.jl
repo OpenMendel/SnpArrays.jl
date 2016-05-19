@@ -8,7 +8,7 @@ type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
 end
 
 """
-Constructor a SnpArray from an array of minor allele counts {0, 1, 2}.
+Construct a SnpArray from an array of minor allele counts {0, 1, 2}.
 # TODO: make it robust with NaN entries
 """
 function SnpArray(mac::AbstractArray)
@@ -16,7 +16,9 @@ function SnpArray(mac::AbstractArray)
     SnpArray(mac .> zero(T), mac .> one(T))
 end
 
-# constructor from Plink binary files
+"""
+Construct a SnpArray from Plink binary files.
+"""
 function SnpArray(plinkFile::AbstractString)
   plinkBedfile = string(plinkFile, ".bed")
   plinkBimfile = string(plinkFile, ".bim")
@@ -222,6 +224,36 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
     end
   end
   return B
+end
+
+"""
+Convert a SNP matrix to a sparse matrix according to specified SNP model.
+Missing genotypes are ignored.
+#TODO: implement imputation.
+"""
+function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
+  A::SnpLike{2}; model::Symbol = :additive)
+  m, n = size(A)
+  I, J, V = TI[], TI[], T[]
+  zeroT = zero(T)
+  v = zero(T)
+  @inbounds for j = 1:n, i = 1:m
+    (a1, a2) = A[i, j]
+    if !a1 & a2 # missing
+      continue
+    end
+    if model == :additive
+      v = convert(T, a1 + a2)
+    elseif model == :dominant
+      v = convert(T, 2(a1 & a2))
+    elseif model == :recessive
+      v = convert(T, 2a1)
+    end
+    if v ≠ zeroT
+      push!(I, i), push!(J, j), push!(V, v)
+    end
+  end
+  return sparse(I, J, V, m, n)
 end
 
 Base.isnan(a::Tuple{Bool, Bool}) = !a[1] & a[2]
