@@ -308,21 +308,34 @@ end
 
 """
 Computes empirical kinship matrix from a SnpMatrix.
+# TODO: implement MoM method
 """
 function kinship(A::SnpLike{2}; method::Symbol = :GRM)
   n, p = size(A)
-  _, _, mafcol = summarysnps(A)
+  Φ = zeros(n, n)
+  if 8.0n * p < 1e9 # take no more than 1GB memory
+    snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true,
+      center = true, scale = true)
+    BLAS.syrk!('U', 'N', 0.5/p, snpchunk, 1.0, Φ)
+  else
+    # chunsize is chosen to have intermediate matrix taking upto 1GB memory
+    chunksize = ceil(Int, 1e9 / 8.0n)
+    snpchunk = zeros(n, chunksize)
+    for chunk = 1:floor(Int, p / chunksize)
+      J = ((chunk - 1) * chunksize + 1):chunk * chunksize
+      copy!(snpchunk, sub(A, :, J); model = :additive,
+        impute = true, center = true, scale = true)
+      BLAS.syrk!('U', 'N', 1.0, snpchunk, 1.0, Φ)
+    end
+    # last chunk
+    J = (p - rem(p, chunksize) + 1):p
+    snpchunk = convert(Matrix{Float64}, sub(A, :, J); model = :additive,
+      impute = true, center = true, scale = true)
+    BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
+  end
+  LinAlg.copytri!(Φ, 'U')
+  return Φ
 end
-
-"""
-Computes empirical kinship matrix from a numeric genotype matrix.
-"""
-function kinship(A::AbstractMatrix; method::Symbol = :GRM)
-  n, p = size(A)
-  _, _, mafcol = summarysnps(A)
-end
-
-
 
 end # module
 
