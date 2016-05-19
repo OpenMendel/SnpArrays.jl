@@ -1,6 +1,6 @@
 module SnpArrays
 
-export SnpArray, summarysnps
+export SnpArray, summarysnps, kinship
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -150,13 +150,15 @@ Convert a SNP matrix to a numeric matrix according to specified SNP model. If
 frequencies.
 """
 function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
-  model::Symbol = :additive, impute::Bool = false)
+  model::Symbol = :additive, impute::Bool = false, center::Bool = false,
+  scale::Bool = false)
   B = similar(A, T)
-  copy!(B, A; model = model, impute = impute)
+  copy!(B, A; model = model, impute = impute, center = center, scale = scale)
 end
 
 function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
-  model::Symbol = :additive, impute::Bool = false)
+  model::Symbol = :additive, impute::Bool = false, center::Bool = false,
+  scale::Bool = false)
   @assert size(B) == size(A) "Dimensions do not match"
   nanT = convert(T, NaN)
   if ndims(A) == 1
@@ -205,9 +207,11 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
         end
       end
     end
-    # second pass: impute missing entries in column j
-    if impute && nmisscol > 0
+    # second pass: impute, center, scale
+    if (impute && nmisscol > 0) || center || scale
       maf = nmialcol / 2(m - nmisscol)
+      ct = 2.0maf
+      wt = ifelse(maf == 0.0, 1.0, 1.0 / sqrt(2.0maf * (1.0 - maf)))
       @inbounds @simd for i = 1:m
         if isnan(B[i, j])
           a1 = rand() < maf
@@ -219,6 +223,12 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
           elseif model == :recessive
             B[i, j] = 2a1
           end
+        end
+        if center
+          B[i, j] -= ct
+        end
+        if scale
+          B[i, j] *= wt
         end
       end
     end
@@ -266,6 +276,11 @@ Base.isnan(A::SnpArray) = !A.A1 & A.A2
 #   !pA.A1[pidx] & pA.A2[pidx]
 # end
 
+"""
+Computes the number of minor alleles, number of missing genotypes, and minor
+allele frequencies (MAF) along each row and column. Calculation of MAF takes
+into account of missingness.
+"""
 function summarysnps(A::SnpLike{2})
   m, n = size(A)
   nmialcol = zeros(Int, n)      # no. minor alleles for each column
@@ -290,6 +305,25 @@ function summarysnps(A::SnpLike{2})
   end
   return nmialcol, nmisscol, mafcol, nmialrow, nmissrow, mafrow
 end
+
+"""
+Computes empirical kinship matrix from a SnpMatrix.
+"""
+function kinship(A::SnpLike{2}; method::Symbol = :GRM)
+  n, p = size(A)
+  _, _, mafcol = summarysnps(A)
+end
+
+"""
+Computes empirical kinship matrix from a numeric genotype matrix.
+"""
+function kinship(A::AbstractMatrix; method::Symbol = :GRM)
+  n, p = size(A)
+  _, _, mafcol = summarysnps(A)
+end
+
+
+
 end # module
 
 
