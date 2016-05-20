@@ -148,6 +148,7 @@ end
 Convert a SNP matrix to a numeric matrix according to specified SNP model. If
 `impute == true`, missing entries are imputed according to (column) minor allele
 frequencies.
+# TODO: allow scaling by column std
 """
 function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
@@ -166,30 +167,10 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
   elseif ndims(A) == 2
     m, n = size(A)
   end
-  # nmialcol, nmisscol, mafcol = summarysnps(A)
-  # for j = 1:n, i = 1:m
-  #   (a1, a2) = A[i, j]
-  #   ism = isnan((a1, a2))
-  #   if ism && !impute # missing value (false, true)
-  #     B[i, j] = nanT
-  #   else
-  #     if ism && impute
-  #       a1 = rand() < mafcol[j]
-  #       a2 = rand() < mafcol[j]
-  #     end
-  #     if model == :additive
-  #       B[i, j] = a1 + a2
-  #     elseif model == :dominant
-  #       B[i, j] = 2(a1 & a2)
-  #     elseif model == :recessive
-  #       B[i, j] = 2a1
-  #     end
-  #   end
-  # end
 
   @inbounds for j = 1:n
     # first pass: convert and count missing genotypes
-    nmisscol = 0 # no. missing entries in column j
+    nmisscol = 0  # no. missing entries in column j
     nmialcol = 0  # no. minor alleles in column j
     @simd for i = 1:m
       (a1, a2) = A[i, j]
@@ -313,7 +294,6 @@ end
 
 """
 Computes empirical kinship matrix from a SnpMatrix.
-# TODO: implement MoM method
 """
 function kinship(A::SnpLike{2}; method::Symbol = :GRM)
   if method == :GRM
@@ -360,7 +340,7 @@ function mom(A::SnpLike{2})
   Φ = zeros(n, n)
   if 8.0n * p < 1e9 # take no more than 1GB memory
     snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true)
-    for i in eachindex(snpchunk)
+    @inbounds @simd for i in eachindex(snpchunk)
       snpchunk[i] -= 1.0
     end
     BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
@@ -378,13 +358,15 @@ function mom(A::SnpLike{2})
     end
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
-    snpchunk = convert(Matrix{Float64}, sub(A, :, J); model = :additive, impute = true)
+    snpchunk = convert(Matrix{Float64}, sub(A, :, J);
+      model = :additive, impute = true)
     BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
   end
   LinAlg.copytri!(Φ, 'U')
+  a, b = 0.5p - c, p - c
   @inbounds @simd for i in eachindex(Φ)
-    Φ[i] += 0.5p - c
-    Φ[i] /= p - c
+    Φ[i] += a
+    Φ[i] /= b
   end
   return Φ
 end
