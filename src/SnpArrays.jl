@@ -1,6 +1,6 @@
 module SnpArrays
 
-export SnpArray, summarysnps, kinship, impute!
+export SnpArray, summarize, grm
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -33,18 +33,20 @@ function SnpArray(plinkFile::AbstractString)
   # PLINK coding (bits->genotype): 00->aa, 01->Aa, 10->Missing, 11->AA
   # where a is the minor allele. We code it as bitwise inverse of Plink.
   # Our coding: 11->aa, 10->Aa, 01->Missing, 00->AA.
+  A1 = BitArray(nper, nsnp)
+  A2 = BitArray(nper, nsnp)
   if bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011"
     # v1.0 BED file
     if bits(bedheader[3]) == "00000001"
       # SNP-major
-      snpbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25nper), nsnp), 3)
-      A1 = !slice(snpbits, 1, 1:nper, :)
-      A2 = !slice(snpbits, 2, 1:nper, :)
+      plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25nper), nsnp), 3)
+      A1 = copy!(A1, slice(plinkbits, 1, 1:nper, :))
+      A2 = copy!(A2, slice(plinkbits, 2, 1:nper, :))
     else
       # individual-major
       snpbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25nsnp), nper), 3)
-      A1 = !slice(snpbits, 1, 1:nsnp, :)'
-      A2 = !slice(snpbits, 2, 1:nsnp, :)'
+      A1 = copy!(A1, slice(plinkbits, 1, 1:nper, :))
+      A2 = copy!(A2, slice(plinkbits, 2, 1:nper, :)')
     end
   else
     # TODO: v0.99 BED file: individual-major
@@ -57,7 +59,7 @@ function SnpArray(plinkFile::AbstractString)
 end
 
 # SnpArray or a view of a SnpArray
-typealias SnpLike{N} Union{SnpArray{N}, SubArray{Tuple{Bool, Bool}, N, SnpArray{N}}}
+typealias SnpLike{N} Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N}}
 typealias SnpMatrix SnpArray{2}
 typealias SnpVector SnpArray{1}
 
@@ -89,17 +91,17 @@ end
 
 function Base.setindex!(A::SnpArray, v::Real, i::Int)
   if isnan(v)
-    setindex!(A, (false, true), i)
+    setindex!(A, (true, false), i)
   else
-    setindex!(A, (v > zero(eltype(v)), v > one(eltype(v))), i)
+    setindex!(A, (v > one(eltype(v)), v > zero(eltype(v))), i)
   end
 end
 
 function Base.setindex!(A::SnpArray, v::Real, i::Int, j::Int)
   if isnan(v)
-    setindex!(A, (false, true), i, j)
+    setindex!(A, (true, false), i, j)
   else
-    setindex!(A, (v > zero(eltype(v)), v > one(eltype(v))), i, j)
+    setindex!(A, (v > one(eltype(v)), v > zero(eltype(v))), i, j)
   end
 end
 
@@ -125,20 +127,30 @@ end
 
 """
 Convert a two-bit genotype to a real number. Missing genotype is converted to
-NaN.
+NaN. `minor_allele == true` indicates `A1` is the minor allele;
+`minor_allele == false` indicates `A2` is the minor allele.
 """
-function Base.convert{T<:Real}(t::Type{T}, a::NTuple{2, Bool};
-  model::Symbol = :additive)
-  b = zero(t)
-  if !a[1] & a[2]
+function Base.convert{T<:Real}(t::Type{T}, a::NTuple{2, Bool},
+  minor_allele::Bool; model::Symbol = :additive)
+  if isnan(a)
     b = convert(t, NaN)
   else
-    if model == :additive
-      b = convert(T, a[1] + a[2])
-    elseif model == :dominant
-      b = convert(T, 2(a[1] & a[2]))
-    elseif model == :recessive
-      b = convert(T, 2a[1])
+    if minor_allele # A1 is the minor allele
+      if model == :additive
+        b = convert(T, !a[1] + !a[2])
+      elseif model == :dominant
+        b = convert(T, !a[1] | !a[2])
+      elseif model == :recessive
+        b = convert(T, !a[1] & !a[2])
+      end
+    else # A2 is the minor allele
+      if model == :additive
+        b = convert(T, a[1] + a[2])
+      elseif model == :dominant
+        b = convert(T, a[1] | a[2])
+      elseif model == :recessive
+        b = convert(T, a[1] & a[2])
+      end
     end
   end
   return b
@@ -167,50 +179,25 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
   elseif ndims(A) == 2
     m, n = size(A)
   end
-
+  # convert column by column
   @inbounds for j = 1:n
-    # first pass: convert and count missing genotypes
-    nmisscol = 0  # no. missing entries in column j
-    nmialcol = 0  # no. minor alleles in column j
+    # first pass: find minor allele and its frequency
+    maf, minor_allele, = summarize(sub(A, :, j))
+    # second pass: impute, convert, center, scale
+    ct = 2.0maf
+    wt = ifelse(maf == 0.0, 1.0, 1.0 / sqrt(2.0maf * (1.0 - maf)))
     @simd for i = 1:m
       (a1, a2) = A[i, j]
-      if !a1 & a2 # missing value (false, true)
-        B[i, j] = nanT
-        nmisscol += 1
-      else
-        nmialcol += a1 + a2
-        if model == :additive
-          B[i, j] = a1 + a2
-        elseif model == :dominant
-          B[i, j] = 2(a1 & a2)
-        elseif model == :recessive
-          B[i, j] = 2a1
-        end
+      # impute if asked
+      if isnan(a1, a2) && impute
+        a1, a2 = randgeno(maf, minor_allele)
       end
-    end
-    # second pass: impute, center, scale
-    if (impute && nmisscol > 0) || center || scale
-      maf = nmialcol / 2(m - nmisscol)
-      ct = 2.0maf
-      wt = ifelse(maf == 0.0, 1.0, 1.0 / sqrt(2.0maf * (1.0 - maf)))
-      @inbounds @simd for i = 1:m
-        if isnan(B[i, j])
-          a1 = rand() < maf
-          a2 = rand() < maf
-          if model == :additive
-            B[i, j] = a1 + a2
-          elseif model == :dominant
-            B[i, j] = 2(a1 & a2)
-          elseif model == :recessive
-            B[i, j] = 2a1
-          end
-        end
-        if center
-          B[i, j] -= ct
-        end
-        if scale
-          B[i, j] *= wt
-        end
+      B[i, j] = convert(T, (a1, a2), minor_allele; model = model)
+      if center
+        B[i, j] -= ct
+      end
+      if scale
+        B[i, j] *= wt
       end
     end
   end
@@ -219,126 +206,184 @@ end
 
 """
 Convert a SNP matrix to a sparse matrix according to specified SNP model.
-Missing genotypes are ignored.
-#TODO: implement imputation.
+If `impute == false`, missing genotypes are ignored. If `impute == true`,
+missing genotypes are imputed on the fly according to the minor allele
+frequencies.
 """
 function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
-  A::SnpLike{2}; model::Symbol = :additive)
+  A::SnpLike{2}; model::Symbol = :additive, impute::Bool = false)
   m, n = size(A)
-  I, J, V = TI[], TI[], T[]
-  zeroT = zero(T)
-  v = zero(T)
-  @inbounds for j = 1:n, i = 1:m
-    (a1, a2) = A[i, j]
-    if !a1 & a2 # missing
-      continue
-    end
-    if model == :additive
-      v = convert(T, a1 + a2)
-    elseif model == :dominant
-      v = convert(T, 2(a1 & a2))
-    elseif model == :recessive
-      v = convert(T, 2a1)
-    end
-    if v ≠ zeroT
-      push!(I, i), push!(J, j), push!(V, v)
+  # prepare sparese matrix data structure
+  rowval = TI[]
+  nzval = T[]
+  colptr = zeros(TI, n + 1)
+  # convert column by column
+  zeroT = convert(T, 0.0)
+  @inbounds for j = 1:n
+    colptr[j] = length(nzval) + 1
+    # first pass: find minor allele and its frequency
+    maf, minor_allele, = summarize(sub(A, :, j))
+    # second pass: impute, convert
+    for i = 1:m
+      (a1, a2) = A[i, j]
+      # impute if asked
+      if isnan(a1, a2)
+        if impute
+          a1, a2 = randgeno(maf, minor_allele)
+        else
+          continue
+        end
+      end
+      v = convert(T, (a1, a2), minor_allele; model = model)
+      if v ≠ zeroT
+        push!(rowval, i), push!(nzval, v)
+      end
     end
   end
-  return sparse(I, J, V, m, n)
+  colptr[n + 1] = length(nzval) + 1
+  return SparseMatrixCSC(m, n, colptr, rowval, nzval)
 end
 
-Base.isnan(a::Tuple{Bool, Bool}) = !a[1] & a[2]
-Base.isnan(A::SnpArray) = !A.A1 & A.A2
-# TODO: make isnan work for view
-# function Base.isnan{N}(A::SubArray{Tuple{Bool, Bool}, N, SnpArray{N},
-#   Tuple{UnitRange{Int64}, N}, 0})
-#   pA = parent(A)
-#   pidx = parentindexes(A)
-#   !pA.A1[pidx] & pA.A2[pidx]
-# end
-
-# TODO:
-function impute!(A::SnpLike{2})
-
+# missing code is 10 = (true, false)
+Base.isnan(a1::Bool, a2::Bool) = a1 & !a2
+Base.isnan(a::Tuple{Bool, Bool}) = Base.isnan(a[1], a[2])
+function Base.isnan{N}(A::SnpLike{N})
+  b = BitArray(size(A))
+  @inbounds @simd for i in eachindex(A)
+    b[i] = Base.isnan(A[i])
+  end
+  return b
 end
 
 """
-Computes the number of minor alleles, number of missing genotypes, and minor
-allele frequencies (MAF) along each row and column. Calculation of MAF takes
-into account of missingness.
+Generate a genotype according to minor allele frequency. `minor_allele` indicates
+the minor allele is A1 (`true`) or A2 (`false`).
 """
-function summarysnps(A::SnpLike{2})
+function randgeno(maf::Float64, minor_allele::Bool)
+  # recall 1 points to allele A2
+  if minor_allele # A1 is the minor allele
+    b1 = rand() > maf
+    b2 = rand() > maf
+  else # A2 is the minor allele
+    b1 = rand() < maf
+    b2 = rand() < maf
+  end
+  # make sure not conflict with missing code 10
+  if isnan(b1, b2)
+    (b1, b2) = (false, true)
+  end
+  return b1, b2
+end
+
+"""
+Compute summary statistics of a SnpArray.
+
+Output:
+  maf - minor allele frequency of each SNP
+  minor_allele - indicate the minor allele is A1 (`true`) or A2 (`false`)
+  missings_by_person - number of missing genotypes for each person
+  missings_by_snp - number of missing genotypes for each SNP
+"""
+function summarize(A::SnpLike{2})
   m, n = size(A)
-  nmialcol = zeros(Int, n)      # no. minor alleles for each column
-  nmisscol = zeros(Int, n)      # no. missing genotypes for each column
-  mafcol   = zeros(Float64, n)  # minor allele frequencies for each column
-  nmialrow = zeros(Int, m)      # no. minor alleles for each row
-  nmissrow = zeros(Int, m)      # no. missing genotypes for each row
-  mafrow   = zeros(Float64, m)  # minor allele frequencies for each row
+  maf = zeros(Float64, n)                # minor allele frequencies for each column
+  minor_allele = trues(n)                # true->A1 is the minor allele
+  missings_by_snp = zeros(Int, n)        # no. missing genotypes for each row
+  missings_by_person = zeros(Int, m)     # no. missing genotypes for each column
   @inbounds for j = 1:n
     @simd for i = 1:m
       (a1, a2) = A[i, j]
-      ism = !a1 & a2
-      nmialcol[j] += ifelse(ism, 0, a1 + a2)
-      nmisscol[j] += ism
-      nmialrow[i] += ifelse(ism, 0, a1 + a2)
-      nmissrow[i] += ism
+      if isnan(a1, a2)
+        missings_by_person[i] += 1
+        missings_by_snp[j] += 1
+      else
+        maf[j] += convert(Float64, a1 + a2)
+      end
     end
-    mafcol[j] = nmialcol[j] / 2(m - nmisscol[j])
+    maf[j] /= 2.0(m - missings_by_snp[j]) # A2 allele frequency
+    minor_allele[j] = maf[j] > 0.5
+    if minor_allele[j]  # A1 is the minor allele
+      maf[j] = 1.0 - maf[j]
+    end
   end
+  return maf, minor_allele, missings_by_snp, missings_by_person
+end
+
+"""
+Compute summary statistics of a SnpVector.
+
+Output:
+  maf - minor allele frequency of each SNP
+  minor_allele - indicate the minor allele is A1 (`true`) or A2 (`false`)
+  missings - number of missing genotypes
+"""
+function summarize(A::SnpLike{1})
+  m = length(A)
+  maf = 0.0                # minor allele frequency
+  missings = 0             # no. missing genotypes
   @inbounds @simd for i = 1:m
-    mafrow[i] = nmialrow[i] / 2(m - nmissrow[i])
+    (a1, a2) = A[i]
+    if isnan(a1, a2)
+      missings += 1
+    else
+      maf += convert(Float64, a1 + a2)
+    end
   end
-  return nmialcol, nmisscol, mafcol, nmialrow, nmissrow, mafrow
+  maf /= 2.0(m - missings) # A2 allele frequency
+  minor_allele = maf > 0.5
+  if minor_allele          # A1 is the minor allele
+    maf = 1.0 - maf
+  end
+  return maf, minor_allele, missings
 end
 
 """
-Computes empirical kinship matrix from a SnpMatrix.
+Compute empirical kinship matrix from a SnpMatrix. Missing genotypes are imputed
+on the fly according to minor allele frequencies.
 """
-function kinship(A::SnpLike{2}; method::Symbol = :GRM)
+function grm(A::SnpLike{2}; method::Symbol = :GRM)
   if method == :GRM
-    return grm(A::SnpLike{2})
+    return _grm(A::SnpLike{2})
   elseif method == :MoM
-    return mom(A::SnpLike{2})
+    return _mom(A::SnpLike{2})
   end
 end
 
-function grm(A::SnpLike{2})
+function _grm(A::SnpLike{2})
   n, p = size(A)
   Φ = zeros(n, n)
-  if 8.0n * p < 1e9 # take no more than 1GB memory
+  memory_limit = 2.0^30 # 1GB memory usage limit
+  if 8.0n * p < memory_limit
     snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true,
       center = true, scale = true)
     BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
   else
     # chunsize is chosen to have intermediate matrix taking upto 1GB memory
-    chunksize = ceil(Int, 1e9 / 8.0n)
+    chunksize = ceil(Int, memory_limit / 8.0n)
     snpchunk = zeros(n, chunksize)
     for chunk = 1:floor(Int, p / chunksize)
-      J = ((chunk - 1) * chunksize + 1):chunk * chunksize
+      J = ((chunk - 1) * chunksize + 1):(chunk * chunksize)
       copy!(snpchunk, sub(A, :, J); model = :additive,
         impute = true, center = true, scale = true)
       BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
-    snpchunk = convert(Matrix{Float64}, sub(A, :, J); model = :additive,
-      impute = true, center = true, scale = true)
-    BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
+    if length(J) > 0
+      snpchunk = convert(Matrix{Float64}, sub(A, :, J); model = :additive,
+        impute = true, center = true, scale = true)
+      BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
+    end
   end
   LinAlg.copytri!(Φ, 'U')
   return Φ
 end
 
-function mom(A::SnpLike{2})
+function _mom(A::SnpLike{2})
   n, p = size(A)
-  _, _, mafcol = summarysnps(A)
-  c = 0.0
-  @inbounds @simd for j in eachindex(mafcol)
-    c += mafcol[j]^2 + (1.0 - mafcol[j])^2
-  end
+  memory_limit = 2.0^30 # 1GB memory usage limit
   Φ = zeros(n, n)
-  if 8.0n * p < 1e9 # take no more than 1GB memory
+  if 8.0n * p < memory_limit # take no more than 1GB memory
     snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true)
     @inbounds @simd for i in eachindex(snpchunk)
       snpchunk[i] -= 1.0
@@ -346,7 +391,7 @@ function mom(A::SnpLike{2})
     BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
   else
     # chunsize is chosen to have intermediate matrix taking upto 1GB memory
-    chunksize = ceil(Int, 1e9 / 8.0n)
+    chunksize = ceil(Int, memory_limit / 8.0n)
     snpchunk = zeros(n, chunksize)
     for chunk = 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):chunk * chunksize
@@ -358,16 +403,27 @@ function mom(A::SnpLike{2})
     end
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
-    snpchunk = convert(Matrix{Float64}, sub(A, :, J);
-      model = :additive, impute = true)
-    BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
+    if length(J) > 0
+      snpchunk = convert(Matrix{Float64}, sub(A, :, J);
+        model = :additive, impute = true)
+      BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
+    end
   end
-  LinAlg.copytri!(Φ, 'U')
+  # shift and scale elements of Φ
+  c = 0.0
+  maf, = summarize(A)
+  @inbounds @simd for j in eachindex(maf)
+    c += maf[j]^2 + (1.0 - maf[j])^2
+  end
   a, b = 0.5p - c, p - c
-  @inbounds @simd for i in eachindex(Φ)
-    Φ[i] += a
-    Φ[i] /= b
+  @inbounds for j in 1:n
+    @simd for i = 1:n
+      Φ[i, j] += a
+      Φ[i, j] /= b
+    end
   end
+  # copy to lower triangular part
+  LinAlg.copytri!(Φ, 'U')
   return Φ
 end
 
