@@ -1,19 +1,23 @@
 module SnpArrays
 
-export SnpArray, summarize, grm
+export grm, randgeno, SnpArray, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
   A2::BitArray{N}
 end
 
+# SnpArray or a view of a SnpArray
+typealias SnpLike{N} Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N}}
+typealias SnpMatrix SnpArray{2}
+typealias SnpVector SnpArray{1}
+
 """
-Construct a SnpArray from an array of minor allele counts {0, 1, 2}.
-# TODO: make it robust with NaN entries
+Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
 """
 function SnpArray(mac::AbstractArray)
     T = eltype(mac)
-    SnpArray(mac .> zero(T), mac .> one(T))
+    SnpArray(mac .> one(T), mac .> zero(T))
 end
 
 """
@@ -30,9 +34,8 @@ function SnpArray(plinkFile::AbstractString)
   fid = open(plinkBedfile, "r")
   # decide BED file version and snp/individual-major
   bedheader = read(fid, UInt8, 3)
-  # PLINK coding (bits->genotype): 00->aa, 01->Aa, 10->Missing, 11->AA
-  # where a is the minor allele. We code it as bitwise inverse of Plink.
-  # Our coding: 11->aa, 10->Aa, 01->Missing, 00->AA.
+  # PLINK coding (genotype->bits): A1/A1->00, A1/A2->01, A2/A2->11, missing->10
+  # http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml
   A1 = BitArray(nper, nsnp)
   A2 = BitArray(nper, nsnp)
   if bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011"
@@ -45,7 +48,7 @@ function SnpArray(plinkFile::AbstractString)
     else
       # individual-major
       snpbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25nsnp), nper), 3)
-      A1 = copy!(A1, slice(plinkbits, 1, 1:nper, :))
+      A1 = copy!(A1, slice(plinkbits, 1, 1:nper, :)')
       A2 = copy!(A2, slice(plinkbits, 2, 1:nper, :)')
     end
   else
@@ -58,11 +61,6 @@ function SnpArray(plinkFile::AbstractString)
   SnpArray(A1, A2)
 end
 
-# SnpArray or a view of a SnpArray
-typealias SnpLike{N} Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N}}
-typealias SnpMatrix SnpArray{2}
-typealias SnpVector SnpArray{1}
-
 #---------------------------------------------------------------------------# methods
 # Julia docs on methods required for AbstractArray:
 # http://docs.julialang.org/en/release-0.4/manual/interfaces/#man-interfaces-abstractarray
@@ -71,7 +69,7 @@ Base.size(A::SnpArray, d::Int)         = size(A.A1, d)
 Base.ndims(A::SnpArray)                = ndims(A.A1)
 Base.endof(A::SnpArray)                = length(A)
 Base.eltype(A::SnpArray)               = NTuple{2, Bool}
-Base.linearindexing(::Type{SnpArray})  = Base.LinearSlow()
+Base.linearindexing(::Type{SnpArray})  = Base.LinearFast()
 
 function Base.getindex(A::SnpArray, i::Int)
   (getindex(A.A1, i), getindex(A.A2, i))
@@ -125,15 +123,23 @@ function Base.similar(A::SnpArray, ::NTuple{2, Bool}, dims::Dims)
   SnpArray(BitArray(dims), BitArray(dims))
 end
 
+
 """
-Convert a two-bit genotype to a real number. Missing genotype is converted to
-NaN. `minor_allele == true` indicates `A1` is the minor allele;
-`minor_allele == false` indicates `A2` is the minor allele.
+Constructor `SnpArray(m, n)` creates a SnpArray with all A1 alleles.
+"""
+function Base.convert(t::Type{SnpArray}, dims...)
+  SnpArray(falses(dims), falses(dims))
+end
+
+"""
+Convert a two-bit genotype to a real number according to specified SNP model.
+Missing genotype is converted to NaN. `minor_allele == true` indicates `A1` is
+the minor allele; `minor_allele == false` indicates `A2` is the minor allele.
 """
 function Base.convert{T<:Real}(t::Type{T}, a::NTuple{2, Bool},
   minor_allele::Bool; model::Symbol = :additive)
   if isnan(a)
-    b = convert(t, NaN)
+    b = convert(T, NaN)
   else
     if minor_allele # A1 is the minor allele
       if model == :additive
@@ -206,9 +212,9 @@ end
 
 """
 Convert a SNP matrix to a sparse matrix according to specified SNP model.
-If `impute == false`, missing genotypes are ignored. If `impute == true`,
-missing genotypes are imputed on the fly according to the minor allele
-frequencies.
+If `impute == false`, missing genotypes are ignored (translated to 0).
+If `impute == true`, missing genotypes are imputed on the fly according
+to the minor allele frequencies.
 """
 function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   A::SnpLike{2}; model::Symbol = :additive, impute::Bool = false)
@@ -256,24 +262,58 @@ function Base.isnan{N}(A::SnpLike{N})
 end
 
 """
-Generate a genotype according to minor allele frequency. `minor_allele` indicates
-the minor allele is A1 (`true`) or A2 (`false`).
+Generate a genotype according to a1 allele frequency.
 """
-function randgeno(maf::Float64, minor_allele::Bool)
-  # recall 1 points to allele A2
-  if minor_allele # A1 is the minor allele
-    b1 = rand() > maf
-    b2 = rand() > maf
-  else # A2 is the minor allele
-    b1 = rand() < maf
-    b2 = rand() < maf
-  end
+function randgeno(a1freq::Float64)
+  b1 = rand() > a1freq
+  b2 = rand() > a1freq
   # make sure not conflict with missing code 10
   if isnan(b1, b2)
     (b1, b2) = (false, true)
   end
   return b1, b2
 end
+
+"""
+Generate a genotype according to minor allele frequency. `minor_allele` indicates
+the minor allele is A1 (`true`) or A2 (`false`).
+"""
+function randgeno(maf::Float64, minor_allele::Bool)
+  minor_allele ? randgeno(maf) : randgeno(1.0 - maf)
+end
+
+"""
+Generate a SnpVector according to minor allele frequency. `minor_allele` indicates
+the minor allele is A1 (`true`) or A2 (`false`).
+"""
+function randgeno(n::Int, maf::Float64, minor_allele::Bool)
+  s = SnpArray(n)
+  @inbounds @simd for i = 1:n
+    s[i] = randgeno(maf, minor_allele)
+  end
+  return s
+end
+
+"""
+Generate a SnpMatrix according to minor allele frequencies `maf` and the
+`minor_allele` vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
+"""
+function randgeno(m::Int, n::Int, maf::Vector{Float64}, minor_allele::BitVector)
+  @assert length(maf) == n "length of maf should be n"
+  @assert length(minor_allele) == n "length of minor_allele should be n"
+  s = SnpArray(m, n)
+  @inbounds @simd for j = 1:n
+    for i = 1:m
+      s[i, j] = randgeno(maf[j], minor_allele[j])
+    end
+  end
+  return s
+end
+
+function randgeno(n::Tuple{Int,Int}, maf::Vector{Float64}, minor_allele::BitArray{1})
+  randgeno(n..., maf, minor_allele)
+end
+
 
 """
 Compute summary statistics of a SnpArray.
