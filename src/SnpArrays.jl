@@ -446,6 +446,9 @@ function _mom(A::SnpLike{2})
     if length(J) > 0
       snpchunk = convert(Matrix{Float64}, sub(A, :, J);
         model = :additive, impute = true)
+      for i in eachindex(snpchunk)
+        snpchunk[i] -= 1.0
+      end
       BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
     end
   end
