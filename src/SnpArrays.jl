@@ -1,6 +1,8 @@
 module SnpArrays
 
-export grm, randgeno, SnpArray, summarize
+import StandardizedMatrices
+import IterativeSolvers: MatrixCFcn, svdl
+export grm, pca, pca_sp, randgeno, SnpArray, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -436,7 +438,7 @@ function _mom(A::SnpLike{2})
     for chunk = 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):chunk * chunksize
       copy!(snpchunk, sub(A, :, J); model = :additive, impute = true)
-      for i in eachindex(snpchunk)
+      @inbounds @simd for i in eachindex(snpchunk)
         snpchunk[i] -= 1.0
       end
       BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
@@ -446,7 +448,7 @@ function _mom(A::SnpLike{2})
     if length(J) > 0
       snpchunk = convert(Matrix{Float64}, sub(A, :, J);
         model = :additive, impute = true)
-      for i in eachindex(snpchunk)
+      @inbounds @simd for i in eachindex(snpchunk)
         snpchunk[i] -= 1.0
       end
       BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
@@ -459,8 +461,8 @@ function _mom(A::SnpLike{2})
     c += maf[j]^2 + (1.0 - maf[j])^2
   end
   a, b = 0.5p - c, p - c
-  @inbounds for j in 1:n
-    @simd for i = 1:n
+  @inbounds @simd for j = 1:n
+    for i = 1:j
       Φ[i, j] += a
       Φ[i, j] /= b
     end
@@ -468,6 +470,94 @@ function _mom(A::SnpLike{2})
   # copy to lower triangular part
   LinAlg.copytri!(Φ, 'U')
   return Φ
+end
+
+"""
+Principal component analysis of SNP data.
+
+# Input
+
+- `A`: n-by-p SnpArray.
+- `pcs`: number of principal components. Default is 6.
+
+# Output
+
+- `pcscore`: n-by-pcs matrix of principal component scores. Or the top `pcs`
+  eigen-SNPs.
+- `pcloading`: p-by-pcs matrix. Each column is the principal loadings.
+- `pcvariance`: princial variances, equivalent to the top `pcs` eigenvalues of
+  the sample covariance matrix.
+"""
+function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
+  t::Type{Matrix{T}} = Matrix{Float64})
+  # create a memory-mapped genotype matrix G
+  n, p = size(A)
+  G = Mmap.mmap(t, (n, p))
+  copy!(G, A; model = :additive, impute = true, center = true, scale = true)
+  _, pcvariance, pcloading = svds(G, nsv = pcs)
+  pcscore = G * pcloading
+  # square singular values and scale by n to get eigenvalues of the
+  # covariance matrix
+  @inbounds @simd for i = 1:pcs
+    pcvariance[i] = pcvariance[i] * pcvariance[i] / n
+  end
+  return pcscore, pcloading, pcvariance
+end
+
+function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
+  t::Type{SparseMatrixCSC{T, TI}} = SparseMatrixCSC{Float64, Int})
+  n, p = size(A)
+  # genotype matrix *not* centered or scaled
+  G = convert(t, A; model = :additive, impute = true)
+  # center and scale
+  maf, = summarize(A)
+  center = 2.0maf
+  weight = map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf)
+  # standardized genotype matrix
+  tmpv = zeros(eltype(G), p)
+  Gs = MatrixCFcn{eltype(G)}(n, p,
+    (output, v) -> Acs_mul_B!(output, G, v, center, weight, tmpv),
+    (output, v) -> Acsc_mul_B!(output, G, v, center, weight, tmpv))
+  # PCs
+  Gsvd = svdl(Gs, pcs)
+  pcscore = Gs * Gsvd[:V]
+  # scale by n to get eigenvalues of the covariance matrix G'G / n
+  @inbounds @simd for i = 1:pcs
+    pcvariance[i] = pcvariance[i] * pcvariance[i] / n
+  end
+  return pcscore, pcloading, pcvariance
+end
+
+"""
+Standardized matrix A (centered by `center` and scaled by `weight`) multiply B.
+"""
+function Acs_mul_B!(output::AbstractVector, A::AbstractMatrix,
+  b::AbstractVector, center::AbstractVector, weight::AbstractVector,
+  tmpvec::AbstractVector = zeros(eltype(A), size(A, 2)))
+  @inbounds @simd for i in eachindex(tmpvec)
+    tmpvec[i] = weight[i] * b[i]
+  end
+  A_mul_B!(output, A, tmpvec)
+  shift = dot(center, tmpvec)
+  @inbounds @simd for i in eachindex(output)
+    output[i] -= shift
+  end
+  output
+end
+
+"""
+Transpose of standardized matrix A (centered by `center` and scaled by `weight`)
+multiply B.
+"""
+function Acsc_mul_B!(output::AbstractVector, A::AbstractMatrix,
+  b::AbstractVector, center::AbstractVector, weight::AbstractVector,
+  tmpvec::AbstractVector = zeros(eltype(A), size(A, 2)))
+  Ac_mul_B!(tmpvec, A, b)
+  shift = sum(b)
+  @inbounds @simd for i in eachindex(tmpvec)
+    tmpvec[i] = (tmpvec[i] - shift * center[i]) * weight[i]
+  end
+  output
 end
 
 end # module
