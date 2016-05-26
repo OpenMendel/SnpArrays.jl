@@ -226,12 +226,12 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   colptr = zeros(TI, n + 1)
   # convert column by column
   zeroT = convert(T, 0.0)
-  @inbounds for j = 1:n
+  @inbounds for j in 1:n
     colptr[j] = length(nzval) + 1
     # first pass: find minor allele and its frequency
     maf, minor_allele, = summarize(sub(A, :, j))
     # second pass: impute, convert
-    for i = 1:m
+    for i in 1:m
       (a1, a2) = A[i, j]
       # impute if asked
       if isnan(a1, a2)
@@ -311,7 +311,8 @@ function randgeno(m::Int, n::Int, maf::Vector{Float64}, minor_allele::BitVector)
   return s
 end
 
-function randgeno(n::Tuple{Int,Int}, maf::Vector{Float64}, minor_allele::BitArray{1})
+function randgeno(n::Tuple{Int,Int}, maf::Vector{Float64},
+  minor_allele::BitArray{1})
   randgeno(n..., maf, minor_allele)
 end
 
@@ -460,8 +461,8 @@ function _mom(A::SnpLike{2})
     c += maf[j]^2 + (1.0 - maf[j])^2
   end
   a, b = 0.5p - c, p - c
-  @inbounds @simd for j = 1:n
-    for i = 1:j
+  @inbounds @simd for j in 1:n
+    for i in 1:j
       Φ[i, j] += a
       Φ[i, j] /= b
     end
@@ -494,10 +495,11 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
   G = Mmap.mmap(t, (n, p))
   copy!(G, A; model = :additive, impute = true, center = true, scale = true)
   _, pcvariance, pcloading = svds(G, nsv = pcs)
+  identify!(pcloading)
   pcscore = G * pcloading
   # square singular values and scale by n to get eigenvalues of the
   # covariance matrix
-  @inbounds @simd for i = 1:pcs
+  @inbounds @simd for i in 1:pcs
     pcvariance[i] = pcvariance[i] * pcvariance[i] / n
   end
   return pcscore, pcloading, pcvariance
@@ -519,6 +521,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
     (output, v) -> AcstAcs_mul_B!(output, G, v, center, weight, tmpv))
   # PCs
   pcvariance, pcloading = eigs(Gs, nev = pcs)
+  identify!(pcloading)
   # pcscore = Gs * pcloading
   pcscore = zeros(T, n, pcs)
   Acs_mul_B!(pcscore, G, pcloading, center, weight)
@@ -592,6 +595,23 @@ function Acsc_mul_B!(output::AbstractVector, A::AbstractMatrix,
     tmpvec[i] = (tmpvec[i] - shift * center[i]) * weight[i]
   end
   output
+end
+
+"""
+Make first entry of each column nonnegative. This is for better identifibility
+of an orthogonal matrix such as from eigen value or singular value decomposition.
+"""
+function identify!{T <: AbstractFloat}(A::Matrix{T})
+  m, n = size(A)
+  zeroT = zero(eltype(A))
+  negone = - one(eltype(A))
+  @inbounds for j in 1:n
+    if A[1, j] < zeroT
+      @simd for i in 1:m
+        A[i, j] = - A[i, j]
+      end
+    end
+  end
 end
 
 end # module
