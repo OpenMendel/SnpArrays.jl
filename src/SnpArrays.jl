@@ -1,7 +1,7 @@
 module SnpArrays
 
 import StandardizedMatrices
-import IterativeSolvers: MatrixCFcn, svdl
+import IterativeSolvers: MatrixFcn, MatrixCFcn, svdl
 export grm, pca, pca_sp, randgeno, SnpArray, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
@@ -514,12 +514,11 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
   center = 2.0maf
   weight = map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf)
   # standardized genotype matrix
-  tmpv = zeros(eltype(G), p)
-  Gs = MatrixCFcn{eltype(G)}(n, p,
-    (output, v) -> Acs_mul_B!(output, G, v, center, weight, tmpv),
-    (output, v) -> Acsc_mul_B!(output, G, v, center, weight, tmpv))
+  tmpv = zeros(eltype(G), n)
+  Gs = MatrixFcn{eltype(G)}(p, p,
+    (output, v) -> AcstAcs_mul_B!(output, G, v, center, weight, tmpv))
   # PCs
-  Gsvd = svdl(Gs, pcs)
+  Geig = eigs(Gs, nev = pcs)
   pcscore = Gs * Gsvd[:V]
   # scale by n to get eigenvalues of the covariance matrix G'G / n
   @inbounds @simd for i = 1:pcs
@@ -527,6 +526,30 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
   end
   return pcscore, pcloading, pcvariance
 end
+
+"""
+Standardized matrix A'A (centered by `center` and scaled by `weight`) multiply B.
+"""
+function AcstAcs_mul_B!(output::AbstractVector, A::AbstractMatrix,
+  b::AbstractVector, center::AbstractVector, weight::AbstractVector,
+  tmpvec::AbstractVector = zeros(eltype(A), size(A, 1)))
+  # output is used as a temporary vector here
+  @inbounds @simd for i in eachindex(output)
+    output[i] = weight[i] * b[i]
+  end
+  A_mul_B!(tmpvec, A, output)
+  shift = dot(center, tmpvec)
+  @inbounds @simd for i in eachindex(tmpvec)
+    tmpvec[i] -= shift
+  end
+  # now output is the real output
+  Ac_mul_B!(output, A, tmpvec)
+  @inbounds @simd for i in eachindex(output)
+    output[i] = weight[i] * b[i]
+  end
+  output
+end
+
 
 """
 Standardized matrix A (centered by `center` and scaled by `weight`) multiply B.
