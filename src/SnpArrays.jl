@@ -1,7 +1,6 @@
 module SnpArrays
 
-#import StandardizedMatrices
-import IterativeSolvers: MatrixFcn, MatrixCFcn, svdl
+import IterativeSolvers: MatrixFcn
 export grm, pca, pca_sp, randgeno, SnpArray, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
@@ -192,8 +191,8 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
     # first pass: find minor allele and its frequency
     maf, minor_allele, = summarize(sub(A, :, j))
     # second pass: impute, convert, center, scale
-    ct = 2.0maf
-    wt = ifelse(maf == 0.0, 1.0, 1.0 / sqrt(2.0maf * (1.0 - maf)))
+    ct = convert(T, 2.0maf)
+    wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
     @simd for i = 1:m
       (a1, a2) = A[i, j]
       # impute if asked
@@ -246,8 +245,8 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
       if v ≠ zeroT
         push!(rowval, i), push!(nzval, v)
       end
-    end
-  end
+    end # i
+  end # j
   colptr[n + 1] = length(nzval) + 1
   return SparseMatrixCSC(m, n, colptr, rowval, nzval)
 end
@@ -509,18 +508,18 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
   n, p = size(A)
   # genotype matrix *not* centered or scaled
   G = convert(t, A; model = :additive, impute = true)
-  @show full(G)
   # center and scale
   maf, = summarize(A)
-  center = 2.0maf
-  weight = map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf)
+  center = convert(Vector{T}, 2.0maf)
+  weight = convert(Vector{T},
+    map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf))
   # standardized genotype matrix
-  tmpv = zeros(eltype(G), n)
+  tmpv = zeros(T, n)
   Gs = MatrixFcn{eltype(G)}(p, p,
     (output, v) -> AcstAcs_mul_B!(output, G, v, center, weight, tmpv))
   # PCs
   pcvariance, pcloading = eigs(Gs, nev = pcs)
-  #pcscore = Gs * pcloading
+  # pcscore = Gs * pcloading
   pcscore = zeros(T, n, pcs)
   Acs_mul_B!(pcscore, G, pcloading, center, weight)
   # scale by n to get eigenvalues of the covariance matrix G'G / n
@@ -549,7 +548,7 @@ function AcstAcs_mul_B!(output::AbstractVector, A::AbstractMatrix,
   # now output is the real output
   Ac_mul_B!(output, A, tmp)
   @inbounds @simd for i in eachindex(output)
-    output[i] = weight[i] * b[i]
+    output[i] *= weight[i]
   end
   output
 end
@@ -559,19 +558,21 @@ Cheating: to bypass the isssym() error thrown by arpack.jl
 """
 Base.issym{T}(fcn::MatrixFcn{T}) = true
 
-
 """
 Standardized matrix A (centered by `center` and scaled by `weight`) multiply B.
 """
 function Acs_mul_B!{T, N}(output::AbstractMatrix{T}, A::AbstractMatrix{T},
-  b::AbstractArray{T, N}, center::AbstractVector{T}, weight::AbstractVector{T},
-  tmp::AbstractArray{T, N} = zeros(eltype(A), size(b)))
-  copy!(tmp, b)
-  scale!(weight, b)
+  B::AbstractArray{T, N}, center::AbstractVector{T}, weight::AbstractVector{T},
+  tmp::AbstractArray{T, N} = zeros(eltype(B), size(B)))
+  @inbounds @simd for j in 1:size(B, 2)
+    for i in 1:size(B, 1)
+      tmp[i, j] = weight[i] * B[i, j]
+    end
+  end
   A_mul_B!(output, A, tmp)
-  @inbounds @simd for j in 1:size(output, 2)
-    shift = dot(center, tmp[:, j])
-    for i in 1:size(output, 1)
+  @inbounds for j in 1:size(output, 2)
+    shift = dot(center, sub(tmp, :, j))
+    @simd for i in 1:size(output, 1)
       output[i, j] -= shift
     end
   end
