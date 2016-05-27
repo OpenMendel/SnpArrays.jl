@@ -22,7 +22,7 @@ function SnpArray(mac::AbstractArray)
 end
 
 """
-Construct a SnpArray from Plink binary files.
+Construct a SnpArray from Plink binary files (`.bed`, `.bim`, `.fam`).
 """
 function SnpArray(plinkFile::AbstractString)
   plinkBedfile = string(plinkFile, ".bed")
@@ -137,8 +137,8 @@ Convert a two-bit genotype to a real number according to specified SNP model.
 Missing genotype is converted to NaN. `minor_allele == true` indicates `A1` is
 the minor allele; `minor_allele == false` indicates `A2` is the minor allele.
 """
-function Base.convert{T<:Real}(t::Type{T}, a::NTuple{2, Bool},
-  minor_allele::Bool; model::Symbol = :additive)
+function Base.convert{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
+  minor_allele::Bool, model::Symbol = :additive)
   if isnan(a)
     b = convert(T, NaN)
   else
@@ -187,19 +187,19 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
     m, n = size(A)
   end
   # convert column by column
-  @inbounds for j = 1:n
+  @inbounds for j in 1:n
     # first pass: find minor allele and its frequency
     maf, minor_allele, = summarize(sub(A, :, j))
     # second pass: impute, convert, center, scale
     ct = convert(T, 2.0maf)
     wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
-    @simd for i = 1:m
+    @simd for i in 1:m
       (a1, a2) = A[i, j]
       # impute if asked
       if isnan(a1, a2) && impute
         a1, a2 = randgeno(maf, minor_allele)
       end
-      B[i, j] = convert(T, (a1, a2), minor_allele; model = model)
+      B[i, j] = convert(T, (a1, a2), minor_allele, model)
       if center
         B[i, j] -= ct
       end
@@ -238,10 +238,10 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
         if impute
           a1, a2 = randgeno(maf, minor_allele)
         else
-          continue
+          continue # nan and no impute -> done
         end
       end
-      v = convert(T, (a1, a2), minor_allele; model = model)
+      v = convert(T, (a1, a2), minor_allele, model)
       if v ≠ zeroT
         push!(rowval, i), push!(nzval, v)
       end
@@ -265,7 +265,7 @@ end
 """
 Generate a genotype according to a1 allele frequency.
 """
-function randgeno(a1freq::Float64)
+function randgeno{T <: AbstractFloat}(a1freq::T)
   b1 = rand() > a1freq
   b2 = rand() > a1freq
   # make sure not conflict with missing code 10
@@ -279,7 +279,7 @@ end
 Generate a genotype according to minor allele frequency. `minor_allele` indicates
 the minor allele is A1 (`true`) or A2 (`false`).
 """
-function randgeno(maf::Float64, minor_allele::Bool)
+function randgeno{T <: AbstractFloat}(maf::T, minor_allele::Bool)
   minor_allele ? randgeno(maf) : randgeno(1.0 - maf)
 end
 
@@ -287,9 +287,9 @@ end
 Generate a SnpVector according to minor allele frequency. `minor_allele` indicates
 the minor allele is A1 (`true`) or A2 (`false`).
 """
-function randgeno(n::Int, maf::Float64, minor_allele::Bool)
+function randgeno{T <: AbstractFloat}(n::Int, maf::T, minor_allele::Bool)
   s = SnpArray(n)
-  @inbounds @simd for i = 1:n
+  @inbounds @simd for i in 1:n
     s[i] = randgeno(maf, minor_allele)
   end
   return s
@@ -299,7 +299,8 @@ end
 Generate a SnpMatrix according to minor allele frequencies `maf` and the
 `minor_allele` vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
 """
-function randgeno(m::Int, n::Int, maf::Vector{Float64}, minor_allele::BitVector)
+function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
+  minor_allele::BitVector)
   @assert length(maf) == n "length of maf should be n"
   @assert length(minor_allele) == n "length of minor_allele should be n"
   s = SnpArray(m, n)
@@ -311,7 +312,7 @@ function randgeno(m::Int, n::Int, maf::Vector{Float64}, minor_allele::BitVector)
   return s
 end
 
-function randgeno(n::Tuple{Int,Int}, maf::Vector{Float64},
+function randgeno{T <: AbstractFloat}(n::Tuple{Int,Int}, maf::Vector{T},
   minor_allele::BitArray{1})
   randgeno(n..., maf, minor_allele)
 end
@@ -328,12 +329,12 @@ Output:
 """
 function summarize(A::SnpLike{2})
   m, n = size(A)
-  maf = zeros(Float64, n)                # minor allele frequencies for each column
-  minor_allele = trues(n)                # true->A1 is the minor allele
-  missings_by_snp = zeros(Int, n)        # no. missing genotypes for each row
-  missings_by_person = zeros(Int, m)     # no. missing genotypes for each column
-  @inbounds for j = 1:n
-    @simd for i = 1:m
+  maf = zeros(Float64, n)             # minor allele frequencies for each column
+  minor_allele = trues(n)             # true->A1 is the minor allele
+  missings_by_snp = zeros(Int, n)     # no. missing genotypes for each row
+  missings_by_person = zeros(Int, m)  # no. missing genotypes for each column
+  @inbounds for j in 1:n
+    @simd for i in 1:m
       (a1, a2) = A[i, j]
       if isnan(a1, a2)
         missings_by_person[i] += 1
@@ -363,7 +364,7 @@ function summarize(A::SnpLike{1})
   m = length(A)
   maf = 0.0                # minor allele frequency
   missings = 0             # no. missing genotypes
-  @inbounds @simd for i = 1:m
+  @inbounds @simd for i in 1:m
     (a1, a2) = A[i]
     if isnan(a1, a2)
       missings += 1
@@ -403,7 +404,7 @@ function _grm(A::SnpLike{2})
     # chunsize is chosen to have intermediate matrix taking upto 1GB memory
     chunksize = ceil(Int, memory_limit / 8.0n)
     snpchunk = zeros(n, chunksize)
-    for chunk = 1:floor(Int, p / chunksize)
+    for chunk in 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):(chunk * chunksize)
       copy!(snpchunk, sub(A, :, J); model = :additive,
         impute = true, center = true, scale = true)
@@ -435,7 +436,7 @@ function _mom(A::SnpLike{2})
     # chunsize is chosen to have intermediate matrix taking upto 1GB memory
     chunksize = ceil(Int, memory_limit / 8.0n)
     snpchunk = zeros(n, chunksize)
-    for chunk = 1:floor(Int, p / chunksize)
+    for chunk in 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):chunk * chunksize
       copy!(snpchunk, sub(A, :, J); model = :additive, impute = true)
       @inbounds @simd for i in eachindex(snpchunk)
@@ -490,10 +491,11 @@ Principal component analysis of SNP data.
 """
 function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
   t::Type{Matrix{T}} = Matrix{Float64})
-  # create a memory-mapped genotype matrix G
   n, p = size(A)
+  # memory-mapped genotype matrix G, centered and scaled
   G = Mmap.mmap(t, (n, p))
   copy!(G, A; model = :additive, impute = true, center = true, scale = true)
+  # partial SVD
   _, pcvariance, pcloading = svds(G, nsv = pcs)
   identify!(pcloading)
   pcscore = G * pcloading
@@ -526,7 +528,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
   pcscore = zeros(T, n, pcs)
   Acs_mul_B!(pcscore, G, pcloading, center, weight)
   # scale by n to get eigenvalues of the covariance matrix G'G / n
-  @inbounds @simd for i = 1:pcs
+  @inbounds @simd for i in 1:pcs
     pcvariance[i] = pcvariance[i] / n
   end
   return pcscore, pcloading, pcvariance
@@ -542,7 +544,6 @@ function AcstAcs_mul_B!(output::AbstractVector, A::AbstractMatrix,
   @inbounds @simd for i in eachindex(output)
     output[i] = weight[i] * b[i]
   end
-  #scale!(weight, b)
   A_mul_B!(tmp, A, output)
   shift = dot(center, output)
   @inbounds @simd for i in eachindex(tmp)
@@ -599,12 +600,11 @@ end
 
 """
 Make first entry of each column nonnegative. This is for better identifibility
-of an orthogonal matrix such as from eigen value or singular value decomposition.
+of an orthogonal matrix such as from eigen- or singular value decomposition.
 """
 function identify!{T <: AbstractFloat}(A::Matrix{T})
   m, n = size(A)
   zeroT = zero(eltype(A))
-  negone = - one(eltype(A))
   @inbounds for j in 1:n
     if A[1, j] < zeroT
       @simd for i in 1:m
