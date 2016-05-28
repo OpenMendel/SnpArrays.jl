@@ -1,7 +1,7 @@
 module SnpArrays
 
 import IterativeSolvers: MatrixFcn
-export grm, pca, pca_sp, randgeno, SnpArray, summarize
+export estimatesize, grm, pca, pca_sp, randgeno, SnpArray, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -180,7 +180,6 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false)
   @assert size(B) == size(A) "Dimensions do not match"
-  nanT = convert(T, NaN)
   if ndims(A) == 1
     m, n = length(A), 1
   elseif ndims(A) == 2
@@ -227,7 +226,7 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   # convert column by column
   zeroT = convert(T, 0.0)
   @inbounds for j in 1:n
-    colptr[j] = length(nzval) + 1
+    colptr[j] = convert(TI, length(nzval) + 1)
     # first pass: find minor allele and its frequency
     maf, minor_allele, = summarize(sub(A, :, j))
     # second pass: impute, convert
@@ -243,7 +242,7 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
       end
       v = convert(T, (a1, a2), minor_allele, model)
       if v ≠ zeroT
-        push!(rowval, i), push!(nzval, v)
+        push!(rowval, convert(TI, i)), push!(nzval, v)
       end
     end # i
   end # j
@@ -488,6 +487,8 @@ Principal component analysis of SNP data.
 - `pcloading`: p-by-pcs matrix. Each column is the principal loadings.
 - `pcvariance`: princial variances, equivalent to the top `pcs` eigenvalues of
   the sample covariance matrix.
+
+# TODO: maket it work for Integer type matrix
 """
 function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
   t::Type{Matrix{T}} = Matrix{Float64})
@@ -499,10 +500,10 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
   _, pcvariance, pcloading = svds(G, nsv = pcs)
   identify!(pcloading)
   pcscore = G * pcloading
-  # square singular values and scale by n to get eigenvalues of the
+  # square singular values and scale by n - 1 to get eigenvalues of the
   # covariance matrix
   @inbounds @simd for i in 1:pcs
-    pcvariance[i] = pcvariance[i] * pcvariance[i] / n
+    pcvariance[i] = pcvariance[i] * pcvariance[i] / (n - 1)
   end
   return pcscore, pcloading, pcvariance
 end
@@ -514,22 +515,21 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
   G = convert(t, A; model = :additive, impute = true)
   # center and scale
   maf, = summarize(A)
-  center = convert(Vector{T}, 2.0maf)
-  weight = convert(Vector{T},
-    map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf))
+  center = 2.0maf
+  weight = map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf)
   # standardized genotype matrix
-  tmpv = zeros(T, n)
-  Gs = MatrixFcn{eltype(G)}(p, p,
+  tmpv = zeros(eltype(center), n)
+  Gs = MatrixFcn{eltype(center)}(p, p,
     (output, v) -> AcstAcs_mul_B!(output, G, v, center, weight, tmpv))
   # PCs
   pcvariance, pcloading = eigs(Gs, nev = pcs)
   identify!(pcloading)
   # pcscore = Gs * pcloading
-  pcscore = zeros(T, n, pcs)
+  pcscore = zeros(eltype(center), n, pcs)
   Acs_mul_B!(pcscore, G, pcloading, center, weight)
-  # scale by n to get eigenvalues of the covariance matrix G'G / n
+  # scale by n to get eigenvalues of the covariance matrix G'G / (n - 1)
   @inbounds @simd for i in 1:pcs
-    pcvariance[i] = pcvariance[i] / n
+    pcvariance[i] = pcvariance[i] / (n - 1)
   end
   return pcscore, pcloading, pcvariance
 end
@@ -537,9 +537,9 @@ end
 """
 Standardized matrix A'A (centered by `center` and scaled by `weight`) multiply B.
 """
-function AcstAcs_mul_B!(output::AbstractVector, A::AbstractMatrix,
-  b::AbstractVector, center::AbstractVector, weight::AbstractVector,
-  tmp::AbstractVector = zeros(eltype(A), size(A, 1)))
+function AcstAcs_mul_B!{T}(output::Vector{T}, A::AbstractMatrix,
+  b::Vector{T}, center::Vector{T}, weight::Vector{T},
+  tmp::Vector{T} = zeros(eltype(b), size(A, 1)))
   # output is used as a temporary vector here
   @inbounds @simd for i in eachindex(output)
     output[i] = weight[i] * b[i]
@@ -565,8 +565,8 @@ Base.issym{T}(fcn::MatrixFcn{T}) = true
 """
 Standardized matrix A (centered by `center` and scaled by `weight`) multiply B.
 """
-function Acs_mul_B!{T, N}(output::AbstractMatrix{T}, A::AbstractMatrix{T},
-  B::AbstractArray{T, N}, center::AbstractVector{T}, weight::AbstractVector{T},
+function Acs_mul_B!{T, N}(output::AbstractArray{T, N}, A::AbstractMatrix,
+  B::AbstractArray{T, N}, center::Vector{T}, weight::Vector{T},
   tmp::AbstractArray{T, N} = zeros(eltype(B), size(B)))
   @inbounds @simd for j in 1:size(B, 2)
     for i in 1:size(B, 1)
@@ -612,6 +612,22 @@ function identify!{T <: AbstractFloat}(A::Matrix{T})
       end
     end
   end
+end
+
+"""
+Estimate the memory usage for storing SNP data with `people` individuals and
+`snps` SNPs.
+"""
+function estimatesize{T <: AbstractFloat}(n::Int, p::Int,
+  maf::T, t::Type)
+  if t <: DenseMatrix
+    storage = convert(Float64, sizeof(eltype(t)) * n * p)
+  elseif t <: AbstractSparseMatrix
+    storage = convert(Float64,
+      (sizeof(t.parameters[1]) + sizeof(t.parameters[2])) *
+      n * p * maf * (2.0 - maf) + sizeof(t.parameters[2]) * (p + 1))
+  end
+  storage
 end
 
 end # module
