@@ -124,9 +124,19 @@ function Base.similar(A::SnpArray, ::NTuple{2, Bool}, dims::Dims)
   SnpArray(BitArray(dims), BitArray(dims))
 end
 
+# missing code is 10 = (true, false)
+Base.isnan(a1::Bool, a2::Bool) = a1 & !a2
+Base.isnan(a::Tuple{Bool, Bool}) = Base.isnan(a[1], a[2])
+function Base.isnan{N}(A::SnpLike{N})
+  b = BitArray(size(A))
+  @inbounds @simd for i in eachindex(A)
+    b[i] = Base.isnan(A[i])
+  end
+  return b
+end
 
 """
-Constructor `SnpArray(m, n)` creates a SnpArray with all A1 alleles.
+Create a SnpArray with all A1 alleles.
 """
 function Base.convert(t::Type{SnpArray}, dims...)
   SnpArray(falses(dims), falses(dims))
@@ -134,8 +144,8 @@ end
 
 """
 Convert a two-bit genotype to a real number according to specified SNP model.
-Missing genotype is converted to NaN. `minor_allele == true` indicates `A1` is
-the minor allele; `minor_allele == false` indicates `A2` is the minor allele.
+Missing genotype is converted to `NaN`. `minor_allele=true` indicates `A1` is
+the minor allele; `minor_allele=false` indicates `A2` is the minor allele.
 """
 function Base.convert{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
   minor_allele::Bool, model::Symbol = :additive)
@@ -167,7 +177,6 @@ end
 Convert a SNP matrix to a numeric matrix according to specified SNP model. If
 `impute == true`, missing entries are imputed according to (column) minor allele
 frequencies.
-# TODO: allow scaling by column std
 """
 function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
@@ -212,8 +221,8 @@ end
 
 """
 Convert a SNP matrix to a sparse matrix according to specified SNP model.
-If `impute == false`, missing genotypes are ignored (translated to 0).
-If `impute == true`, missing genotypes are imputed on the fly according
+If `impute=false`, missing genotypes are ignored (translated to 0).
+If `impute=true`, missing genotypes are imputed on the fly according
 to the minor allele frequencies.
 """
 function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
@@ -250,17 +259,6 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   return SparseMatrixCSC(m, n, colptr, rowval, nzval)
 end
 
-# missing code is 10 = (true, false)
-Base.isnan(a1::Bool, a2::Bool) = a1 & !a2
-Base.isnan(a::Tuple{Bool, Bool}) = Base.isnan(a[1], a[2])
-function Base.isnan{N}(A::SnpLike{N})
-  b = BitArray(size(A))
-  @inbounds @simd for i in eachindex(A)
-    b[i] = Base.isnan(A[i])
-  end
-  return b
-end
-
 """
 Generate a genotype according to a1 allele frequency.
 """
@@ -295,16 +293,16 @@ function randgeno{T <: AbstractFloat}(n::Int, maf::T, minor_allele::Bool)
 end
 
 """
-Generate a SnpMatrix according to minor allele frequencies `maf` and the
-`minor_allele` vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
+Generate a SnpMatrix according to minor allele frequencies `maf`. `minor_allele`
+vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
 """
 function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
   minor_allele::BitVector)
   @assert length(maf) == n "length of maf should be n"
   @assert length(minor_allele) == n "length of minor_allele should be n"
   s = SnpArray(m, n)
-  @inbounds @simd for j = 1:n
-    for i = 1:m
+  @inbounds @simd for j in 1:n
+    for i in 1:m
       s[i, j] = randgeno(maf[j], minor_allele[j])
     end
   end
@@ -318,13 +316,13 @@ end
 
 
 """
-Compute summary statistics of a SnpArray.
+Compute summary statistics of a SnpMatrix.
 
-Output:
-  maf - minor allele frequency of each SNP
-  minor_allele - indicate the minor allele is A1 (`true`) or A2 (`false`)
-  missings_by_person - number of missing genotypes for each person
-  missings_by_snp - number of missing genotypes for each SNP
+# Output:
+* `maf` - minor allele frequency of each SNP
+* `minor_allele` - indicate the minor allele is A1 (`true`) or A2 (`false`)
+*  `missings_by_person` - number of missing genotypes for each person
+*  `missings_by_snp` - number of missing genotypes for each SNP
 """
 function summarize(A::SnpLike{2})
   m, n = size(A)
@@ -339,7 +337,7 @@ function summarize(A::SnpLike{2})
         missings_by_person[i] += 1
         missings_by_snp[j] += 1
       else
-        maf[j] += convert(Float64, a1 + a2)
+        maf[j] += convert(Float64, a1 + a2) # accumulate A2 allele count
       end
     end
     maf[j] /= 2.0(m - missings_by_snp[j]) # A2 allele frequency
@@ -354,10 +352,10 @@ end
 """
 Compute summary statistics of a SnpVector.
 
-Output:
-  maf - minor allele frequency of each SNP
-  minor_allele - indicate the minor allele is A1 (`true`) or A2 (`false`)
-  missings - number of missing genotypes
+# Output:
+* `maf` - minor allele frequency
+* `minor_allele` - indicate the minor allele is A1 (`true`) or A2 (`false`)
+* `missings` - number of missing genotypes
 """
 function summarize(A::SnpLike{1})
   m = length(A)
@@ -417,6 +415,7 @@ function _grm(A::SnpLike{2})
       BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
   end
+  # copy to lower triangular part
   LinAlg.copytri!(Φ, 'U')
   return Φ
 end
@@ -457,7 +456,7 @@ function _mom(A::SnpLike{2})
   # shift and scale elements of Φ
   c = 0.0
   maf, = summarize(A)
-  @inbounds @simd for j in eachindex(maf)
+  @inbounds for j in eachindex(maf)
     c += maf[j]^2 + (1.0 - maf[j])^2
   end
   a, b = 0.5p - c, p - c
@@ -475,17 +474,15 @@ end
 """
 Principal component analysis of SNP data.
 
-# Input
-
-- `A`: n-by-p SnpArray.
-- `pcs`: number of principal components. Default is 6.
+# Arguments
+* `A`: n-by-p SnpArray.
+* `pcs`: number of principal components. Default is 6.
 
 # Output
-
-- `pcscore`: n-by-pcs matrix of principal component scores. Or the top `pcs`
+* `pcscore`: n-by-pcs matrix of principal component scores, or the top `pcs`
   eigen-SNPs.
-- `pcloading`: p-by-pcs matrix. Each column is the principal loadings.
-- `pcvariance`: princial variances, equivalent to the top `pcs` eigenvalues of
+* `pcloading`: p-by-pcs matrix. Each column is the principal loadings.
+* `pcvariance`: princial variances, equivalent to the top `pcs` eigenvalues of
   the sample covariance matrix.
 
 # TODO: maket it work for Integer type matrix
@@ -498,6 +495,7 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
   copy!(G, A; model = :additive, impute = true, center = true, scale = true)
   # partial SVD
   _, pcvariance, pcloading = svds(G, nsv = pcs)
+  # make first entry of each eigenvector nonneagtive for identifiability
   identify!(pcloading)
   pcscore = G * pcloading
   # square singular values and scale by n - 1 to get eigenvalues of the
@@ -518,16 +516,17 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
   center = 2.0maf
   weight = map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf)
   # standardized genotype matrix
-  tmpv = zeros(eltype(center), n)
+  tmpv = zeros(eltype(center), n) # pre-allocate space for intermediate vector
   Gs = MatrixFcn{eltype(center)}(p, p,
     (output, v) -> AcstAcs_mul_B!(output, G, v, center, weight, tmpv))
   # PCs
   pcvariance, pcloading = eigs(Gs, nev = pcs)
+  # make first entry of each eigenvector nonneagtive for identifiability
   identify!(pcloading)
   # pcscore = Gs * pcloading
   pcscore = zeros(eltype(center), n, pcs)
   Acs_mul_B!(pcscore, G, pcloading, center, weight)
-  # scale by n to get eigenvalues of the covariance matrix G'G / (n - 1)
+  # scale by n-1 to obtain eigenvalues of the covariance matrix G'G / (n - 1)
   @inbounds @simd for i in 1:pcs
     pcvariance[i] = pcvariance[i] / (n - 1)
   end
@@ -535,7 +534,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
 end
 
 """
-Standardized matrix A'A (centered by `center` and scaled by `weight`) multiply B.
+Gram matrix Acs'Acs multiply B, where Acs is the centered and scaled A.
 """
 function AcstAcs_mul_B!{T}(output::Vector{T}, A::AbstractMatrix,
   b::Vector{T}, center::Vector{T}, weight::Vector{T},
@@ -563,7 +562,7 @@ Cheating: to bypass the isssym() error thrown by arpack.jl
 Base.issym{T}(fcn::MatrixFcn{T}) = true
 
 """
-Standardized matrix A (centered by `center` and scaled by `weight`) multiply B.
+Standardized A (centered by `center` and scaled by `weight`) multiply B.
 """
 function Acs_mul_B!{T, N}(output::AbstractArray{T, N}, A::AbstractMatrix,
   B::AbstractArray{T, N}, center::Vector{T}, weight::Vector{T},
@@ -615,8 +614,8 @@ function identify!{T <: AbstractFloat}(A::Matrix{T})
 end
 
 """
-Estimate the memory usage for storing SNP data with `people` individuals and
-`snps` SNPs.
+Estimate the memory usage for storing SNP data with `n` individuals,
+`p` SNPs, and average minor allele frequency `maf`.
 """
 function estimatesize{T <: AbstractFloat}(n::Int, p::Int,
   maf::T, t::Type)
