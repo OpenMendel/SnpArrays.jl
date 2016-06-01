@@ -1,7 +1,7 @@
 module SnpArrays
 
 import IterativeSolvers: MatrixFcn
-export estimatesize, grm, pca, pca_sp, randgeno, SnpArray, summarize
+export estimatesize, grm, pca, pca_sp, randgeno, SnpArray, SnpData, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -629,7 +629,51 @@ function estimatesize{T <: AbstractFloat}(n::Int, p::Int,
   storage
 end
 
+"""
+Type for SNP and person information.
+"""
+type SnpData
+  people::Int                       # number of rows (individuals)
+  snps::Int                         # number of columns (snps)
+  personid::Vector{AbstractString}  # names of individuals
+  snpchr::Vector{AbstractString}    # snp chromosome
+  snppos::Vector{AbstractString}    # snp position
+  snpid::Vector{AbstractString}     # ids of snps
+  maf::Vector{Float64}              # minor allele frequencies
+  minor_allele::BitVector            # bit array designating the minor allele
+  snpmatrix::SnpLike{2}             # matrix of genotypes or haplotypes
+  missings_per_person::Vector{Int}  # number of missing genotypes per person
+  missings_per_snp::Vector{Int}     # number of missing genotypes per snp
+end # end type
+
+"""
+Construct a SnpData type from a PLINK file.
+"""
+function SnpData(plink_file::AbstractString)
+
+  # load snp info
+  plink_bim_file = string(plink_file, ".bim")
+  snp_info = readdlm(plink_bim_file, AbstractString)
+  snpchr = snp_info[:, 1]
+  snpid = snp_info[:, 2]
+  snppos = snp_info[:, 4]
+  #allele1 = snp_info[:, 5]
+  #allele2 = snp_info[:, 6]
+
+  # load person info
+  plink_fam_file = string(plink_file, ".fam")
+  person_info = readdlm(plink_fam_file, AbstractString)
+  personid = person_info[:, 2]
+
+  # load snp array matrix
+  snpmatrix = SnpArray(plink_file)
+  maf, minor_allele, missings_per_snp, missings_per_person = summarize(snpmatrix)
+  people, snps = size(snpmatrix)
+
+  # construct SnpData unfiltered
+  snp_data = SnpData(people, snps, personid, snpchr, snppos, snpid,
+    maf, minor_allele, snpmatrix, missings_per_person, missings_per_snp)
+
+end
+
 end # module
-
-
-S = SnpArrays
