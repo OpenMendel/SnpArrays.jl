@@ -13,46 +13,41 @@ end
 
 
 info("Constructors")
-#@time sa = SnpArray("/home/huwenbo/Huwenbo/CG10kNhwHg19Clean_v2_Mar2013")
-@time sabm = SnpArrayBM("/home/huwenbo/Huwenbo/CG10kNhwHg19Clean_v2_Mar2013")
 
-#info("getindex")
-#for i=1:100
-#    for j=1:100
-#        @test sa[i,j] == sabm[i,j]
-#    end
-#end
+@time sa = SnpArray("../docs/hapmap3")
+@time sabm = SnpArrayBM("../docs/hapmap3")
 
-#for i=1:100
-#    for j=1:100
-#        sa[i,j] = (false,true)
-#        @test sa[i,j] == (false,true)
-#        sabm[i,j] = (false,true)
-#        @test sabm[i,j] == (false,true)
-#    end
-#end
+info("getindex")
+for i=1:10
+    for j=1:10
+        @test sa[i,j] == sabm[i,j]
+    end
+end
+
+for i=1:100
+    for j=1:100
+        sa[i,j] = (false,true)
+        @test sa[i,j] == (false,true)
+        sabm[i,j] = (false,true)
+        @test sabm[i,j] == (false,true)
+    end
+end
 
 
-#info("summarize")
-#@time maf, _, _, _ = summarize(sa)
-#@time mafbm, _, _, _ = summarize(sabm)
-#_, m, n = size(sabm)
-#for i=1:n
-#    @test maf[i] == mafbm[i]
-#end
+info("summarize")
+@time maf, _, _, _ = summarize(sa)
+@time mafbm, _, _, _ = summarize(sabm)
+_, m, n = size(sabm)
+for i=1:n
+    @test maf[i] == mafbm[i]
+end
 
 info("grm")
-#@time grm(sa)
-@time _grmbm(sabm)
+@time grm(sa; method=:GRM)
+@time grm(sabm; method=:GRM)
 
-#snp[i, j] = 2
-#@test snp[i, j] == (true, true)
-#snp[i, j] = 1
-#@test snp[i, j] == (true, false)
-#snp[i, j] = 0
-#@test snp[i, j] == (false, false)
-#snp[i, j] = NaN
-#@test snp[i, j] == (false, true)
-
+info("mom")
+@time grm(sa; method=:MoM)
+@time grm(sabm; method=:MoM)
 
 end # module
