@@ -1,6 +1,8 @@
 module SnpArrays
 
-export SnpArray, SnpArrayBM, summarysnps, grm, impute!, summarize
+
+import IterativeSolvers: MatrixFcn
+export SnpArray, SnpArrayBM, pca, pca_sp, summarysnps, grm, impute!, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -213,21 +215,31 @@ function Base.isnan{N}(A::SnpLike{N})
 end
 
 """
-Convert a two-bit genotype to a real number. Missing genotype is converted to
-NaN.
+Convert a two-bit genotype to a real number according to specified SNP model.
+Missing genotype is converted to `NaN`. `minor_allele=true` indicates `A1` is
+the minor allele; `minor_allele=false` indicates `A2` is the minor allele.
 """
-function Base.convert{T<:Real}(t::Type{T}, a::NTuple{2, Bool};
-  model::Symbol = :additive)
-  b = zero(t)
-  if !a[1] & a[2]
-    b = convert(t, NaN)
+function Base.convert{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
+  minor_allele::Bool, model::Symbol = :additive)
+  if isnan(a)
+    b = convert(T, NaN)
   else
-    if model == :additive
-      b = convert(T, a[1] + a[2])
-    elseif model == :dominant
-      b = convert(T, 2(a[1] & a[2]))
-    elseif model == :recessive
-      b = convert(T, 2a[1])
+    if minor_allele # A1 is the minor allele
+      if model == :additive
+        b = convert(T, !a[1] + !a[2])
+      elseif model == :dominant
+        b = convert(T, !a[1] | !a[2])
+      elseif model == :recessive
+        b = convert(T, !a[1] & !a[2])
+      end
+    else # A2 is the minor allele
+      if model == :additive
+        b = convert(T, a[1] + a[2])
+      elseif model == :dominant
+        b = convert(T, a[1] | a[2])
+      elseif model == :recessive
+        b = convert(T, a[1] & a[2])
+      end
     end
   end
   return b
@@ -317,38 +329,97 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike;
   return B
 end
 
-"""
-Convert a SNP matrix to a sparse matrix according to specified SNP model.
-Missing genotypes are ignored.
-#TODO: implement imputation.
-"""
-function Base.convert{T <: Real, TI <: Integer, N}(t::Type{SparseMatrixCSC{T, TI}},
-  A::SnpLike{N}; model::Symbol = :additive)
+function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
+  A::SnpLike; model::Symbol = :additive, impute::Bool = false)
   if ndims(A) == 2
     m, n = size(A)
   elseif ndims(A) == 3
     _, m, n = size(A)
   end
-  I, J, V = TI[], TI[], T[]
-  zeroT = zero(T)
-  v = zero(T)
-  @inbounds for j = 1:n, i = 1:m
-    (a1, a2) = A[i, j]
-    if !a1 & a2 # missing
-      continue
-    end
-    if model == :additive
-      v = convert(T, a1 + a2)
-    elseif model == :dominant
-      v = convert(T, 2(a1 & a2))
-    elseif model == :recessive
-      v = convert(T, 2a1)
-    end
-    if v ≠ zeroT
-      push!(I, i), push!(J, j), push!(V, v)
+  # prepare sparese matrix data structure
+  rowval = TI[]
+  nzval = T[]
+  colptr = zeros(TI, n + 1)
+  # convert column by column
+  zeroT = convert(T, 0.0)
+  @inbounds for j in 1:n
+    colptr[j] = convert(TI, length(nzval) + 1)
+    # first pass: find minor allele and its frequency
+    maf, minor_allele, = summarize(sub(A, :, j))
+    # second pass: impute, convert
+    for i in 1:m
+      (a1, a2) = A[i, j]
+      # impute if asked
+      if isnan(a1, a2)
+        if impute
+          a1, a2 = randgeno(maf, minor_allele)
+        else
+          continue # nan and no impute -> done
+        end
+      end
+      v = convert(T, (a1, a2), minor_allele, model)
+      if v ≠ zeroT
+        push!(rowval, convert(TI, i)), push!(nzval, v)
+      end
+    end # i
+  end # j
+  colptr[n + 1] = length(nzval) + 1
+  return SparseMatrixCSC(m, n, colptr, rowval, nzval)
+end
+
+"""
+Generate a genotype according to a1 allele frequency.
+"""
+function randgeno{T <: AbstractFloat}(a1freq::T)
+  b1 = rand() > a1freq
+  b2 = rand() > a1freq
+  # make sure not conflict with missing code 10
+  if isnan(b1, b2)
+    (b1, b2) = (false, true)
+  end
+  return b1, b2
+end
+
+"""
+Generate a genotype according to minor allele frequency. `minor_allele` indicates
+the minor allele is A1 (`true`) or A2 (`false`).
+"""
+function randgeno{T <: AbstractFloat}(maf::T, minor_allele::Bool)
+  minor_allele ? randgeno(maf) : randgeno(1.0 - maf)
+end
+
+"""
+Generate a SnpVector according to minor allele frequency. `minor_allele` indicates
+the minor allele is A1 (`true`) or A2 (`false`).
+"""
+function randgeno{T <: AbstractFloat}(n::Int, maf::T, minor_allele::Bool)
+  s = SnpArray(n)
+  @inbounds @simd for i in 1:n
+    s[i] = randgeno(maf, minor_allele)
+  end
+  return s
+end
+
+"""
+Generate a SnpMatrix according to minor allele frequencies `maf`. `minor_allele`
+vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
+"""
+function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
+  minor_allele::BitVector)
+  @assert length(maf) == n "length of maf should be n"
+  @assert length(minor_allele) == n "length of minor_allele should be n"
+  s = SnpArray(m, n)
+  @inbounds @simd for j in 1:n
+    for i in 1:m
+      s[i, j] = randgeno(maf[j], minor_allele[j])
     end
   end
-  return sparse(I, J, V, m, n)
+  return s
+end
+
+function randgeno{T <: AbstractFloat}(n::Tuple{Int,Int}, maf::Vector{T},
+  minor_allele::BitArray{1})
+  randgeno(n..., maf, minor_allele)
 end
 
 
@@ -435,6 +506,25 @@ function summarize(A::SnpLike)
   return maf, minor_allele, missings_by_snp, missings_by_person
 end
 
+function summarize(A::SnpLike{1})
+  m = length(A)
+  maf = 0.0                # minor allele frequency
+  missings = 0             # no. missing genotypes
+  @inbounds @simd for i in 1:m
+    (a1, a2) = A[i]
+    if isnan(a1, a2)
+      missings += 1
+    else
+      maf += convert(Float64, a1 + a2)
+    end
+  end
+  maf /= 2.0(m - missings) # A2 allele frequency
+  minor_allele = maf > 0.5
+  if minor_allele          # A1 is the minor allele
+    maf = 1.0 - maf
+  end
+  return maf, minor_allele, missings
+end
 
 """
 Computes empirical kinship matrix from a SnpMatrix.
@@ -537,6 +627,170 @@ function _mom(A::SnpLike)
   LinAlg.copytri!(Φ, 'U')
   return Φ
 end
+
+"""
+Principal component analysis of SNP data.
+# Arguments
+* `A`: n-by-p SnpArray.
+* `pcs`: number of principal components. Default is 6.
+# Output
+* `pcscore`: n-by-pcs matrix of principal component scores, or the top `pcs`
+  eigen-SNPs.
+* `pcloading`: p-by-pcs matrix. Each column is the principal loadings.
+* `pcvariance`: princial variances, equivalent to the top `pcs` eigenvalues of
+  the sample covariance matrix.
+# TODO: maket it work for Integer type matrix
+"""
+function pca{T <: AbstractFloat}(A::SnpLike, pcs::Int = 6,
+  t::Type{Matrix{T}} = Matrix{Float64})
+  if ndims(A) == 2
+    n, p = size(A)
+  elseif ndims(A) == 3
+    _, n, p = size(A)
+  end
+  # memory-mapped genotype matrix G, centered and scaled
+  G = Mmap.mmap(t, (n, p))
+  copy!(G, A; model = :additive, impute = true, center = true, scale = true)
+  # partial SVD
+  _, pcvariance, pcloading = svds(G, nsv = pcs)
+  # make first entry of each eigenvector nonneagtive for identifiability
+  identify!(pcloading)
+  pcscore = G * pcloading
+  # square singular values and scale by n - 1 to get eigenvalues of the
+  # covariance matrix
+  @inbounds @simd for i in 1:pcs
+    pcvariance[i] = pcvariance[i] * pcvariance[i] / (n - 1)
+  end
+  return pcscore, pcloading, pcvariance
+end
+
+function pca_sp{T <: Real, TI}(A::SnpLike, pcs::Int = 6,
+  t::Type{SparseMatrixCSC{T, TI}} = SparseMatrixCSC{Float64, Int})
+  if ndims(A) == 2
+    n, p = size(A)
+  elseif ndims(A) == 3
+    _, n, p = size(A)
+  end
+  # genotype matrix *not* centered or scaled
+  G = convert(t, A; model=:additive, impute=true)
+  # center and scale
+  maf, = summarize(A)
+  center = 2.0maf
+  weight = map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf)
+  # standardized genotype matrix
+  tmpv = zeros(eltype(center), n) # pre-allocate space for intermediate vector
+  Gs = MatrixFcn{eltype(center)}(p, p,
+    (output, v) -> AcstAcs_mul_B!(output, G, v, center, weight, tmpv))
+  # PCs
+  pcvariance, pcloading = eigs(Gs, nev = pcs)
+  # make first entry of each eigenvector nonneagtive for identifiability
+  identify!(pcloading)
+  # pcscore = Gs * pcloading
+  pcscore = zeros(eltype(center), n, pcs)
+  Acs_mul_B!(pcscore, G, pcloading, center, weight)
+  # scale by n-1 to obtain eigenvalues of the covariance matrix G'G / (n - 1)
+  @inbounds @simd for i in 1:pcs
+    pcvariance[i] = pcvariance[i] / (n - 1)
+  end
+  return pcscore, pcloading, pcvariance
+end
+
+"""
+Gram matrix Acs'Acs multiply B, where Acs is the centered and scaled A.
+"""
+function AcstAcs_mul_B!{T}(output::Vector{T}, A::AbstractMatrix,
+  b::Vector{T}, center::Vector{T}, weight::Vector{T},
+  tmp::Vector{T} = zeros(eltype(b), size(A, 1)))
+  # output is used as a temporary vector here
+  @inbounds @simd for i in eachindex(output)
+    output[i] = weight[i] * b[i]
+  end
+  A_mul_B!(tmp, A, output)
+  shift = dot(center, output)
+  @inbounds @simd for i in eachindex(tmp)
+    tmp[i] -= shift
+  end
+  # now output is the real output
+  Ac_mul_B!(output, A, tmp)
+  @inbounds @simd for i in eachindex(output)
+    output[i] *= weight[i]
+  end
+  output
+end
+
+"""
+Cheating: to bypass the isssym() error thrown by arpack.jl
+"""
+Base.issym{T}(fcn::MatrixFcn{T}) = true
+
+"""
+Standardized A (centered by `center` and scaled by `weight`) multiply B.
+"""
+function Acs_mul_B!{T, N}(output::AbstractArray{T, N}, A::AbstractMatrix,
+  B::AbstractArray{T, N}, center::Vector{T}, weight::Vector{T},
+  tmp::AbstractArray{T, N} = zeros(eltype(B), size(B)))
+  @inbounds @simd for j in 1:size(B, 2)
+    for i in 1:size(B, 1)
+      tmp[i, j] = weight[i] * B[i, j]
+    end
+  end
+  A_mul_B!(output, A, tmp)
+  @inbounds for j in 1:size(output, 2)
+    shift = dot(center, sub(tmp, :, j))
+    @simd for i in 1:size(output, 1)
+      output[i, j] -= shift
+    end
+  end
+  output
+end
+
+"""
+Transpose of standardized matrix A (centered by `center` and scaled by `weight`)
+multiply B.
+"""
+function Acsc_mul_B!(output::AbstractVector, A::AbstractMatrix,
+  b::AbstractVector, center::AbstractVector, weight::AbstractVector,
+  tmpvec::AbstractVector = zeros(eltype(A), size(A, 2)))
+  Ac_mul_B!(tmpvec, A, b)
+  shift = sum(b)
+  @inbounds @simd for i in eachindex(tmpvec)
+    tmpvec[i] = (tmpvec[i] - shift * center[i]) * weight[i]
+  end
+  output
+end
+
+"""
+Make first entry of each column nonnegative. This is for better identifibility
+of an orthogonal matrix such as from eigen- or singular value decomposition.
+"""
+function identify!{T <: AbstractFloat}(A::Matrix{T})
+  m, n = size(A)
+  zeroT = zero(eltype(A))
+  @inbounds for j in 1:n
+    if A[1, j] < zeroT
+      @simd for i in 1:m
+        A[i, j] = - A[i, j]
+      end
+    end
+  end
+end
+
+"""
+Estimate the memory usage for storing SNP data with `n` individuals,
+`p` SNPs, and average minor allele frequency `maf`.
+"""
+function estimatesize{T <: AbstractFloat}(n::Int, p::Int,
+  maf::T, t::Type)
+  if t <: DenseMatrix
+    storage = convert(Float64, sizeof(eltype(t)) * n * p)
+  elseif t <: AbstractSparseMatrix
+    storage = convert(Float64,
+      (sizeof(t.parameters[1]) + sizeof(t.parameters[2])) *
+      n * p * maf * (2.0 - maf) + sizeof(t.parameters[2]) * (p + 1))
+  end
+  storage
+end
+
 
 end # module
 

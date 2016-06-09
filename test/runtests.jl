@@ -37,17 +37,34 @@ end
 info("summarize")
 @time maf, _, _, _ = summarize(sa)
 @time mafbm, _, _, _ = summarize(sabm)
-_, m, n = size(sabm)
-for i=1:n
+_, n, p = size(sabm)
+for i=1:p
     @test maf[i] == mafbm[i]
 end
 
 info("grm")
-@time grm(sa; method=:GRM)
-@time grm(sabm; method=:GRM)
+#@time grm(sa; method=:GRM)
+#@time grm(sabm; method=:GRM)
 
 info("mom")
-@time grm(sa; method=:MoM)
-@time grm(sabm; method=:MoM)
+#@time grm(sa; method=:MoM)
+#@time grm(sabm; method=:MoM)
+
+info("pca")
+
+@time sc2, _, _ = pca(sabm)
+@time sc1, _, _ = pca(sa)
+
+for i=1:6
+    @show sc1[i], sc2[i]
+end
+
+info("pca_sp")
+@time sc1, _, _ = pca_sp(sa)
+@time sc2, _, _ = pca_sp(sabm)
+
+for i=1:6
+    @show sc1[i], sc2[i]
+end
 
 end # module
