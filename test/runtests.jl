@@ -52,19 +52,11 @@ info("mom")
 
 info("pca")
 
-@time sc2, _, _ = pca(sabm)
-@time sc1, _, _ = pca(sa)
+@time _, _, v1 = pca(sabm)
+@time _, _, v2 = pca(sa)
 
-for i=1:6
-    @show sc1[i], sc2[i]
-end
-
-info("pca_sp")
-@time sc1, _, _ = pca_sp(sa)
-@time sc2, _, _ = pca_sp(sabm)
-
-for i=1:6
-    @show sc1[i], sc2[i]
+for i=1:5
+    @show v1[i,1], v2[i,1]
 end
 
 end # module
