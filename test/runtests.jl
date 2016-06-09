@@ -1,5 +1,9 @@
+include("../src/SnpArrays.jl")
+
 module SnpArraysTest
+
 using SnpArrays
+
 if VERSION >= v"0.5.0-dev+7720"
     using Base.Test
 else
@@ -8,35 +12,47 @@ else
 end
 
 
-n, p = 100, 1000
-
 info("Constructors")
-x = rand(0:2, n, p)
-snp = SnpArray(x)
-@test typeof(snp) <: AbstractMatrix
-@test size(snp) == size(x)
-@test eltype(snp) == Tuple{Bool, Bool}
+#@time sa = SnpArray("/home/huwenbo/Huwenbo/CG10kNhwHg19Clean_v2_Mar2013")
+@time sabm = SnpArrayBM("/home/huwenbo/Huwenbo/CG10kNhwHg19Clean_v2_Mar2013")
+
+#info("getindex")
+#for i=1:100
+#    for j=1:100
+#        @test sa[i,j] == sabm[i,j]
+#    end
+#end
+
+#for i=1:100
+#    for j=1:100
+#        sa[i,j] = (false,true)
+#        @test sa[i,j] == (false,true)
+#        sabm[i,j] = (false,true)
+#        @test sabm[i,j] == (false,true)
+#    end
+#end
 
 
-info("getindex and setindex!")
-i, j = rand(1:size(snp, 1)), rand(1:size(snp, 2))
-snp[i, j] = 2
-@test snp[i, j] == (true, true)
-snp[i, j] = 1
-@test snp[i, j] == (true, false)
-snp[i, j] = 0
-@test snp[i, j] == (false, false)
-snp[i, j] = NaN
-@test snp[i, j] == (false, true)
+#info("summarize")
+#@time maf, _, _, _ = summarize(sa)
+#@time mafbm, _, _, _ = summarize(sabm)
+#_, m, n = size(sabm)
+#for i=1:n
+#    @test maf[i] == mafbm[i]
+#end
 
+info("grm")
+#@time grm(sa)
+@time _grmbm(sabm)
 
-info("convert")
-snp_float = Matrix{Float64}(snp)
-@test typeof(snp_float) == Matrix{Float64}
-@test size(snp) == size(snp_float)
-storage = zeros(n, p)
-copy!(storage, snp)
-
+#snp[i, j] = 2
+#@test snp[i, j] == (true, true)
+#snp[i, j] = 1
+#@test snp[i, j] == (true, false)
+#snp[i, j] = 0
+#@test snp[i, j] == (false, false)
+#snp[i, j] = NaN
+#@test snp[i, j] == (false, true)
 
 
 end # module
