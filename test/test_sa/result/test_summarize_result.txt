@@ -1,0 +1,1 @@
+ 59.910459 seconds (46.60 k allocations: 130.495 MB, 0.00% gc time)

@@ -11,9 +11,12 @@ else
     const Test = BaseTestNext
 end
 
-sa = SnpArray("/home/huwenbo/Huwenbo/merge-geno")
+sa = SnpArray("../../docs/hapmap3")
+#sa = SnpArray("/home/huwenbo/Huwenbo/merge-geno")
+#sa = SnpArray(sa.A1[:,1:25:end], sa.A2[:,1:25:end])
 gc()
-@time pca_sp(sa)
+@time _,_,v = pca_sp(sa)
 gc()
+@show v[1]
 
 end

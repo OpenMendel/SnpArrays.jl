@@ -1,0 +1,1 @@
+332.296832 seconds (8.04 G allocations: 122.229 GB, 1.26% gc time)

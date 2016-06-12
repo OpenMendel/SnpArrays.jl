@@ -12,6 +12,7 @@ else
 end
 
 sa = SnpArray("/home/huwenbo/Huwenbo/merge-geno")
+sa = SnpArray(sa.A1[:,1:25:end], sa.A2[:,1:25:end])
 gc()
 @time pca(sa)
 gc()

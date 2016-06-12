@@ -451,10 +451,11 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   @inbounds for j in 1:n
     colptr[j] = convert(TI, length(nzval) + 1)
     # first pass: find minor allele and its frequency
-    maf, minor_allele, = summarize(sub(A, :, j))
+    Asub = sub(A.A, :, :, j)
+    maf, minor_allele, = summarize(Asub)
     # second pass: impute, convert
     for i in 1:m
-      (a1, a2) = A[i, j]
+      (a1, a2) = (Asub[1,i], Asub[2,i])
       # impute if asked
       if isnan(a1, a2)
         if impute
@@ -582,8 +583,9 @@ function summarize(A::SnpLike{3})
   missings_by_snp = zeros(Int, n)     # no. missing genotypes for each row
   missings_by_person = zeros(Int, m)  # no. missing genotypes for each column
   @inbounds for j in 1:n
+    Asub = sub(A.A, :, :, j)
     @simd for i in 1:m
-      (a1, a2) = A[i, j]
+      (a1, a2) = (Asub[1, i], Asub[2,i])
       if isnan(a1, a2)
         missings_by_person[i] += 1
         missings_by_snp[j] += 1
@@ -955,7 +957,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
   @inbounds @simd for i in 1:pcs
     pcvariance[i] = pcvariance[i] / (n - 1)
   end
-  return pcscore, pcloading, pcvariance
+  return pcscore, pcloading, pcvariance, G
 end
 
 
@@ -984,7 +986,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{3}, pcs::Int = 6,
   @inbounds @simd for i in 1:pcs
     pcvariance[i] = pcvariance[i] / (n - 1)
   end
-  return pcscore, pcloading, pcvariance
+  return pcscore, pcloading, pcvariance, G
 end
 
 

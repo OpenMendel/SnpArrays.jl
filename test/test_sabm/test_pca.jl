@@ -12,6 +12,7 @@ else
 end
 
 sa = SnpArrayBM("/home/huwenbo/Huwenbo/merge-geno")
+sa = SnpArrayBM(sa.A[:,:,1:25:end])
 gc()
 @time pca(sa)
 gc()
