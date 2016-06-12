@@ -2,7 +2,7 @@ module SnpArrays
 
 import IterativeSolvers: MatrixFcn
 export estimatesize, grm, pca, pca_sp, randgeno, SnpArray, 
-    SnpData, summarize, SnpArrayBM
+    SnpData, summarize, SnpArrayBM, myprod
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -601,6 +601,56 @@ function summarize(A::SnpLike{3})
   end
   return maf, minor_allele, missings_by_snp, missings_by_person
 end
+
+
+function myprod{T <: AbstractFloat}(A::SnpLike{3}, v::Vector{T})
+    _,n,p = size(A)
+    mv = zeros(T, n)
+    @simd for j=1:p
+        @inbounds vj = v[j]
+        @simd for i=1:n
+            @inbounds a1 = A.A[1,i,j]
+            @inbounds a2 = A.A[2,i,j]
+            if(a1)
+                @inbounds @fastmath mv[i] += vj
+            end
+            if(a2)
+                @inbounds @fastmath mv[i] += vj
+            end
+        end
+    end
+    return mv
+end
+
+#function myprod{T <: AbstractFloat}(A::SnpLike{3}, v::Vector{T})
+#    _,n,p = size(A)
+#    mv = zeros(T, n)
+#    @simd for i=1:2*n*p
+#        @fastmath nidx = div((i % 2n)-1, 2) + 1
+#        @fastmath pidx = div(i-1, 2n) + 1
+#        @fastmath offset = ((i-1) % 2) + 1
+#        @inbounds a1 = A.A[offset,nidx,pidx]
+#        @inbounds a2 = A.A[offset,nidx,pidx]
+#        @inbounds vj = v[pidx]
+#        if(a1)
+#            @inbounds @fastmath mv[nidx] += vj
+#        end
+#        if(a2)
+#            @inbounds @fastmath mv[nidx] += vj
+#        end
+#    end
+#    return mv
+#end
+
+function Base.(:(*)){T <: AbstractFloat}(A::SnpLike{3}, v::Vector{T})
+    return slice(A.A, 1,:,:)*v + slice(A.A, 2,:,:)*v
+end
+
+
+function Base.(:(*)){T <: AbstractFloat}(A::SnpLike{2}, v::Vector{T})
+    return A.A1*v + A.A2*v
+end
+
 
 """
 Compute summary statistics of a SnpVector.
