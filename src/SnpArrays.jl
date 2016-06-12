@@ -279,6 +279,12 @@ function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{3};
   copy!(B, A; model = model, impute = impute, center = center, scale = scale)
 end
 
+function Base.convert{T <: Real, N}(t::Type{Array{T, N}},
+  A::SubArray{Bool, 3, BitArray{3}}; model::Symbol = :additive,
+  impute::Bool = false, center::Bool = false, scale::Bool = false)
+  B = zeros(Float64, (size(A,2), size(A,3)))
+  copy!(B, A; model = model, impute = impute, center = center, scale = scale)
+end
 
 function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
@@ -313,7 +319,6 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
   end
   return B
 end
-
 
 
 """
@@ -352,6 +357,36 @@ function Base.copy!{T <: Float64, N}(B::Array{T, N}, A::SnpLike{3};
 end
 
 
+function Base.copy!{T <: Real, N}(B::Array{T, N},
+    A::SubArray{Bool, 3, BitArray{3}};
+    model::Symbol = :additive, impute::Bool = false,
+    center::Bool = false, scale::Bool = false)
+  _, m, n = size(A)
+  # convert column by column
+  @inbounds for j in 1:n
+    # first pass: find minor allele and its frequency
+    Asub = sub(A, :, :, j)
+    maf, minor_allele, = summarize(Asub)
+    # second pass: impute, convert, center, scale
+    ct = convert(T, 2.0maf)
+    wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
+    @simd for i in 1:m
+      (a1, a2) = (Asub[1, i], Asub[2,i])
+      # impute if asked
+      if isnan(a1, a2) && impute
+        a1, a2 = randgeno(maf, minor_allele)
+      end
+      B[i, j] = convert(T, (a1, a2), minor_allele, model)
+      if center
+        B[i, j] -= ct
+      end
+      if scale
+        B[i, j] *= wt
+      end
+    end
+  end
+  return B
+end
 
 
 """
@@ -723,7 +758,7 @@ end
 
 
 """
-BENCH MARK ==================================================================
+BENCHMARK ==================================================================
 Compute empirical kinship matrix from a SnpMatrix. Missing genotypes are
 imputed on the fly according to minor allele frequencies.
 """
@@ -746,17 +781,17 @@ function _grm(A::SnpLike{3})
   else
     # chunsize is chosen to have intermediate matrix taking upto 1GB memory
     chunksize = ceil(Int, memory_limit / 8.0n)
-    snpchunk = zeros(n, chunksize)
+    snpchunk = zeros(Float64, (n, chunksize))
     for chunk in 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):(chunk * chunksize)
-      copy!(snpchunk, sub(A, :, J); model = :additive,
+      copy!(snpchunk, sub(A.A, :, :, J); model = :additive,
         impute = true, center = true, scale = true)
       BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
     if length(J) > 0
-      snpchunk = convert(Matrix{Float64}, sub(A, :, J); model = :additive,
+      snpchunk = convert(Matrix{Float64}, sub(A.A, :, :, J); model = :additive,
         impute = true, center = true, scale = true)
       BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
@@ -782,7 +817,7 @@ function _mom(A::SnpLike{3})
     snpchunk = zeros(n, chunksize)
     for chunk in 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):chunk * chunksize
-      copy!(snpchunk, sub(A, :, J); model = :additive, impute = true)
+      copy!(snpchunk, sub(A.A, :, :, J); model = :additive, impute = true)
       @inbounds @simd for i in eachindex(snpchunk)
         snpchunk[i] -= 1.0
       end
@@ -791,7 +826,7 @@ function _mom(A::SnpLike{3})
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
     if length(J) > 0
-      snpchunk = convert(Matrix{Float64}, sub(A, :, J);
+      snpchunk = convert(Matrix{Float64}, sub(A.A, :, :, J);
         model = :additive, impute = true)
       @inbounds @simd for i in eachindex(snpchunk)
         snpchunk[i] -= 1.0
