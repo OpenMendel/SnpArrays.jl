@@ -12,7 +12,7 @@ Use the Julia package manager to install SnpArrays.jl:
 
 ## Documentation
 
-View the [tutorial]().
+View the [tutorial](https://github.com/Hua-Zhou/SnpArrays.jl/blob/master/docs/snparray.ipynb).
 
 ## OpenMendel
 
