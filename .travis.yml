@@ -10,6 +10,6 @@ notifications:
   email: false
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("OnlineStats"); Pkg.test("SnpArrays"; coverage=true)'
+  - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("SnpArrays"); Pkg.test("SnpArrays"; coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("SnpArrays")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
