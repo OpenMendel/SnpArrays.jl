@@ -2,8 +2,6 @@
 
 [![Build Status](https://travis-ci.org/Hua-Zhou/SnpArrays.jl.svg?branch=master)](https://travis-ci.org/Hua-Zhou/SnpArrays.jl)
 
-https://travis-ci.org/Hua-Zhou/SnpArrays.jl.svg?branch=master
-
 SnpArrays pvovide utilities for handling compressed storage of biallelic [SNP (Single-Nucleotide Polymorphism)](https://en.wikipedia.org/wiki/Single-nucleotide_polymorphism) data.
 
 ## Installation
