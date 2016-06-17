@@ -60,7 +60,7 @@ function SnpArray(plinkFile::AbstractString)
   end
   close(fid)
   SnpArray(A1, A2)
-end
+end # function SnpArray
 
 #---------------------------------------------------------------------------# methods
 # Julia docs on methods required for AbstractArray:
@@ -106,23 +106,23 @@ end
 
 function Base.similar(A::SnpArray, T::Real, dims::Dims)
   zeros(T, dims)
-end
+end # function Base.similar
 
 function Base.similar(A::SnpArray)
   SnpArray(similar(A.A1), similar(A.A2))
-end
+end # function Base.similar
 
 function Base.similar(A::SnpArray, ::NTuple{2, Bool})
   similar(A)
-end
+end # function Base.similar
 
 function Base.similar(A::SnpArray, dims::Dims)
   SnpArray(BitArray(dims), BitArray(dims))
-end
+end # function Base.similar
 
 function Base.similar(A::SnpArray, ::NTuple{2, Bool}, dims::Dims)
   SnpArray(BitArray(dims), BitArray(dims))
-end
+end # function Base.similar
 
 # missing code is 10 = (true, false)
 Base.isnan(a1::Bool, a2::Bool) = a1 & !a2
@@ -133,14 +133,14 @@ function Base.isnan{N}(A::SnpLike{N})
     b[i] = Base.isnan(A[i])
   end
   return b
-end
+end # function Base.isnan
 
 """
 Create a SnpArray with all A1 alleles.
 """
 function Base.convert(t::Type{SnpArray}, dims...)
   SnpArray(falses(dims), falses(dims))
-end
+end # function Base.convert
 
 """
 Convert a two-bit genotype to a real number according to specified SNP model.
@@ -171,7 +171,7 @@ function Base.convert{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
     end
   end
   return b
-end
+end # function Base.convert
 
 """
 Convert a SNP matrix to a numeric matrix according to specified SNP model. If
@@ -183,7 +183,7 @@ function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
   scale::Bool = false)
   B = similar(A, T)
   copy!(B, A; model = model, impute = impute, center = center, scale = scale)
-end
+end # function Base.convert
 
 function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
@@ -217,7 +217,7 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
     end
   end
   return B
-end
+end # function Base.copy!
 
 """
 Convert a SNP matrix to a sparse matrix according to specified SNP model.
@@ -257,7 +257,7 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   end # j
   colptr[n + 1] = length(nzval) + 1
   return SparseMatrixCSC(m, n, colptr, rowval, nzval)
-end
+end # function Base.convert
 
 """
 Generate a genotype according to a1 allele frequency.
@@ -270,7 +270,7 @@ function randgeno{T <: AbstractFloat}(a1freq::T)
     (b1, b2) = (false, true)
   end
   return b1, b2
-end
+end # function readgeno
 
 """
 Generate a genotype according to minor allele frequency. `minor_allele` indicates
@@ -278,11 +278,11 @@ the minor allele is A1 (`true`) or A2 (`false`).
 """
 function randgeno{T <: AbstractFloat}(maf::T, minor_allele::Bool)
   minor_allele ? randgeno(maf) : randgeno(1.0 - maf)
-end
+end # function readgeno
 
 """
-Generate a SnpVector according to minor allele frequency. `minor_allele` indicates
-the minor allele is A1 (`true`) or A2 (`false`).
+Generate a SnpVector according to minor allele frequency. `minor_allele`
+indicates the minor allele is A1 (`true`) or A2 (`false`).
 """
 function randgeno{T <: AbstractFloat}(n::Int, maf::T, minor_allele::Bool)
   s = SnpArray(n)
@@ -290,7 +290,7 @@ function randgeno{T <: AbstractFloat}(n::Int, maf::T, minor_allele::Bool)
     s[i] = randgeno(maf, minor_allele)
   end
   return s
-end
+end # function readgeno
 
 """
 Generate a SnpMatrix according to minor allele frequencies `maf`. `minor_allele`
@@ -307,12 +307,12 @@ function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
     end
   end
   return s
-end
+end # function readgeno
 
 function randgeno{T <: AbstractFloat}(n::Tuple{Int,Int}, maf::Vector{T},
   minor_allele::BitArray{1})
   randgeno(n..., maf, minor_allele)
-end
+end # function readgeno
 
 
 """
@@ -375,7 +375,7 @@ function summarize(A::SnpLike{1})
     maf = 1.0 - maf
   end
   return maf, minor_allele, missings
-end
+end # function summarize
 
 """
 Compute empirical kinship matrix from a SnpMatrix. Missing genotypes are imputed
@@ -387,7 +387,7 @@ function grm(A::SnpLike{2}; method::Symbol = :GRM)
   elseif method == :MoM
     return _mom(A::SnpLike{2})
   end
-end
+end # function grm
 
 function _grm(A::SnpLike{2})
   n, p = size(A)
@@ -418,7 +418,7 @@ function _grm(A::SnpLike{2})
   # copy to lower triangular part
   LinAlg.copytri!(Φ, 'U')
   return Φ
-end
+end # function _grm
 
 function _mom(A::SnpLike{2})
   n, p = size(A)
@@ -469,7 +469,7 @@ function _mom(A::SnpLike{2})
   # copy to lower triangular part
   LinAlg.copytri!(Φ, 'U')
   return Φ
-end
+end # function _mom
 
 """
 Principal component analysis of SNP data.
@@ -504,7 +504,7 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
     pcvariance[i] = pcvariance[i] * pcvariance[i] / (n - 1)
   end
   return pcscore, pcloading, pcvariance
-end
+end # function pca
 
 function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
   t::Type{SparseMatrixCSC{T, TI}} = SparseMatrixCSC{Float64, Int})
@@ -531,7 +531,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
     pcvariance[i] = pcvariance[i] / (n - 1)
   end
   return pcscore, pcloading, pcvariance
-end
+end # function pca_sp
 
 """
 Gram matrix Acs'Acs multiply B, where Acs is the centered and scaled A.
@@ -554,7 +554,7 @@ function AcstAcs_mul_B!{T}(output::Vector{T}, A::AbstractMatrix,
     output[i] *= weight[i]
   end
   output
-end
+end # function AcstAcs_mul_B!
 
 """
 Cheating: to bypass the isssym() error thrown by arpack.jl
@@ -580,7 +580,7 @@ function Acs_mul_B!{T, N}(output::AbstractArray{T, N}, A::AbstractMatrix,
     end
   end
   output
-end
+end # function Acs_mul_B
 
 """
 Transpose of standardized matrix A (centered by `center` and scaled by `weight`)
@@ -595,7 +595,7 @@ function Acsc_mul_B!(output::AbstractVector, A::AbstractMatrix,
     tmpvec[i] = (tmpvec[i] - shift * center[i]) * weight[i]
   end
   output
-end
+end # function Acsc_mul_B!
 
 """
 Make first entry of each column nonnegative. This is for better identifibility
@@ -611,7 +611,7 @@ function identify!{T <: AbstractFloat}(A::Matrix{T})
       end
     end
   end
-end
+end # function identify!
 
 """
 Estimate the memory usage for storing SNP data with `n` individuals,
@@ -627,7 +627,7 @@ function estimatesize{T <: AbstractFloat}(n::Int, p::Int,
       n * p * maf * (2.0 - maf) + sizeof(t.parameters[2]) * (p + 1))
   end
   storage
-end
+end # function estimatesize
 
 """
 Type for SNP and person information.
@@ -636,11 +636,11 @@ type SnpData
   people::Int                       # number of rows (individuals)
   snps::Int                         # number of columns (snps)
   personid::Vector{AbstractString}  # names of individuals
-  snpchr::Vector{AbstractString}    # snp chromosome
-  snppos::Vector{AbstractString}    # snp position
+  chromosome::Vector{AbstractString}# snp chromosome
+  basepair::Vector{Int}             # snp position
   snpid::Vector{AbstractString}     # ids of snps
   maf::Vector{Float64}              # minor allele frequencies
-  minor_allele::BitVector            # bit array designating the minor allele
+  minor_allele::BitVector           # bit vector designating the minor allele
   snpmatrix::SnpLike{2}             # matrix of genotypes or haplotypes
   missings_per_person::Vector{Int}  # number of missing genotypes per person
   missings_per_snp::Vector{Int}     # number of missing genotypes per snp
@@ -654,11 +654,11 @@ function SnpData(plink_file::AbstractString)
   # load snp info
   plink_bim_file = string(plink_file, ".bim")
   snp_info = readdlm(plink_bim_file, AbstractString)
-  snpchr = snp_info[:, 1]
+  chromosome = snp_info[:, 1]
   snpid = snp_info[:, 2]
-  snppos = snp_info[:, 4]
-  #allele1 = snp_info[:, 5]
-  #allele2 = snp_info[:, 6]
+  basepair = convert(Vector{Int}, snp_info[:, 4])
+  allele1 = snp_info[:, 5]
+  allele2 = snp_info[:, 6]
 
   # load person info
   plink_fam_file = string(plink_file, ".fam")
@@ -671,9 +671,9 @@ function SnpData(plink_file::AbstractString)
   people, snps = size(snpmatrix)
 
   # construct SnpData unfiltered
-  snp_data = SnpData(people, snps, personid, snpchr, snppos, snpid,
+  snp_data = SnpData(people, snps, personid, chromosome, basepair, snpid,
     maf, minor_allele, snpmatrix, missings_per_person, missings_per_snp)
 
 end
 
-end # module
+end # module SnpArrays
