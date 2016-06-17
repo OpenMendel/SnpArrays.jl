@@ -23,11 +23,11 @@ i, j = rand(1:size(snp, 1)), rand(1:size(snp, 2))
 snp[i, j] = 2
 @test snp[i, j] == (true, true)
 snp[i, j] = 1
-@test snp[i, j] == (true, false)
+@test snp[i, j] == (false, true)
 snp[i, j] = 0
 @test snp[i, j] == (false, false)
 snp[i, j] = NaN
-@test snp[i, j] == (false, true)
+@test snp[i, j] == (true, false)
 
 
 info("convert")
