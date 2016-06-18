@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Hua-Zhou/SnpArrays.jl.svg?branch=master)](https://travis-ci.org/Hua-Zhou/SnpArrays.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/vw41tj5stjxv1h99/branch/master?svg=true)](https://ci.appveyor.com/project/Hua-Zhou/snparrays-jl/branch/master)
+[![Coverage Status](https://coveralls.io/repos/github/Hua-Zhou/SnpArrays.jl/badge.svg?branch=master)](https://coveralls.io/github/Hua-Zhou/SnpArrays.jl?branch=master)
 [![codecov](https://codecov.io/gh/Hua-Zhou/SnpArrays.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/Hua-Zhou/SnpArrays.jl)
 
 SnpArrays pvovide utilities for handling compressed storage of biallelic [SNP (Single-Nucleotide Polymorphism)](https://en.wikipedia.org/wiki/Single-nucleotide_polymorphism) data.
