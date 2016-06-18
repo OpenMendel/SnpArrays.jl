@@ -487,7 +487,7 @@ Principal component analysis of SNP data.
 
 # TODO: maket it work for Integer type matrix
 """
-function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
+function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
   t::Type{Matrix{T}} = Matrix{Float64})
   n, p = size(A)
   # memory-mapped genotype matrix G, centered and scaled
@@ -506,7 +506,7 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Int = 6,
   return pcscore, pcloading, pcvariance
 end # function pca
 
-function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Int = 6,
+function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
   t::Type{SparseMatrixCSC{T, TI}} = SparseMatrixCSC{Float64, Int})
   n, p = size(A)
   # genotype matrix *not* centered or scaled
