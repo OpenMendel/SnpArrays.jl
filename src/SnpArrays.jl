@@ -1,7 +1,9 @@
 module SnpArrays
 
 import IterativeSolvers: MatrixFcn
-export estimatesize, grm, pca, pca_sp, randgeno, SnpArray, SnpData, summarize
+#import Base: convert, similar
+export estimatesize, grm, _grm, _mom, pca, pca_sp, randgeno,
+  SnpArray, SnpData, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -16,41 +18,43 @@ typealias SnpVector SnpArray{1}
 """
 Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
 """
-function SnpArray(mac::AbstractArray)
-    T = eltype(mac)
-    SnpArray(mac .> one(T), mac .> zero(T))
+function SnpArray(a1count::AbstractArray)
+    T = eltype(a1count)
+    SnpArray(a1count .> one(T), a1count .> zero(T))
 end
 
 """
-Construct a SnpArray from Plink binary files (`.bed`, `.bim`, `.fam`).
+    SnpArray(plinkFile, [people], [snps])
+Construct a SnpArray from Plink binary file `plinkFile.bed`.
 """
-function SnpArray(plinkFile::AbstractString)
-  plinkBedfile = string(plinkFile, ".bed")
-  plinkBimfile = string(plinkFile, ".bim")
-  plinkFamfile = string(plinkFile, ".fam")
+function SnpArray(
+  plinkFile::AbstractString,
+  people::Integer = countlines(plinkFile * ".fam"),
+  snps::Integer = countlines(plinkFile * ".bim")
+  )
+
   # dimensions
-  nper = countlines(plinkFamfile)
-  nsnp = countlines(plinkBimfile)
+  @assert (people > 0 && snps > 0) "people and snps have to be positive integer"
   # read binary genotype data from bed file
-  fid = open(plinkBedfile, "r")
+  fid = open(plinkFile * ".bed", "r")
   # decide BED file version and snp/individual-major
   bedheader = read(fid, UInt8, 3)
   # PLINK coding (genotype->bits): A1/A1->00, A1/A2->01, A2/A2->11, missing->10
   # http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml
-  A1 = BitArray(nper, nsnp)
-  A2 = BitArray(nper, nsnp)
+  A1 = BitArray(people, snps)
+  A2 = BitArray(people, snps)
   if bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011"
     # v1.0 BED file
     if bits(bedheader[3]) == "00000001"
       # SNP-major
-      plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25nper), nsnp), 3)
-      A1 = copy!(A1, slice(plinkbits, 1, 1:nper, :))
-      A2 = copy!(A2, slice(plinkbits, 2, 1:nper, :))
+      plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25people), snps), 3)
+      A1 = copy!(A1, slice(plinkbits, 1, 1:people, :))
+      A2 = copy!(A2, slice(plinkbits, 2, 1:people, :))
     else
       # individual-major
-      snpbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25nsnp), nper), 3)
-      A1 = copy!(A1, slice(plinkbits, 1, 1:nper, :)')
-      A2 = copy!(A2, slice(plinkbits, 2, 1:nper, :)')
+      snpbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25snps), people), 3)
+      A1 = copy!(A1, slice(plinkbits, 1, 1:people, :)')
+      A2 = copy!(A2, slice(plinkbits, 2, 1:people, :)')
     end
   else
     # TODO: v0.99 BED file: individual-major
@@ -65,6 +69,7 @@ end # function SnpArray
 #---------------------------------------------------------------------------# methods
 # Julia docs on methods required for AbstractArray:
 # http://docs.julialang.org/en/release-0.4/manual/interfaces/#man-interfaces-abstractarray
+
 Base.size(A::SnpArray)                 = size(A.A1)
 Base.size(A::SnpArray, d::Int)         = size(A.A1, d)
 Base.ndims(A::SnpArray)                = ndims(A.A1)
@@ -89,6 +94,7 @@ function Base.setindex!(A::SnpArray, v::NTuple{2, Bool}, i::Int, j::Int)
 end
 
 function Base.setindex!(A::SnpArray, v::Real, i::Int)
+  # real number v is interpreted as A1 allele count
   if isnan(v)
     setindex!(A, (true, false), i)
   else
@@ -112,21 +118,25 @@ function Base.similar(A::SnpArray)
   SnpArray(similar(A.A1), similar(A.A2))
 end # function Base.similar
 
-function Base.similar(A::SnpArray, ::NTuple{2, Bool})
-  similar(A)
-end # function Base.similar
+# function Base.similar(A::SnpArray, ::NTuple{2, Bool})
+#   similar(A)
+# end # function Base.similar
 
 function Base.similar(A::SnpArray, dims::Dims)
   SnpArray(BitArray(dims), BitArray(dims))
 end # function Base.similar
 
-function Base.similar(A::SnpArray, ::NTuple{2, Bool}, dims::Dims)
-  SnpArray(BitArray(dims), BitArray(dims))
-end # function Base.similar
+# function Base.similar(A::SnpArray, ::NTuple{2, Bool}, dims::Dims)
+#   SnpArray(BitArray(dims), BitArray(dims))
+# end # function Base.similar
+
+#---------------------------------------------------------------------------#
+# Code for missing genotypes
+#---------------------------------------------------------------------------#
 
 # missing code is 10 = (true, false)
-Base.isnan(a1::Bool, a2::Bool) = a1 & !a2
-Base.isnan(a::Tuple{Bool, Bool}) = Base.isnan(a[1], a[2])
+@inline Base.isnan(a1::Bool, a2::Bool) = a1 & !a2
+@inline Base.isnan(a::Tuple{Bool, Bool}) = Base.isnan(a[1], a[2])
 function Base.isnan{N}(A::SnpLike{N})
   b = BitArray(size(A))
   @inbounds @simd for i in eachindex(A)
@@ -134,6 +144,30 @@ function Base.isnan{N}(A::SnpLike{N})
   end
   return b
 end # function Base.isnan
+
+#---------------------------------------------------------------------------#
+# Convert and copy
+#---------------------------------------------------------------------------#
+
+"""
+    estimatesize(n, p, t[, maf])
+
+Estimate the memory usage (in bytes) for storing SNP data with `n` individuals,
+`p` SNPs, and average minor allele frequency `maf`. `maf` is used only when
+`t <: AbstractSparseMatrix`.
+"""
+function estimatesize{T <: AbstractFloat}(n::Int, p::Int,
+  t::Type, maf::T = 0.25)
+  if t <: DenseMatrix
+    storage = convert(Float64, sizeof(eltype(t)) * n * p)
+  elseif t <: AbstractSparseMatrix
+    storage = convert(Float64,
+      (sizeof(t.parameters[1]) + sizeof(t.parameters[2])) *
+      n * p * maf * (2.0 - maf) + sizeof(t.parameters[2]) * (p + 1))
+  end
+  storage
+end # function estimatesize
+
 
 """
 Create a SnpArray with all A1 alleles.
@@ -259,6 +293,10 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   return SparseMatrixCSC(m, n, colptr, rowval, nzval)
 end # function Base.convert
 
+#---------------------------------------------------------------------------#
+# Random genotype generation
+#---------------------------------------------------------------------------#
+
 """
 Generate a genotype according to a1 allele frequency.
 """
@@ -314,6 +352,9 @@ function randgeno{T <: AbstractFloat}(n::Tuple{Int,Int}, maf::Vector{T},
   randgeno(n..., maf, minor_allele)
 end # function readgeno
 
+#---------------------------------------------------------------------------#
+# Summary statistics
+#---------------------------------------------------------------------------#
 
 """
 Compute summary statistics of a SnpMatrix.
@@ -377,22 +418,25 @@ function summarize(A::SnpLike{1})
   return maf, minor_allele, missings
 end # function summarize
 
+#---------------------------------------------------------------------------#
+# Empirical kinship matrices
+#---------------------------------------------------------------------------#
+
 """
 Compute empirical kinship matrix from a SnpMatrix. Missing genotypes are imputed
 on the fly according to minor allele frequencies.
 """
-function grm(A::SnpLike{2}; method::Symbol = :GRM)
+function grm(A::SnpLike{2}; method::Symbol = :GRM, memory_limit::Real = 2.0^30)
   if method == :GRM
-    return _grm(A::SnpLike{2})
+    return _grm(A::SnpLike{2}, memory_limit)
   elseif method == :MoM
-    return _mom(A::SnpLike{2})
+    return _mom(A::SnpLike{2}, memory_limit)
   end
 end # function grm
 
-function _grm(A::SnpLike{2})
+function _grm(A::SnpLike{2}, memory_limit::Real = 2.0^30)
   n, p = size(A)
   Φ = zeros(n, n)
-  memory_limit = 2.0^30 # 1GB memory usage limit
   if 8.0n * p < memory_limit
     snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true,
       center = true, scale = true)
@@ -420,9 +464,8 @@ function _grm(A::SnpLike{2})
   return Φ
 end # function _grm
 
-function _mom(A::SnpLike{2})
+function _mom(A::SnpLike{2}, memory_limit::Real = 2.0^30)
   n, p = size(A)
-  memory_limit = 2.0^30 # 1GB memory usage limit
   Φ = zeros(n, n)
   if 8.0n * p < memory_limit # take no more than 1GB memory
     snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true)
@@ -455,7 +498,7 @@ function _mom(A::SnpLike{2})
   end
   # shift and scale elements of Φ
   c = 0.0
-  maf, = summarize(A)
+  maf = summarize(A)[1]
   @inbounds for j in eachindex(maf)
     c += maf[j]^2 + (1.0 - maf[j])^2
   end
@@ -470,6 +513,10 @@ function _mom(A::SnpLike{2})
   LinAlg.copytri!(Φ, 'U')
   return Φ
 end # function _mom
+
+#---------------------------------------------------------------------------#
+# Principal components
+#---------------------------------------------------------------------------#
 
 """
 Principal component analysis of SNP data.
@@ -613,21 +660,10 @@ function identify!{T <: AbstractFloat}(A::Matrix{T})
   end
 end # function identify!
 
-"""
-Estimate the memory usage for storing SNP data with `n` individuals,
-`p` SNPs, and average minor allele frequency `maf`.
-"""
-function estimatesize{T <: AbstractFloat}(n::Int, p::Int,
-  maf::T, t::Type)
-  if t <: DenseMatrix
-    storage = convert(Float64, sizeof(eltype(t)) * n * p)
-  elseif t <: AbstractSparseMatrix
-    storage = convert(Float64,
-      (sizeof(t.parameters[1]) + sizeof(t.parameters[2])) *
-      n * p * maf * (2.0 - maf) + sizeof(t.parameters[2]) * (p + 1))
-  end
-  storage
-end # function estimatesize
+#---------------------------------------------------------------------------#
+# SnpData type
+#---------------------------------------------------------------------------#
+
 
 """
 Type for SNP and person information.
