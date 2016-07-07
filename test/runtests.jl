@@ -188,4 +188,31 @@ end
   @test vecnorm(pcvariance_f32 - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
 end
 
-end # module
+@testset "SnpData" begin
+  hapmapdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+  @test size(hapmapdata.snpmatrix) == (324, 13928)
+  @test hapmapdata.people == 324
+  @test hapmapdata.snps == 13928
+  @test length(hapmapdata.personid) == 324
+  @test length(hapmapdata.snpid) == 13928
+  @test length(hapmapdata.chromosome) == 13928
+  @test length(hapmapdata.basepair) == 13928
+  @test length(hapmapdata.allele1) == 13928
+  @test length(hapmapdata.allele2) == 13928
+  @test length(hapmapdata.maf) == 13928
+  @test length(hapmapdata.minor_allele) == 13928
+  @test length(hapmapdata.missings_per_person) == 324
+  @test length(hapmapdata.missings_per_snp) == 13928
+end
+
+@testset "Write Plink" begin
+  hapmapdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+  testfile = Pkg.dir("SnpArrays") * "/test/testhapmap"
+  writeplink(testfile, hapmapdata)
+  hapmaptest = SnpArray(testfile, 324, 13928)
+  @test all(hapmapdata.snpmatrix .== hapmaptest)
+  rm(testfile * ".bed")
+  rm(testfile * ".bim")
+end
+
+end # SnpArraysTest module

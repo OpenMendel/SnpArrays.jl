@@ -3,7 +3,7 @@ module SnpArrays
 import IterativeSolvers: MatrixFcn
 import Base: filter
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
-  SnpArray, SnpData, summarize
+  SnpArray, SnpData, summarize, writeplink
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
@@ -18,8 +18,7 @@ typealias SnpVector SnpArray{1}
 """
 Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
 """
-function SnpArray(a1count::AbstractArray)
-    T = eltype(a1count)
+function SnpArray{T <: Real}(a1count::AbstractArray{T})
     SnpArray(a1count .> one(T), a1count .> zero(T))
 end
 
@@ -441,7 +440,8 @@ function filter(
   A::SnpLike{2},
   min_success_rate_per_snp::Float64 = 0.98,
   min_success_rate_per_person::Float64 = 0.98,
-  maxiters::Int = 3)
+  maxiters::Int = 3
+  )
 
   snp_index = trues(size(A, 2))
   person_index = trues(size(A, 1))
@@ -716,7 +716,6 @@ end # function identify!
 # SnpData type
 #---------------------------------------------------------------------------#
 
-
 """
 Type for SNP and person information.
 """
@@ -724,15 +723,18 @@ type SnpData
   people::Int                       # number of rows (individuals)
   snps::Int                         # number of columns (snps)
   personid::Vector{AbstractString}  # names of individuals
-  chromosome::Vector{AbstractString}# snp chromosome
-  basepair::Vector{Int}             # snp position
-  snpid::Vector{AbstractString}     # ids of snps
+  snpid::Vector{AbstractString}     # SNP ids
+  chromosome::Vector{AbstractString}# SNP chromosome
+  distance::Vector{Float64}         # genetic distance
+  basepair::Vector{Int}             # SNP base pair position
+  allele1::Vector{AbstractString}   # A1 code
+  allele2::Vector{AbstractString}   # A2 code
   maf::Vector{Float64}              # minor allele frequencies
   minor_allele::BitVector           # bit vector designating the minor allele
   snpmatrix::SnpLike{2}             # matrix of genotypes or haplotypes
   missings_per_person::Vector{Int}  # number of missing genotypes per person
   missings_per_snp::Vector{Int}     # number of missing genotypes per snp
-end # end type
+end # end SnpData
 
 """
 Construct a SnpData type from a PLINK file.
@@ -744,7 +746,8 @@ function SnpData(plink_file::AbstractString)
   snp_info = readdlm(plink_bim_file, AbstractString)
   chromosome = snp_info[:, 1]
   snpid = snp_info[:, 2]
-  basepair = convert(Vector{Int}, snp_info[:, 4])
+  distance = map(x -> parse(Float64, x), snp_info[:, 3])
+  basepair = map(x -> parse(Int, x), snp_info[:, 4])
   allele1 = snp_info[:, 5]
   allele2 = snp_info[:, 6]
 
@@ -759,9 +762,31 @@ function SnpData(plink_file::AbstractString)
   people, snps = size(snpmatrix)
 
   # construct SnpData unfiltered
-  snp_data = SnpData(people, snps, personid, chromosome, basepair, snpid,
-    maf, minor_allele, snpmatrix, missings_per_person, missings_per_snp)
+  SnpData(people, snps, personid, snpid, chromosome, distance, basepair,
+    allele1, allele2, maf, minor_allele, snpmatrix, missings_per_person,
+    missings_per_snp)
+end
 
+"""
+Write snp data to Plink bed and bim files.
+"""
+function writeplink(filename::AbstractString, snpdata::SnpData)
+  bimfile = filename * ".bim"
+  bedfile = filename * ".bed"
+  isfile(bimfile) && error("($bimfile) alread exists.")
+  isfile(bedfile) && error("($bedfile) alread exists.")
+  # write bim file
+  writedlm(bimfile, zip(snpdata.chromosome, snpdata.snpid, snpdata.distance,
+    snpdata.basepair, snpdata.allele1, snpdata.allele2))
+  # write bed file
+  fid = open(bedfile, "w+")
+  write(fid, UInt8[0x6c])
+  write(fid, UInt8[0x1b])
+  write(fid, UInt8[0x01])
+  plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25snpdata.people), snpdata.snps))
+  copy!(slice(plinkbits, 1, 1:snpdata.people, :), snpdata.snpmatrix.A1)
+  copy!(slice(plinkbits, 2, 1:snpdata.people, :), snpdata.snpmatrix.A2)
+  close(fid)
 end
 
 end # module SnpArrays
