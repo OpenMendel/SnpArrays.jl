@@ -140,6 +140,17 @@ end
   @test missings == n
 end
 
+@testset "filter" begin
+  hapmap = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+  #@code_warntype filter(hapmap, 0.98, 0.98, 5)
+  @inferred filter(hapmap, 0.98, 0.98, 5)
+  snp_idx, person_idx = filter(hapmap, 0.98, 0.98)
+  _, _, missings_by_snp, missings_by_person =
+    summarize(sub(hapmap, person_idx, snp_idx))
+  @test 1.0 - maximum(missings_by_snp) / length(missings_by_person) ≥ 0.98
+  @test 1.0 - maximum(missings_by_person) / length(missings_by_snp) ≥ 0.98
+end
+
 @testset "grm" begin
   maf, minor_allele = 0.5rand(p), bitrand(p)
   snp = randgeno(n, p, maf, minor_allele)

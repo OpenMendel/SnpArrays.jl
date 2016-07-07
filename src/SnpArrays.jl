@@ -1,8 +1,8 @@
 module SnpArrays
 
 import IterativeSolvers: MatrixFcn
-#import Base: convert, similar
-export estimatesize, grm, _grm, _mom, pca, pca_sp, randgeno,
+import Base: filter
+export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
   SnpArray, SnpData, summarize
 
 type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
@@ -362,8 +362,8 @@ Compute summary statistics of a SnpMatrix.
 # Output:
 * `maf` - minor allele frequency of each SNP
 * `minor_allele` - indicate the minor allele is A1 (`true`) or A2 (`false`)
-*  `missings_by_person` - number of missing genotypes for each person
-*  `missings_by_snp` - number of missing genotypes for each SNP
+* `missings_by_person` - number of missing genotypes for each person
+* `missings_by_snp` - number of missing genotypes for each SNP
 """
 function summarize(A::SnpLike{2})
   m, n = size(A)
@@ -417,6 +417,58 @@ function summarize(A::SnpLike{1})
   end
   return maf, minor_allele, missings
 end # function summarize
+
+#---------------------------------------------------------------------------#
+# Filtering
+#---------------------------------------------------------------------------#
+
+"""
+    filter(A[, min_success_rate_per_person, min_success_rate_per_person, maxiters])
+
+Filter a SnpMatrix by genotyping success rate.
+
+# Input
+- `A`: a SnpMatrix.
+- `min_success_rate_per_snp`: threshold for SNP genotyping success rate.
+- `min_success_rate_per_person`: threshold for person genotyping success rate.
+- `maxiters`: maximum number of filtering iterations.
+
+# Output
+- `snp_index`: BitVector indicating remaining SNPs.
+- `person_index`: BitVector indicating remaining people.
+"""
+function filter(
+  A::SnpLike{2},
+  min_success_rate_per_snp::Float64 = 0.98,
+  min_success_rate_per_person::Float64 = 0.98,
+  maxiters::Int = 3)
+
+  snp_index = trues(size(A, 2))
+  person_index = trues(size(A, 1))
+  missings_by_snp = zeros(Int, size(A, 2))
+  missings_by_person = zeros(Int, size(A, 1))
+  for r in 1:maxiters
+    # summary statistics of remaining people/SNPs
+    _, _, missings_by_snp[snp_index], missings_by_person[person_index] =
+      summarize(sub(A, person_index, snp_index))
+    if (maximum(missings_by_snp[snp_index]) / countnz(person_index) <
+      1.0 - min_success_rate_per_snp) &&
+      (maximum(missings_by_person[person_index]) / countnz(snp_index) <
+      1.0 - min_success_rate_per_person)
+      # all remaining SNPs and people pass success rate threshold
+      break
+    else
+      # some remaining SNPs and people still below success rate threshold
+      snp_index[snp_index] &= (missings_by_snp[snp_index] / countnz(person_index)
+        .< 1.0 - min_success_rate_per_snp)
+      person_index[person_index] &= (missings_by_person[person_index] / countnz(snp_index)
+        .< 1.0 - min_success_rate_per_person)
+      r == maxiters && "maxiters reached; some SNPs and/or people may still have
+        genotyping success rates below threshold."
+    end
+  end
+  snp_index, person_index
+end
 
 #---------------------------------------------------------------------------#
 # Empirical kinship matrices
