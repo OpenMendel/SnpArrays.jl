@@ -111,25 +111,13 @@ function Base.setindex!(A::SnpArray, v::Real, i::Int, j::Int)
   end
 end
 
-function Base.similar(A::SnpArray, T::Real, dims::Dims)
-  zeros(T, dims)
-end # function Base.similar
-
-function Base.similar(A::SnpArray)
-  SnpArray(similar(A.A1), similar(A.A2))
-end # function Base.similar
-
-# function Base.similar(A::SnpArray, ::NTuple{2, Bool})
-#   similar(A)
-# end # function Base.similar
-
 function Base.similar(A::SnpArray, dims::Dims)
   SnpArray(BitArray(dims), BitArray(dims))
 end # function Base.similar
-
-# function Base.similar(A::SnpArray, ::NTuple{2, Bool}, dims::Dims)
-#   SnpArray(BitArray(dims), BitArray(dims))
-# end # function Base.similar
+#
+function Base.similar(A::SnpArray, ::Type{NTuple{2, Bool}}, dims::Dims)
+  similar(A, dims)
+end # function Base.similar
 
 #---------------------------------------------------------------------------#
 # Code for missing genotypes
@@ -714,7 +702,9 @@ function identify!{T <: AbstractFloat}(A::Matrix{T})
   end
 end # function identify!
 
-# implementation for the SnpData type
+#---------------------------------------------------------------------------#
+# SnpData type implementation
+#---------------------------------------------------------------------------#
 include("snpdata.jl")
 
 end # module SnpArrays

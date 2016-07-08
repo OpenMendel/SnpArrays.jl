@@ -44,6 +44,7 @@ end
 
 @testset "similar" begin
   snp = SnpArray(n, p)
+  @show typeof(snp)
   A = similar(snp, Float64, size(snp))
   @test eltype(A) == Float64
   @test size(A) == size(snp)
@@ -53,6 +54,9 @@ end
   A = similar(snp, (3, 3))
   @test typeof(A) == SnpArray{2}
   @test size(A) == (3, 3)
+  A = similar(snp, Tuple{Bool, Bool})
+  @test typeof(A) == SnpArray{2}
+  @test size(A) == size(snp)
 end
 
 @testset "isnan" begin
