@@ -11,11 +11,11 @@ SnpArrays pvovide utilities for handling compressed storage of biallelic [SNP (S
 
 Use the Julia package manager to install SnpArrays.jl:
 
-    Pkg.clone("git@github.com:Hua-Zhou/SnpArrays.jl.git")
+    Pkg.clone("git@github.com:OpenMendel/SnpArrays.jl.git")
 
 ## Documentation
 
-View the [tutorial](https://github.com/Hua-Zhou/SnpArrays.jl/blob/master/docs/snparray.ipynb).
+View the [tutorial](https://github.com/OpenMendel/SnpArrays.jl/blob/master/docs/snparray.ipynb).
 
 ## OpenMendel
 
