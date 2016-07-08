@@ -226,8 +226,8 @@ end
   writeplink(testfile, hapmapdata)
   hapmaptest = SnpArray(testfile; people = 324, snps = 13928)
   @test all(hapmapdata.snpmatrix .== hapmaptest)
-  rm(testfile * ".bed")
-  rm(testfile * ".bim")
+  @unix_only rm(testfile * ".bed")
+  @unix_only rm(testfile * ".bim")
 end
 
 end # SnpArraysTest module
