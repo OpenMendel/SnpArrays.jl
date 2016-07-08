@@ -142,6 +142,16 @@ end
   @test sum(missings_by_person) == n
   _, _, missings = summarize(snp[:, 1])
   @test missings == n
+  # corner case: m = 0 (SnpArray is empty)
+  snp = SnpArray(0, 5)
+  maf, = summarize(snp)
+  @test isnan(maf[1])
+  maf, = summarize(snp[:, 1])
+  @test isnan(maf[1])
+  # edge case: p = 0 (SnpArray is empty)
+  snp = SnpArray(5, 0)
+  maf, = summarize(snp)
+  @test isempty(maf)
 end
 
 @testset "filter" begin
