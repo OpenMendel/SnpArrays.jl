@@ -29,8 +29,8 @@ Construct a SnpArray from Plink binary file `plinkFile.bed`.
 """
 function SnpArray(
   plinkFile::AbstractString;
-  people::Integer = countlines(plinkFile * ".fam"),
-  snps::Integer = countlines(plinkFile * ".bim")
+  people::Int = countlines(plinkFile * ".fam"),
+  snps::Int = countlines(plinkFile * ".bim")
   )
 
   # dimensions
@@ -48,12 +48,12 @@ function SnpArray(
     # v1.0 BED file
     if bits(bedheader[3]) == "00000001"
       # SNP-major
-      plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25people), snps), 3)
+      plinkbits = Mmap.mmap(fid, BitArray{3}, (2, 4ceil(Int, 0.25people), snps), 3)
       A1 = copy!(A1, slice(plinkbits, 1, 1:people, :))
       A2 = copy!(A2, slice(plinkbits, 2, 1:people, :))
     else
       # individual-major
-      snpbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25snps), people), 3)
+      snpbits = Mmap.mmap(fid, BitArray{3}, (2, 4ceil(Int, 0.25snps), people), 3)
       A1 = copy!(A1, slice(plinkbits, 1, 1:people, :)')
       A2 = copy!(A2, slice(plinkbits, 2, 1:people, :)')
     end
@@ -166,9 +166,10 @@ function Base.convert(t::Type{SnpArray}, dims...)
 end # function Base.convert
 
 """
-Convert a two-bit genotype to a real number according to specified SNP model.
-Missing genotype is converted to `NaN`. `minor_allele=true` indicates `A1` is
-the minor allele; `minor_allele=false` indicates `A2` is the minor allele.
+Convert a two-bit genotype to a real number (minor allele count) according to
+specified SNP model. Missing genotype is converted to `NaN`. `minor_allele=true`
+indicates `A1` is the minor allele; `minor_allele=false` indicates `A2` is the
+minor allele.
 """
 function Base.convert{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
   minor_allele::Bool, model::Symbol = :additive)
@@ -197,9 +198,9 @@ function Base.convert{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
 end # function Base.convert
 
 """
-Convert a SNP matrix to a numeric matrix according to specified SNP model. If
-`impute == true`, missing entries are imputed according to (column) minor allele
-frequencies.
+Convert a SNP matrix to a numeric matrix of minor allele counts according to
+specified SNP model. If `impute == true`, missing entries are imputed according
+to (column) minor allele frequencies.
 """
 function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
@@ -243,10 +244,9 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
 end # function Base.copy!
 
 """
-Convert a SNP matrix to a sparse matrix according to specified SNP model.
-If `impute=false`, missing genotypes are ignored (translated to 0).
-If `impute=true`, missing genotypes are imputed on the fly according
-to the minor allele frequencies.
+Convert a SNP matrix to a numeric matrix of minor allele counts according to
+specified SNP model. If `impute == true`, missing entries are imputed according
+to (column) minor allele frequencies.
 """
 function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   A::SnpLike{2}; model::Symbol = :additive, impute::Bool = false)
@@ -303,7 +303,7 @@ end # function readgeno
 Generate a genotype according to minor allele frequency. `minor_allele` indicates
 the minor allele is A1 (`true`) or A2 (`false`).
 """
-function randgeno{T <: AbstractFloat}(maf::T, minor_allele::Bool)
+@inline function randgeno{T <: AbstractFloat}(maf::T, minor_allele::Bool)
   minor_allele ? randgeno(maf) : randgeno(1.0 - maf)
 end # function readgeno
 
