@@ -16,6 +16,11 @@ notifications:
     on_build_failure: false
     on_build_status_changed: false
 
+skip_commits:
+  files:
+  - docs/*
+  - '**/*.html'
+
 install:
 # Download most recent Julia Windows binary
   - ps: (new-object net.webclient).DownloadFile(
