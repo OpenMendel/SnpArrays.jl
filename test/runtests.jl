@@ -18,7 +18,7 @@ n, p = 100, 1000
   @test eltype(snp) == Tuple{Bool, Bool}
   hapmap1 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
   @test size(hapmap1) == (324, 13928)
-  hapmap2 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3", 324, 13928)
+  hapmap2 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3"; people = 324, snps = 13928)
   @test all(hapmap1 == hapmap2)
 end
 
@@ -196,7 +196,8 @@ end
   @test length(hapmapdata.personid) == 324
   @test length(hapmapdata.snpid) == 13928
   @test length(hapmapdata.chromosome) == 13928
-  @test length(hapmapdata.basepair) == 13928
+  @test length(hapmapdata.genetic_distance) == 13928
+  @test length(hapmapdata.basepairs) == 13928
   @test length(hapmapdata.allele1) == 13928
   @test length(hapmapdata.allele2) == 13928
   @test length(hapmapdata.maf) == 13928
@@ -209,7 +210,7 @@ end
   hapmapdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
   testfile = Pkg.dir("SnpArrays") * "/test/testhapmap"
   writeplink(testfile, hapmapdata)
-  hapmaptest = SnpArray(testfile, 324, 13928)
+  hapmaptest = SnpArray(testfile; people = 324, snps = 13928)
   @test all(hapmapdata.snpmatrix .== hapmaptest)
   rm(testfile * ".bed")
   rm(testfile * ".bim")
