@@ -200,6 +200,52 @@ function Base.convert{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
   return b
 end # function Base.convert
 
+# missing genotype
+Base.convert{T <: Real}(
+  ::Type{T},
+  ::Type{Val{(true, false)}},
+  ::Union{Type{Val{true}}, Type{Val{false}}},
+  ::Union{Type{Val{:additive}}, Type{Val{:dominant}}, Type{Val{:recessive}}}
+  ) = convert(T, NaN)
+# A1 is the minor allele
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, false)}}, ::Type{Val{true}},
+  ::Type{Val{:additive}}) = convert(T, 2)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, true)}}, ::Type{Val{true}},
+  ::Type{Val{:additive}}) = convert(T, 1)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(true, true)}}, ::Type{Val{true}},
+  ::Type{Val{:additive}}) = convert(T, 0)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, false)}}, ::Type{Val{true}},
+  ::Type{Val{:dominant}}) = convert(T, 1)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, true)}}, ::Type{Val{true}},
+  ::Type{Val{:dominant}}) = convert(T, 1)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(true, true)}}, ::Type{Val{true}},
+  ::Type{Val{:dominant}}) = convert(T, 0)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, false)}}, ::Type{Val{true}},
+  ::Type{Val{:recessive}}) = convert(T, 1)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, true)}}, ::Type{Val{true}},
+  ::Type{Val{:recessive}}) = convert(T, 0)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(true, true)}}, ::Type{Val{true}},
+  ::Type{Val{:recessive}}) = convert(T, 0)
+# A2 is the minor allele
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, false)}}, ::Type{Val{false}},
+  ::Type{Val{:additive}}) = convert(T, 0)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, true)}}, ::Type{Val{false}},
+  ::Type{Val{:additive}}) = convert(T, 1)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(true, true)}}, ::Type{Val{false}},
+  ::Type{Val{:additive}}) = convert(T, 2)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, false)}}, ::Type{Val{false}},
+  ::Type{Val{:dominant}}) = convert(T, 0)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, true)}}, ::Type{Val{false}},
+  ::Type{Val{:dominant}}) = convert(T, 1)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(true, true)}}, ::Type{Val{false}},
+  ::Type{Val{:dominant}}) = convert(T, 1)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, false)}}, ::Type{Val{false}},
+  ::Type{Val{:recessive}}) = convert(T, 0)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(false, true)}}, ::Type{Val{false}},
+  ::Type{Val{:recessive}}) = convert(T, 0)
+Base.convert{T <: Real}(::Type{T}, ::Type{Val{(true, true)}}, ::Type{Val{false}},
+  ::Type{Val{:recessive}}) = convert(T, 1)
+
 """
 Convert a SNP matrix to a numeric matrix of minor allele counts according to
 specified SNP model. If `impute == true`, missing entries are imputed according
@@ -234,13 +280,9 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
       if isnan(a1, a2) && impute
         a1, a2 = randgeno(maf, minor_allele)
       end
-      B[i, j] = convert(T, (a1, a2), minor_allele, model)
-      if center
-        B[i, j] -= ct
-      end
-      if scale
-        B[i, j] *= wt
-      end
+      B[i, j] = convert(T, Val{(a1, a2)}, Val{minor_allele}, Val{model})
+      if center; B[i, j] -= ct; end
+      if scale; B[i, j] *= wt; end
     end
   end
   return B
@@ -275,7 +317,7 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
           continue # nan and no impute -> done
         end
       end
-      v = convert(T, (a1, a2), minor_allele, model)
+      v = convert(T, Val{(a1, a2)}, Val{minor_allele}, Val{model})
       if v ≠ zeroT
         push!(rowval, convert(TI, i)), push!(nzval, v)
       end
