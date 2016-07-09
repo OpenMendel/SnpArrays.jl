@@ -70,6 +70,7 @@ function SnpArray(
   SnpArray(A1, A2)
 end # function SnpArray
 
+
 #---------------------------------------------------------------------------# methods
 # Julia docs on methods required for AbstractArray:
 # http://docs.julialang.org/en/release-0.4/manual/interfaces/#man-interfaces-abstractarray
@@ -481,7 +482,7 @@ function _grm(A::SnpLike{2}, memory_limit::Real = 2.0^30)
       center = true, scale = true)
     BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
   else
-    # chunsize is chosen to have intermediate matrix taking upto 1GB memory
+    # chunsize is chosen to have intermediate matrix taking upto memory_limit bytes
     chunksize = ceil(Int, memory_limit / 8.0n)
     snpchunk = zeros(n, chunksize)
     for chunk in 1:floor(Int, p / chunksize)
@@ -513,7 +514,7 @@ function _mom(A::SnpLike{2}, memory_limit::Real = 2.0^30)
     end
     BLAS.syrk!('U', 'N', 0.5, snpchunk, 1.0, Φ)
   else
-    # chunsize is chosen to have intermediate matrix taking upto 1GB memory
+    # chunsize is chosen to have intermediate matrix taking upto memory_limit bytes
     chunksize = ceil(Int, memory_limit / 8.0n)
     snpchunk = zeros(n, chunksize)
     for chunk in 1:floor(Int, p / chunksize)

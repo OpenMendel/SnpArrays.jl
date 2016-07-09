@@ -1,10 +1,27 @@
 #module HaplotypeArrays
 
-export HaplotypeArray, summarize
+export HaplotypeArray, convert_haplotype
 
 type HaplotypeArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
   A2::BitArray{N}
+end
+
+#---------------------------------------------------------------------------#
+# Constructors
+#---------------------------------------------------------------------------#
+
+# construct HaplotypeArray from SnpArray
+HaplotypeArray(s::SnpArray) = HaplotypeArray(s.A1, s.A2)
+
+# construct SnpArray from HaplotypeArray
+function SnpArray(h::HaplotypeArray)
+  s = SnpArray(h.A1, h.A2)
+  # NaN (true, false) should be (false, true)
+  @simd for i in eachindex(s)
+    if isnan(s[i]); s[i] = (false, true); end
+  end
+  return s
 end
 
 # HaplotypeArray or a view of a HaplotypeArray
@@ -41,6 +58,11 @@ end
 
 # real number v is interpreted (A2 allele count, A2 allele count)
 @inline function Base.setindex!(A::HaplotypeArray, v::Tuple{Real, Real}, i::Int)
+  setindex!(A.A1, v[1] > 0, i), setindex!(A.A2, v[2] > 0, i)
+end
+
+# real number v is interpreted (A2 allele count, A2 allele count)
+@inline function Base.setindex!(A::HaplotypeArray, v::Tuple{Real, Real}, i::Int, j::Int)
   setindex!(A.A1, v[1] > 0, i, j), setindex!(A.A2, v[2] > 0, i, j)
 end
 
@@ -96,7 +118,7 @@ Convert a haplotype matrix to a numeric matrix of minor allele counts according 
 specified SNP model.
 """
 function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::HaplotypeLike{N};
-  model::Symbol = :additive, enter::Bool = false, scale::Bool = false)
+  model::Symbol = :additive, center::Bool = false, scale::Bool = false)
   B = similar(A, T)
   copy!(B, A; model = model, center = center, scale = scale)
 end # function Base.convert
@@ -131,8 +153,7 @@ end # function Base.copy!
 
 """
 Convert a SNP matrix to a numeric matrix of minor allele counts according to
-specified SNP model. If `impute == true`, missing entries are imputed according
-to (column) minor allele frequencies.
+specified SNP model.
 """
 function Base.convert{T <: Real, TI <: Integer}(
   t::Type{SparseMatrixCSC{T, TI}},

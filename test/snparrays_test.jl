@@ -18,6 +18,8 @@ n, p = 100, 1000
   @test typeof(snp) <: AbstractMatrix
   @test size(snp) == size(x)
   @test eltype(snp) == Tuple{Bool, Bool}
+  @test endof(snp) == n * p
+  # constructor from Plink files
   hapmap1 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
   @test size(hapmap1) == (324, 13928)
   hapmap2 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3"; people = 324, snps = 13928)
@@ -42,6 +44,10 @@ end
   @test snp[i, j] == (false, false)
   snp[i, j] = NaN
   @test snp[i, j] == (true, false)
+  snp[sub2ind((n, p), i, j)] = 2.0
+  @test snp[sub2ind((n, p), i, j)] == (true, true)
+  snp[sub2ind((n, p), i, j)] = NaN
+  @test snp[sub2ind((n, p), i, j)] == (true, false)
 end
 
 @testset "similar" begin
@@ -182,8 +188,8 @@ end
   Φ_grm = grm(snp; method = :GRM)
   @test issym(Φ_grm)
   @test all(eigvals(Φ_grm) .≥ -1.0e-6)
-  # GRM: restrict memory usage to 1KB
-  Φ_grm_memlim = grm(snp; method = :GRM, memory_limit = 2^10)
+  # GRM: restrict memory usage to 5KB
+  Φ_grm_memlim = grm(snp; method = :GRM, memory_limit = 5 * 2^10)
   @test_approx_eq_eps vecnorm(Φ_grm - Φ_grm_memlim) 0.0 1.0e-8
   # empirical kinship by MoM
   #@code_warntype _mom(snp, 2.0^30)
@@ -193,7 +199,7 @@ end
   # MoM is not guaranteed to be psd:
   #@test all(eigvals(Φ_mom) .≥ -1.0e-6)
   # MoM: restrict memory usage to 1KB
-  Φ_mom_memlim = grm(snp; method = :MoM, memory_limit = 2^10)
+  Φ_mom_memlim = grm(snp; method = :MoM, memory_limit = 5 * 2^10)
   @test_approx_eq_eps vecnorm(Φ_mom - Φ_mom_memlim) 0.0 1.0e-8
 end
 
