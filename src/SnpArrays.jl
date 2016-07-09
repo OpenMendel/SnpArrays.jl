@@ -3,15 +3,16 @@ module SnpArrays
 import IterativeSolvers: MatrixFcn
 import Base: filter
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
-  SnpArray, SnpData, summarize, writeplink
+  SnpArray, SnpData, summarize, writeplink,
+  SnpLike
 
-type SnpArray{N} <: AbstractArray{NTuple{2, Bool}, N}
+type SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
   A1::BitArray{N}
   A2::BitArray{N}
 end
 
 # SnpArray or a view of a SnpArray
-typealias SnpLike{N} Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N}}
+typealias SnpLike{N, S<:SnpArray} Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N, S}}
 typealias SnpMatrix SnpArray{2}
 typealias SnpVector SnpArray{1}
 
@@ -80,23 +81,23 @@ Base.endof(A::SnpArray)                = length(A)
 Base.eltype(A::SnpArray)               = NTuple{2, Bool}
 Base.linearindexing(::Type{SnpArray})  = Base.LinearFast()
 
-function Base.getindex(A::SnpArray, i::Int)
+@inline function Base.getindex(A::SnpArray, i::Int)
   (getindex(A.A1, i), getindex(A.A2, i))
 end
 
-function Base.getindex(A::SnpArray, i::Int, j::Int)
+@inline function Base.getindex(A::SnpArray, i::Int, j::Int)
   (getindex(A.A1, i, j), getindex(A.A2, i, j))
 end
 
-function Base.setindex!(A::SnpArray, v::NTuple{2, Bool}, i::Int)
+@inline function Base.setindex!(A::SnpArray, v::NTuple{2, Bool}, i::Int)
   setindex!(A.A1, v[1], i), setindex!(A.A2, v[2], i)
 end
 
-function Base.setindex!(A::SnpArray, v::NTuple{2, Bool}, i::Int, j::Int)
+@inline function Base.setindex!(A::SnpArray, v::NTuple{2, Bool}, i::Int, j::Int)
   setindex!(A.A1, v[1], i, j), setindex!(A.A2, v[2], i, j)
 end
 
-function Base.setindex!(A::SnpArray, v::Real, i::Int)
+@inline function Base.setindex!(A::SnpArray, v::Real, i::Int)
   # real number v is interpreted as A1 allele count
   if isnan(v)
     setindex!(A, (true, false), i)
@@ -105,7 +106,7 @@ function Base.setindex!(A::SnpArray, v::Real, i::Int)
   end
 end
 
-function Base.setindex!(A::SnpArray, v::Real, i::Int, j::Int)
+@inline function Base.setindex!(A::SnpArray, v::Real, i::Int, j::Int)
   if isnan(v)
     setindex!(A, (true, false), i, j)
   else
@@ -223,7 +224,7 @@ function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
   # convert column by column
   @inbounds for j in 1:n
     # first pass: find minor allele and its frequency
-    maf, minor_allele, = summarize(sub(A, :, j))
+    maf, minor_allele = summarize(slice(A, :, j))
     # second pass: impute, convert, center, scale
     ct = convert(T, 2.0maf)
     wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
@@ -435,31 +436,29 @@ function filter(
   maxiters::Int = 3
   )
 
-  snp_index = trues(size(A, 2))
-  person_index = trues(size(A, 1))
-  missings_by_snp = zeros(Int, size(A, 2))
-  missings_by_person = zeros(Int, size(A, 1))
+  n, p = size(A)
+  snp_index = trues(p)
+  person_index = trues(n)
   for r in 1:maxiters
     # summary statistics of remaining people/SNPs
-    _, _, missings_by_snp[snp_index], missings_by_person[person_index] =
-      summarize(sub(A, person_index, snp_index))
-    if (maximum(missings_by_snp[snp_index]) / countnz(person_index) <
+    storage = summarize(sub(A, person_index, snp_index))
+    if (maximum(storage[3]) / countnz(person_index) <
       1.0 - min_success_rate_per_snp) &&
-      (maximum(missings_by_person[person_index]) / countnz(snp_index) <
+      (maximum(storage[4]) / countnz(snp_index) <
       1.0 - min_success_rate_per_person)
       # all remaining SNPs and people pass success rate threshold
       break
     else
       # some remaining SNPs and people still below success rate threshold
-      snp_index[snp_index] &= (missings_by_snp[snp_index] / countnz(person_index)
+      snp_index[snp_index] &= (storage[3] / countnz(person_index)
         .< 1.0 - min_success_rate_per_snp)
-      person_index[person_index] &= (missings_by_person[person_index] / countnz(snp_index)
+      person_index[person_index] &= (storage[4] / countnz(snp_index)
         .< 1.0 - min_success_rate_per_person)
       r == maxiters && "maxiters reached; some SNPs and/or people may still have
         genotyping success rates below threshold."
     end
   end
-  snp_index, person_index
+  return snp_index, person_index
 end
 
 #---------------------------------------------------------------------------#
@@ -708,5 +707,10 @@ end # function identify!
 # SnpData type implementation
 #---------------------------------------------------------------------------#
 include("snpdata.jl")
+
+#---------------------------------------------------------------------------#
+# HaplotypeArray type implementation
+#---------------------------------------------------------------------------#
+include("haplotypearray.jl")
 
 end # module SnpArrays
