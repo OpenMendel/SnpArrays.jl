@@ -20,6 +20,7 @@ n, p = 100, 1000
   @test size(h) == size(a1)
   @test eltype(h) == Tuple{Bool, Bool}
   @test endof(h) == n * p
+  @test ndims(h) == 2
   # construct SnpArray from HaplotypeArray
   snp = SnpArray(h)
   @test any(isnan(snp)) == false
@@ -35,9 +36,6 @@ end
   a1, a2 = rand(Bool), rand(Bool)
   snp[i, j] = (a1, a2)
   @test snp[i, j] == (a1, a2)
-  a1, a2 = rand(), rand()
-  snp[i, j] = (a1, a2)
-  @test snp[i, j] == (a1 > 0, a2 > 0)
 end
 
 @testset "convert" begin
@@ -69,19 +67,19 @@ end
   @test convert_haplotype(Float64, (true, false), false, :recessive) == 0.0
   @test convert_haplotype(Float64, (true, true), false, :recessive) == 1.0
   # convert to real matrix
-  snp = HaplotypeArray(n, p)
-  snp_float = convert(Matrix{Float64}, snp)
-  @test typeof(snp_float) == Matrix{Float64}
-  @test size(snp) == size(snp_float)
+  h = HaplotypeArray(n, p)
+  h_float = convert(Matrix{Float64}, h)
+  @test typeof(h_float) == Matrix{Float64}
+  @test size(h) == size(h_float)
   # copy to real matrix
   storage = zeros(n, p)
   #@code_warntype copy!(storage, snp)
-  copy!(storage, snp)
-  @test all(snp_float .== storage)
+  copy!(storage, h)
+  @test all(h_float .== storage)
   # convert to sparse matrix
-  snp_sparse = SparseMatrixCSC{Float64, Int}(snp)
-  @test typeof(snp_sparse) == SparseMatrixCSC{Float64, Int}
-  @test snp_sparse == snp_float
+  h_sparse = SparseMatrixCSC{Float64, Int}(h)
+  @test typeof(h_sparse) == SparseMatrixCSC{Float64, Int}
+  @test h_sparse == h_float
 end
 
 @testset "summarize" begin

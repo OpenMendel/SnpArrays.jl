@@ -56,16 +56,6 @@ end
   setindex!(A.A1, v[1], i, j), setindex!(A.A2, v[2], i, j)
 end
 
-# real number v is interpreted (A2 allele count, A2 allele count)
-@inline function Base.setindex!(A::HaplotypeArray, v::Tuple{Real, Real}, i::Int)
-  setindex!(A.A1, v[1] > 0, i), setindex!(A.A2, v[2] > 0, i)
-end
-
-# real number v is interpreted (A2 allele count, A2 allele count)
-@inline function Base.setindex!(A::HaplotypeArray, v::Tuple{Real, Real}, i::Int, j::Int)
-  setindex!(A.A1, v[1] > 0, i, j), setindex!(A.A2, v[2] > 0, i, j)
-end
-
 function Base.similar(A::HaplotypeArray, dims::Dims)
   HaplotypeArray(BitArray(dims), BitArray(dims))
 end # function Base.similar
@@ -73,6 +63,12 @@ end # function Base.similar
 function Base.similar(A::HaplotypeArray, ::Type{NTuple{2, Bool}}, dims::Dims)
   similar(A, dims)
 end # function Base.similar
+
+#---------------------------------------------------------------------------#
+# Code for missing genotypes
+#---------------------------------------------------------------------------#
+
+Base.isnan{N}(A::HaplotypeLike{N}) = falses(size(A))
 
 #---------------------------------------------------------------------------#
 # Convert and copy
