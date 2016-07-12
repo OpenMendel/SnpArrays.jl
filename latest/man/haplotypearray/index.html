@@ -258,7 +258,11 @@
           
           <p><a id='HaplotypeArray-1'></a></p>
 <h1 id="haplotypearray">HaplotypeArray</h1>
-<p>The <code>HaplotypeArray</code> type is similar to <a href="../snparray/#SnpArray-1">SnpArray</a>, but with two key differences:   * The two alleles are ordered, therefore (A1, A2) is different from (A2, A1);   * The code <code>(true,false)</code> means the genotype (A2, A1), instead of the missing genotype in <code>SnpArray</code>.</p>
+<p>The <code>HaplotypeArray</code> type is similar to <a href="../snparray/#SnpArray-1">SnpArray</a>, but with two key differences:  </p>
+<ul>
+<li>The two alleles are ordered, therefore (A1, A2) is different from (A2, A1);  </li>
+<li>The code <code>(true,false)</code> means the genotype (A2, A1), instead of the missing genotype in <code>SnpArray</code>.  </li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -288,7 +292,10 @@
 <p>Each bit <code>true</code> in <code>HaplotypeArray</code> indicates a copy of the A2 allele. </p>
 <p><a id='Constructor-1'></a></p>
 <h2 id="constructor">Constructor</h2>
-<p>There are various ways to initialize a <code>HaplotypeArray</code>.   * <code>HaplotypeArray</code> can be intialized from two <code>BitArray</code>s. Each <code>BitArray</code> indicates an A2 allele copy in the first and second positions respectively.</p>
+<p>There are various ways to initialize a <code>HaplotypeArray</code>.  </p>
+<ul>
+<li><code>HaplotypeArray</code> can be intialized from two <code>BitArray</code>s. Each <code>BitArray</code> indicates an A2 allele copy in the first and second positions respectively.</li>
+</ul>
 <div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">SnpArrays</span>
 <span class="n">h</span> <span class="o">=</span> <span class="n">HaplotypeArray</span><span class="p">(</span><span class="n">bitrand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">bitrand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 </pre></div>
