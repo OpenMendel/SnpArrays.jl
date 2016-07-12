@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="no-js ie6"><![endif]-->
+<!--[if IE 7 ]><html class="no-js ie7"><![endif]-->
+<!--[if IE 8 ]><html class="no-js ie8"><![endif]-->
+<!--[if IE 9 ]><html class="no-js ie9"><![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js"> <!--<![endif]-->
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
+    
+      
+        <title>HaplotypeArray - SnpArrays.jl</title>
+      
+      
+      
+      
+        <meta name="author" content="Hua Zhou">
+      
+    
+    <meta property="og:url" content="None">
+    <meta property="og:title" content="SnpArrays.jl">
+    <meta property="og:image" content="None/../../">
+    <meta name="apple-mobile-web-app-title" content="SnpArrays.jl">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
+    <style>
+      @font-face {
+      	font-family: 'Icon';
+      	src: url('../../assets/fonts/icon.eot?52m981');
+      	src: url('../../assets/fonts/icon.eot?#iefix52m981')
+               format('embedded-opentype'),
+      		   url('../../assets/fonts/icon.woff?52m981')
+               format('woff'),
+      		   url('../../assets/fonts/icon.ttf?52m981')
+               format('truetype'),
+      		   url('../../assets/fonts/icon.svg?52m981#icon')
+               format('svg');
+      	font-weight: normal;
+      	font-style: normal;
+      }
+    </style>
+    <link rel="stylesheet" href="../../assets/stylesheets/application-a422ff04cc.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/palettes-05ab2406df.css">
+    
+    
+      
+      
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
+      <style>
+        body, input {
+          font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
+        }
+        pre, code {
+          font-family: 'Ubuntu Mono', 'Courier New', 'Courier', monospace;
+        }
+      </style>
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+    <script src="../../assets/javascripts/modernizr-4ab42b99fd.js"></script>
+    
+  </head>
+  
+  
+  
+  <body class="palette-primary-indigo palette-accent-blue">
+    
+      
+      
+    
+    <div class="backdrop">
+      <div class="backdrop-paper"></div>
+    </div>
+    <input class="toggle" type="checkbox" id="toggle-drawer">
+    <input class="toggle" type="checkbox" id="toggle-search">
+    <label class="toggle-button overlay" for="toggle-drawer"></label>
+    <header class="header">
+      <nav aria-label="Header">
+  <div class="bar default">
+    <div class="button button-menu" role="button" aria-label="Menu">
+      <label class="toggle-button icon icon-menu" for="toggle-drawer">
+        <span></span>
+      </label>
+    </div>
+    <div class="stretch">
+      <div class="title">
+        
+          <span class="path">
+            
+              
+                Manual <i class="icon icon-link"></i>
+              
+            
+          </span>
+        
+        HaplotypeArray
+      </div>
+    </div>
+    
+    
+    <div class="button button-search" role="button" aria-label="Search">
+      <label class="toggle-button icon icon-search" title="Search" for="toggle-search"></label>
+    </div>
+  </div>
+  <div class="bar search">
+    <div class="button button-close" role="button" aria-label="Close">
+      <label class="toggle-button icon icon-back" for="toggle-search"></label>
+    </div>
+    <div class="stretch">
+      <div class="field">
+        <input class="query" type="text" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck>
+      </div>
+    </div>
+    <div class="button button-reset" role="button" aria-label="Search">
+      <button class="toggle-button icon icon-close" id="reset-search"></button>
+    </div>
+  </div>
+</nav>
+    </header>
+    <main class="main">
+      
+      <div class="drawer">
+        <nav aria-label="Navigation">
+  
+  <a href="https://github.com/OpenMendel/SnpArrays.jl" class="project">
+    <div class="banner">
+      
+      <div class="name">
+        <strong>
+          SnpArrays.jl
+          <span class="version">
+            
+          </span>
+        </strong>
+        
+          <br>
+          OpenMendel/SnpArrays.jl
+        
+      </div>
+    </div>
+  </a>
+  <div class="scrollable">
+    <div class="wrapper">
+      
+        <ul class="repo">
+          <li class="repo-download">
+            
+            <a href="https://github.com/OpenMendel/SnpArrays.jl/archive/master.zip" target="_blank" title="Download" data-action="download">
+              <i class="icon icon-download"></i> Download
+            </a>
+          </li>
+          <li class="repo-stars">
+            <a href="https://github.com/OpenMendel/SnpArrays.jl/stargazers" target="_blank" title="Stargazers" data-action="star">
+              <i class="icon icon-star"></i> Stars
+              <span class="count">&ndash;</span>
+            </a>
+          </li>
+        </ul>
+        <hr>
+      
+      <div class="toc">
+        <ul>
+          
+            
+  <li>
+    <a class="" title="Home" href="../..">
+      Home
+    </a>
+    
+  </li>
+
+          
+            
+  <li>
+    <span class="section">Manual</span>
+    <ul>
+      
+        
+  <li>
+    <a class="" title="SnpArray" href="../snparray/">
+      SnpArray
+    </a>
+    
+  </li>
+
+      
+        
+  <li>
+    <a class="" title="SnpData" href="../snpdata/">
+      SnpData
+    </a>
+    
+  </li>
+
+      
+        
+  <li>
+    <a class="current" title="HaplotypeArray" href="./">
+      HaplotypeArray
+    </a>
+    
+      
+        
+      
+      
+        <ul>
+          
+            <li class="anchor">
+              <a title="Constructor" href="#constructor">
+                Constructor
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Summary statistics" href="#summary-statistics">
+                Summary statistics
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Subsetting and assignment" href="#subsetting-and-assignment">
+                Subsetting and assignment
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Copy and convert" href="#copy-and-convert">
+                Copy and convert
+              </a>
+            </li>
+          
+        </ul>
+      
+    
+  </li>
+
+      
+    </ul>
+  </li>
+
+          
+        </ul>
+        
+      </div>
+    </div>
+  </div>
+</nav>
+      </div>
+      <article class="article">
+        <div class="wrapper">
+          
+          <p><a id='HaplotypeArray-1'></a></p>
+<h1 id="haplotypearray">HaplotypeArray</h1>
+<p>The <code>HaplotypeArray</code> type is similar to <a href="../snparray/#SnpArray-1">SnpArray</a>, but with two key differences:   * The two alleles are ordered, therefore (A1, A2) is different from (A2, A1);   * The code <code>(true,false)</code> means the genotype (A2, A1), instead of the missing genotype in <code>SnpArray</code>.</p>
+<table>
+<thead>
+<tr>
+<th align="center">Genotype</th>
+<th align="center">HaplotypeArray</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">A1,A1</td>
+<td align="center">(false,false)</td>
+</tr>
+<tr>
+<td align="center">A1,A2</td>
+<td align="center">(false,true)</td>
+</tr>
+<tr>
+<td align="center">A2,A1</td>
+<td align="center">(true,false)</td>
+</tr>
+<tr>
+<td align="center">A2,A2</td>
+<td align="center">(true,true)</td>
+</tr>
+</tbody>
+</table>
+<p>Each bit <code>true</code> in <code>HaplotypeArray</code> indicates a copy of the A2 allele. </p>
+<p><a id='Constructor-1'></a></p>
+<h2 id="constructor">Constructor</h2>
+<p>There are various ways to initialize a <code>HaplotypeArray</code>.   * <code>HaplotypeArray</code> can be intialized from two <code>BitArray</code>s. Each <code>BitArray</code> indicates an A2 allele copy in the first and second positions respectively.</p>
+<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">SnpArrays</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">HaplotypeArray</span><span class="p">(</span><span class="n">bitrand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">bitrand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x3 SnpArrays.HaplotypeArray{2}:
+ (true,true)    (false,false)  (true,false)
+ (true,true)    (false,false)  (true,false)
+ (true,false)   (true,false)   (true,false)
+ (true,false)   (false,false)  (true,false)
+ (false,false)  (false,true)   (true,true)
+</pre></div>
+
+
+<ul>
+<li><code>HaplotypeArray</code> can be intialized from a <code>SnpArray</code>.</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">SnpArray</span><span class="p">(</span><span class="n">bitrand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">bitrand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">HaplotypeArray</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x3 SnpArrays.HaplotypeArray{2}:
+ (true,false)  (true,false)   (true,true)  
+ (true,false)  (true,true)    (true,false) 
+ (false,true)  (false,true)   (true,true)  
+ (true,false)  (false,false)  (false,false)
+ (true,false)  (false,true)   (true,true)
+</pre></div>
+
+
+<p>This constructor does <strong>not</strong> copy data from <code>SnpArray</code>. Therefore both <code>h</code> and <code>s</code> points to the same patch of memory. Only the interpretation of <code>(true, false)</code> changes.</p>
+<div class="codehilite"><pre><span></span><span class="n">isnan</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x3 BitArray{2}:
+  true   true  false
+  true  false   true
+ false  false  false
+  true  false  false
+  true  false  false
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span><span class="n">isnan</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x3 BitArray{2}:
+ false  false  false
+ false  false  false
+ false  false  false
+ false  false  false
+ false  false  false
+</pre></div>
+
+
+<p>Changes to <code>h</code> also effect <code>s</code>.</p>
+<div class="codehilite"><pre><span></span><span class="n">h</span><span class="p">[</span><span class="n">h</span> <span class="o">.==</span> <span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">false</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">true</span><span class="p">)</span>
+<span class="n">isnan</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x3 BitArray{2}:
+ false  false  false
+ false  false  false
+ false  false  false
+ false  false  false
+ false  false  false
+</pre></div>
+
+
+<ul>
+<li><code>HaplotypeArray(m, n)</code> generates an m by n <code>HaplotypeArray</code> of all A1 alleles.</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="n">HaplotypeArray</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x3 SnpArrays.HaplotypeArray{2}:
+ (false,false)  (false,false)  (false,false)
+ (false,false)  (false,false)  (false,false)
+ (false,false)  (false,false)  (false,false)
+ (false,false)  (false,false)  (false,false)
+ (false,false)  (false,false)  (false,false)
+</pre></div>
+
+
+<p><a id='Summary-statistics-1'></a></p>
+<h2 id="summary-statistics">Summary statistics</h2>
+<p><code>summarize</code> when applied to a <code>HaplotypeArray</code> only computes  </p>
+<ul>
+<li><code>maf</code>: minor allele frequencies, taking into account of missingness.  </li>
+<li><code>minor_allele</code>: a <code>BitVector</code> indicating the minor allele for each SNP.   <code>minor_allele[j]==true</code> means A1 is the minor allele for SNP j; <code>minor_allele[j]==false</code> means A2 is the minor allele for SNP j.  </li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="n">maf</span><span class="p">,</span> <span class="n">minor_allele</span> <span class="o">=</span> <span class="n">summarize</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>([0.09999999999999998,0.4,0.19999999999999996],Bool[true,true,true])
+</pre></div>
+
+
+<p><a id='Subsetting-and-assignment-1'></a></p>
+<h2 id="subsetting-and-assignment">Subsetting and assignment</h2>
+<p>Subsetting and assignment work the same as <a href="../snparray/#SnpArray-1">SnpArray</a>.</p>
+<p><a id='Copy-and-convert-1'></a></p>
+<h2 id="copy-and-convert">Copy and convert</h2>
+<p>Copying or converting a <code>HaplotypeArray</code> or slices of it to numeric arrays of <strong>minor allele counts</strong> is similar to <code>SnpArray</code> with the exception there are no missing genotypes in <code>HaplotypeArray</code>. So the keyword <code>impute</code> is not relevant anymore.</p>
+<div class="codehilite"><pre><span></span><span class="c"># convert to Matrix{Float64}</span>
+<span class="n">h_f64</span> <span class="o">=</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Matrix</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">h</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x3 Array{Float64,2}:
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+ 1.0  1.0  0.0
+ 0.0  2.0  2.0
+ 0.0  1.0  0.0
+</pre></div>
+
+
+<p>By default <code>convert</code> translates genotypes according to the <em>additive</em> SNP model, which essentially counts the number of <strong>minor allele</strong> (0, 1 or 2) per genotype. Other SNP models are <em>dominant</em> and <em>recessive</em>, both in terms of the <strong>minor allele</strong>. When <code>A1</code> is the minor allele, genotypes are translated to real number according to</p>
+<table>
+<thead>
+<tr>
+<th align="center">Genotype</th>
+<th align="center"><code>HaplotypeArray</code></th>
+<th align="center"><code>model=:additive</code></th>
+<th align="center"><code>model=:dominant</code></th>
+<th align="center"><code>model=:recessive</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">A1,A1</td>
+<td align="center">00</td>
+<td align="center">2</td>
+<td align="center">1</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center">A1,A2</td>
+<td align="center">01</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">A2,A1</td>
+<td align="center">10</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">A2,A2</td>
+<td align="center">11</td>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center">0</td>
+</tr>
+</tbody>
+</table>
+<p>When <code>A2</code> is the minor allele, genotypes are translated according to</p>
+<table>
+<thead>
+<tr>
+<th align="center">Genotype</th>
+<th align="center"><code>HaplotypeArray</code></th>
+<th align="center"><code>model=:additive</code></th>
+<th align="center"><code>model=:dominant</code></th>
+<th align="center"><code>model=:recessive</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">A1,A1</td>
+<td align="center">00</td>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">A1,A2</td>
+<td align="center">01</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">A2,A1</td>
+<td align="center">01</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">A2,A2</td>
+<td align="center">11</td>
+<td align="center">2</td>
+<td align="center">1</td>
+<td align="center">1</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><span class="p">[</span><span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="p">:</span><span class="n">additive</span><span class="p">)</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="p">:</span><span class="n">dominant</span><span class="p">)</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="p">:</span><span class="n">recessive</span><span class="p">)]</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x3 Array{Float64,2}:
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+ 2.0  1.0  1.0
+ 0.0  0.0  0.0
+</pre></div>
+
+
+<p>By default <code>convert</code> does <strong>not</strong> center and scale genotypes. Setting the optional arguments <code>center=true, scale=true</code> centers genotypes at 2MAF and scales them by $[2 \cdot \text{MAF} \cdot (1 - \text{MAF})]^{-1/2}$. Mono-allelic SNPs (MAF=0) are not scaled.</p>
+<div class="codehilite"><pre><span></span><span class="p">[</span><span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">h</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">h</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">];</span> <span class="n">center</span> <span class="o">=</span> <span class="n">true</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">true</span><span class="p">)]</span>
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>5x2 Array{Float64,2}:
+ 0.0  -0.707107
+ 0.0  -0.707107
+ 0.0  -0.707107
+ 2.0   2.82843 
+ 0.0  -0.707107
+</pre></div>
+
+
+<p><code>copy!</code> is the in-place version of <code>convert()</code>. Options such as GWAS loop over SNPs and perform statistical anlaysis for each SNP. This can be achieved by</p>
+<div class="codehilite"><pre><span></span><span class="n">g</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">copy!</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">h</span><span class="p">[:,</span> <span class="n">j</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="p">:</span><span class="n">additive</span><span class="p">)</span>
+    <span class="c"># do statistical anlaysis</span>
+<span class="k">end</span>
+</pre></div>
+          <aside class="copyright" role="note">
+            
+            Documentation built with
+            <a href="http://www.mkdocs.org" target="_blank">MkDocs</a>
+            using the
+            <a href="http://squidfunk.github.io/mkdocs-material/" target="_blank">
+              Material
+            </a>
+            theme.
+          </aside>
+          
+            <footer class="footer">
+              
+  <nav class="pagination" aria-label="Footer">
+    <div class="previous">
+      
+        <a href="../snpdata/" title="SnpData">
+          <span class="direction">
+            Previous
+          </span>
+          <div class="page">
+            <div class="button button-previous" role="button" aria-label="Previous">
+              <i class="icon icon-back"></i>
+            </div>
+            <div class="stretch">
+              <div class="title">
+                SnpData
+              </div>
+            </div>
+          </div>
+        </a>
+      
+    </div>
+    <div class="next">
+      
+    </div>
+  </nav>
+
+            </footer>
+          
+        </div>
+      </article>
+      <div class="results" role="status" aria-live="polite">
+        <div class="scrollable">
+          <div class="wrapper">
+            <div class="meta"></div>
+            <div class="list"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      var base_url = '../..';
+      var repo_id  = 'OpenMendel/SnpArrays.jl';
+    </script>
+    <script src="../../assets/javascripts/application-997097ee0c.js"></script>
+    
+      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    
+      <script src="../../assets/mathjaxhelper.js"></script>
+    
+    
+  </body>
+</html>
