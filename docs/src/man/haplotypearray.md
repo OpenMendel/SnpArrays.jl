@@ -2,8 +2,9 @@
 # HaplotypeArray
 
 The `HaplotypeArray` type is similar to [SnpArray](@ref), but with two key differences:  
+
 * The two alleles are ordered, therefore (A1, A2) is different from (A2, A1);  
-* The code `(true,false)` means the genotype (A2, A1), instead of the missing genotype in `SnpArray`.
+* The code `(true,false)` means the genotype (A2, A1), instead of the missing genotype in `SnpArray`.  
 
 | Genotype | HaplotypeArray |  
 |:---:|:---:|  
@@ -16,6 +17,7 @@ Each bit `true` in `HaplotypeArray` indicates a copy of the A2 allele.
 ## Constructor
 
 There are various ways to initialize a `HaplotypeArray`.  
+
 * `HaplotypeArray` can be intialized from two `BitArray`s. Each `BitArray` indicates an A2 allele copy in the first and second positions respectively.
 
 
