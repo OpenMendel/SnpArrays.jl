@@ -2,7 +2,7 @@
 
 *Compressed storage for SNP data*
 
-`SnpArrays.jl` implements the `SnpArray` and `HaplotypeArray` types for handling biallelic genotypes.
+`SnpArrays.jl` implements the [SnpArray](@ref), [SnpData](@ref) and [HaplotypeArray](@ref) types for handling biallelic genotypes.
 
 ## Package Features
 
