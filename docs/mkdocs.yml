@@ -31,3 +31,4 @@ pages:
 - Home: index.md
 - Manual:
   - SnpArray: man/snparray.md
+  - SnpData: man/snpdata.md

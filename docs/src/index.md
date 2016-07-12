@@ -28,6 +28,7 @@ This package supports Julia `0.4`.
 ```@contents
 Pages = [
     "man/snparray.md",
+    "man/snpdata.md",
 ]
 Depth = 2
 ```
