@@ -1,6 +1,6 @@
 using Documenter, SnpArrays
 
-run(`jupyter nbconvert --to markdown snparray.ipynb --output ./src/man/snparray.md`)
+run(`jupyter nbconvert --to markdown ./docs/snparray.ipynb --output ./docs/src/man/snparray.md`)
 makedocs()
 deploydocs(
   deps   = Deps.pip("mkdocs", "python-markdown-math", "jupyter"),
