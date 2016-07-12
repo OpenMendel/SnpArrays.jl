@@ -29,6 +29,7 @@ This package supports Julia `0.4`.
 Pages = [
     "man/snparray.md",
     "man/snpdata.md",
+    "man/haplotypearray.md"
 ]
 Depth = 2
 ```

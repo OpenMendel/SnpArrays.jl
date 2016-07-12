@@ -1,7 +1,7 @@
 
 # SnpData
 
-`SnpData` type stores all SNP information besides genotypes. We initialize `SnpData` from Plink binary files. Note all three Plink files `.bed`, `.bim`, and `.fam` need to be present.
+`SnpData` stores all SNP information besides genotypes. We initialize `SnpData` from Plink binary files. Note all three Plink files `.bed`, `.bim` and `.fam` need to be present.
 
 
 ```julia
