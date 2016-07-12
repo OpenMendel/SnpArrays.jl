@@ -15,8 +15,7 @@ Use the Julia package manager to install SnpArrays.jl:
 
 ## Documentation
 
-* [tutorial](https://github.com/OpenMendel/SnpArrays.jl/blob/master/docs/snparray.ipynb) on `SnpArray`.  
-* [tutorial](https://github.com/OpenMendel/SnpArrays.jl/blob/master/docs/haplotypearray.ipynb) on `HaplotypeArray`.
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/SnpArrays.jl/latest)
 
 ## OpenMendel
 
