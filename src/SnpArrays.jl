@@ -213,7 +213,7 @@ function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
   copy!(B, A; model = model, impute = impute, center = center, scale = scale)
 end # function Base.convert
 
-function Base.copy!{T <: Real, N}(B::Array{T, N}, A::SnpLike{N};
+function Base.copy!{T <: Real, N}(B::AbstractArray{T, N}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false)
   @assert size(B) == size(A) "Dimensions do not match"
