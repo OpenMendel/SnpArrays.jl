@@ -22,5 +22,5 @@ Use the Julia package manager to install SnpArrays.jl:
 SnpArrays is one component of the umbrella [OpenMendel](https://github.com/OpenMendel) project. See [cite]() if you use the code in your research.
 
 ## Acknowledgments
-This project is supported by the National Institutes of Health under NIGMS award number R01GM053275 and NHGRI award number R01HG006139.
+This project is supported by the National Institutes of Health under NIGMS award number R01GM053275, NHGRI award number R01HG006139, and NIGMS award number R25GM103774.
 	
