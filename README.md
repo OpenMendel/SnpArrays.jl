@@ -7,20 +7,27 @@
 
 <b>SnpArrays</b> provides utilities for handling compressed storage of biallelic [SNP (Single-Nucleotide Polymorphism)](https://en.wikipedia.org/wiki/Single-nucleotide_polymorphism) data.
 
-## Installation
-
-Use the Julia package manager to install SnpArrays.jl:
-
-    Pkg.clone("git@github.com:OpenMendel/SnpArrays.jl.git")
-
-## Documentation
-
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/SnpArrays.jl/latest)
 
-## OpenMendel
+## Installation
 
-SnpArrays is one component of the umbrella [OpenMendel](https://github.com/OpenMendel) project. See [cite]() if you use the code in your research.
+*Note: Three OpenMendel packages - [SnpArrays](https://github.com/OpenMendel/SnpArrays.jl), [Search](https://github.com/OpenMendel/Search.jl), and [MendelBase](https://github.com/OpenMendel/MendelBase.jl) must be installed before any Mendel analysis packages will run.*
+
+Within Julia, use the package manager to install MendelSnpArrays:
+
+    Pkg.clone("git@github.com:OpenMendel/MendelSnpArrays.jl.git")
+
+This package supports Julia v0.4.
+
+## Citation
+
+If you use [OpenMendel](https://openmendel.github.io) analysis packages in your research, please cite the following reference in the resulting publications:
+
+Lange K, Papp JC, Sinsheimer JS, Sripracha R, Zhou H, Sobel EM (2013) Mendel: The Swiss army knife of genetic analysis programs. Bioinformatics 29:1568-1570.
+
+<!--- ## Contributing
+We welcome contributions to this Open Source project. To contribute, follow this procedure ... --->
 
 ## Acknowledgments
-This project is supported by the National Institutes of Health under NIGMS award number R01GM053275, NHGRI award number R01HG006139, and NIGMS award number R25GM103774.
-	
+
+This project is supported by the National Institutes of Health under NIGMS awards R01GM053275 and R25GM103774 and NHGRI award R01HG006139.
