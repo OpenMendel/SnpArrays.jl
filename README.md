@@ -30,4 +30,4 @@ We welcome contributions to this Open Source project. To contribute, follow this
 
 ## Acknowledgments
 
-This project is supported by the National Institutes of Health under NIGMS awards R01GM053275 and R25GM103774 and NHGRI award R01HG006139.https://github.com/
+This project is supported by the National Institutes of Health under NIGMS awards R01GM053275 and R25GM103774 and NHGRI award R01HG006139.
