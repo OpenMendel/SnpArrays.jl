@@ -1,7 +1,10 @@
 module HaplotypeArraysTest
 
+using Compat
+import Compat:view, issymmetric, is_unix
+
 using SnpArrays
-if VERSION >= v"0.5.0-dev+7720"
+if VERSION >= v"0.5.0"
     using Base.Test
 else
     using BaseTestNext
