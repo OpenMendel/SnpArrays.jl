@@ -6,7 +6,6 @@ import Compat: view
 import IterativeSolvers: MatrixFcn
 import Base: filter
 @compat import Base.issym
-@compat import Base.issymmetric
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
   SnpArray, SnpData, summarize, writeplink,
   SnpLike
@@ -677,7 +676,7 @@ end # function AcstAcs_mul_B!
 Cheating: to bypass the isssym() error thrown by arpack.jl
 """
 @compat Base.issym{T}(fcn::MatrixFcn{T}) = true
-@compat Base.issymmetric{T}(fcn::MatrixFcn{T}) = true
+@compat issymmetric{T}(fcn::MatrixFcn{T}) = true
 
 """
 Standardized A (centered by `center` and scaled by `weight`) multiply B.
