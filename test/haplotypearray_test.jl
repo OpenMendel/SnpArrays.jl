@@ -98,7 +98,7 @@ end
   @test typeof(minor_allele) == Bool
   # summarize a view of HaplotypeVector
   h1 = h[:, 1]
-  summarize(sub(h1, 1:10))
+  summarize(view(h1, 1:10))
   # corner case: m = 0 (SnpArray is empty)
   h = HaplotypeArray(0, 5)
   maf, = summarize(h)

@@ -71,7 +71,7 @@ function writeplink(filename::AbstractString, snpdata::SnpData)
   write(fid, UInt8[0x01])
   plinkbits = Mmap.mmap(fid, BitArray{3},
     (2, 4ceil(Int, 0.25snpdata.people), snpdata.snps))
-  copy!(slice(plinkbits, 1, 1:snpdata.people, :), snpdata.snpmatrix.A1)
-  copy!(slice(plinkbits, 2, 1:snpdata.people, :), snpdata.snpmatrix.A2)
+  copy!(view(plinkbits, 1, 1:snpdata.people, :), snpdata.snpmatrix.A1)
+  copy!(view(plinkbits, 2, 1:snpdata.people, :), snpdata.snpmatrix.A2)
   close(fid)
 end

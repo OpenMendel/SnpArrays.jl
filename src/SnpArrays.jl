@@ -1,5 +1,8 @@
 module SnpArrays
 
+using Compat
+import Compat:view, svds, issymmetric
+
 import IterativeSolvers: MatrixFcn
 import Base: filter
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
@@ -22,6 +25,13 @@ Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
 function SnpArray{T <: Real}(a1count::AbstractArray{T})
     SnpArray(a1count .> one(T), a1count .> zero(T))
 end
+
+"""
+Create a SnpArray with all A1 alleles.
+"""
+function SnpArray(dims...)
+  SnpArray(falses(dims), falses(dims))
+end #
 
 """
     SnpArray(plinkFile, [people], [snps])
@@ -51,14 +61,14 @@ function SnpArray(
       # SNP-major
       plinkbits = Mmap.mmap(plinkBedfile, BitArray{3},
         (2, 4ceil(Int, 0.25people), snps), Int64(3))
-      A1 = copy!(A1, slice(plinkbits, 1, 1:people, :))
-      A2 = copy!(A2, slice(plinkbits, 2, 1:people, :))
+      A1 = copy!(A1, view(plinkbits, 1, 1:people, :))
+      A2 = copy!(A2, view(plinkbits, 2, 1:people, :))
     else
       # individual-major
       snpbits = Mmap.mmap(plinkBedfile, BitArray{3},
         (2, 4ceil(Int, 0.25snps), people), Int64(3))
-      A1 = copy!(A1, slice(plinkbits, 1, 1:people, :)')
-      A2 = copy!(A2, slice(plinkbits, 2, 1:people, :)')
+      A1 = copy!(A1, view(plinkbits, 1, 1:people, :)')
+      A2 = copy!(A2, view(plinkbits, 2, 1:people, :)')
     end
   else
     # TODO: v0.99 BED file: individual-major
@@ -225,7 +235,7 @@ function Base.copy!{T <: Real, N}(B::AbstractArray{T, N}, A::SnpLike{N};
   # convert column by column
   @inbounds for j in 1:n
     # first pass: find minor allele and its frequency
-    maf, minor_allele = summarize(slice(A, :, j))
+    maf, minor_allele = summarize(view(A, :, j))
     # second pass: impute, convert, center, scale
     ct = convert(T, 2.0maf)
     wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
@@ -260,7 +270,7 @@ function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
   @inbounds for j in 1:n
     colptr[j] = convert(TI, length(nzval) + 1)
     # first pass: find minor allele and its frequency
-    maf, minor_allele, = summarize(sub(A, :, j))
+    maf, minor_allele, = summarize(view(A, :, j))
     # second pass: impute, convert
     for i in 1:m
       (a1, a2) = A[i, j]
@@ -438,7 +448,7 @@ function filter(
   person_index = trues(n)
   for r in 1:maxiters
     # summary statistics of remaining people/SNPs
-    storage = summarize(sub(A, person_index, snp_index))
+    storage = summarize(view(A, person_index, snp_index))
     if (maximum(storage[3]) / countnz(person_index) <
       1.0 - min_success_rate_per_snp) &&
       (maximum(storage[4]) / countnz(snp_index) <
@@ -487,14 +497,14 @@ function _grm(A::SnpLike{2}, memory_limit::Real = 2.0^30)
     snpchunk = zeros(n, chunksize)
     for chunk in 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):(chunk * chunksize)
-      copy!(snpchunk, sub(A, :, J); model = :additive,
+      copy!(snpchunk, view(A, :, J); model = :additive,
         impute = true, center = true, scale = true)
       BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
     if length(J) > 0
-      snpchunk = convert(Matrix{Float64}, sub(A, :, J); model = :additive,
+      snpchunk = convert(Matrix{Float64}, view(A, :, J); model = :additive,
         impute = true, center = true, scale = true)
       BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
@@ -519,7 +529,7 @@ function _mom(A::SnpLike{2}, memory_limit::Real = 2.0^30)
     snpchunk = zeros(n, chunksize)
     for chunk in 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):chunk * chunksize
-      copy!(snpchunk, sub(A, :, J); model = :additive, impute = true)
+      copy!(snpchunk, view(A, :, J); model = :additive, impute = true)
       @inbounds @simd for i in eachindex(snpchunk)
         snpchunk[i] -= 1.0
       end
@@ -528,7 +538,7 @@ function _mom(A::SnpLike{2}, memory_limit::Real = 2.0^30)
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
     if length(J) > 0
-      snpchunk = convert(Matrix{Float64}, sub(A, :, J);
+      snpchunk = convert(Matrix{Float64}, view(A, :, J);
         model = :additive, impute = true)
       @inbounds @simd for i in eachindex(snpchunk)
         snpchunk[i] -= 1.0
@@ -581,16 +591,16 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
   G = Mmap.mmap(t, (n, p))
   copy!(G, A; model = :additive, impute = true, center = true, scale = true)
   # partial SVD
-  _, pcvariance, pcloading = svds(G, nsv = pcs)
+  Gsvd, = svds(G; nsv = pcs)
   # make first entry of each eigenvector nonneagtive for identifiability
-  identify!(pcloading)
-  pcscore = G * pcloading
+  identify!(Gsvd[:Vt])
+  pcscore = G * Gsvd[:Vt]
   # square singular values and scale by n - 1 to get eigenvalues of the
   # covariance matrix
   @inbounds @simd for i in 1:pcs
-    pcvariance[i] = pcvariance[i] * pcvariance[i] / (n - 1)
+    Gsvd[:S][i] = Gsvd[:S][i] * Gsvd[:S][i] / (n - 1)
   end
-  return pcscore, pcloading, pcvariance
+  return pcscore, Gsvd[:Vt], Gsvd[:S]
 end # function pca
 
 function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
@@ -607,7 +617,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
   Gs = MatrixFcn{eltype(center)}(p, p,
     (output, v) -> AcstAcs_mul_B!(output, G, v, center, weight, tmpv))
   # PCs
-  pcvariance, pcloading = eigs(Gs, nev = pcs)
+  pcvariance, pcloading, = eigs(Gs, nev = pcs)
   # make first entry of each eigenvector nonneagtive for identifiability
   identify!(pcloading)
   # pcscore = Gs * pcloading
@@ -623,8 +633,8 @@ end # function pca_sp
 """
 Gram matrix Acs'Acs multiply B, where Acs is the centered and scaled A.
 """
-function AcstAcs_mul_B!{T}(output::Vector{T}, A::AbstractMatrix,
-  b::Vector{T}, center::Vector{T}, weight::Vector{T},
+function AcstAcs_mul_B!{T}(output::AbstractVector{T}, A::AbstractMatrix,
+  b::AbstractVector{T}, center::AbstractVector{T}, weight::AbstractVector{T},
   tmp::Vector{T} = zeros(eltype(b), size(A, 1)))
   # output is used as a temporary vector here
   @inbounds @simd for i in eachindex(output)
@@ -646,7 +656,7 @@ end # function AcstAcs_mul_B!
 """
 Cheating: to bypass the isssym() error thrown by arpack.jl
 """
-Base.issym{T}(fcn::MatrixFcn{T}) = true
+Base.issymmetric{T}(fcn::MatrixFcn{T}) = true
 
 """
 Standardized A (centered by `center` and scaled by `weight`) multiply B.
@@ -661,7 +671,7 @@ function Acs_mul_B!{T, N}(output::AbstractArray{T, N}, A::AbstractMatrix,
   end
   A_mul_B!(output, A, tmp)
   @inbounds for j in 1:size(output, 2)
-    shift = dot(center, sub(tmp, :, j))
+    shift = dot(center, view(tmp, :, j))
     @simd for i in 1:size(output, 1)
       output[i, j] -= shift
     end

@@ -1,5 +1,8 @@
 module SnpArraysTest
 
+using Compat
+import Compat:view, issymmetric, is_unix
+
 using SnpArrays
 if VERSION >= v"0.5.0-dev+7720"
     using Base.Test
@@ -155,7 +158,7 @@ end
   @test missings == n
   # summarize a view of SnpVector
   snp1 = snp[:, 1]
-  summarize(sub(snp1, 1:10))
+  summarize(view(snp1, 1:10))
   # corner case: m = 0 (SnpArray is empty)
   snp = SnpArray(0, 5)
   maf, = summarize(snp)
@@ -174,7 +177,7 @@ end
   @inferred filter(hapmap, 0.98, 0.98, 5)
   snp_idx, person_idx = filter(hapmap, 0.98, 0.98)
   _, _, missings_by_snp, missings_by_person =
-    summarize(sub(hapmap, person_idx, snp_idx))
+    summarize(view(hapmap, person_idx, snp_idx))
   @test 1.0 - maximum(missings_by_snp) / length(missings_by_person) ≥ 0.98
   @test 1.0 - maximum(missings_by_person) / length(missings_by_snp) ≥ 0.98
 end
@@ -186,7 +189,7 @@ end
   #@code_warntype _grm(snp, 2.0^30)
   @inferred _grm(snp, 2.0^30)
   Φ_grm = grm(snp; method = :GRM)
-  @test issym(Φ_grm)
+  @test issymmetric(Φ_grm)
   @test all(eigvals(Φ_grm) .≥ -1.0e-6)
   # GRM: restrict memory usage to 5KB
   Φ_grm_memlim = grm(snp; method = :GRM, memory_limit = 5 * 2^10)
@@ -195,7 +198,7 @@ end
   #@code_warntype _mom(snp, 2.0^30)
   @inferred _mom(snp, 2.0^30)
   Φ_mom = grm(snp; method = :MoM)
-  @test issym(Φ_mom)
+  @test issymmetric(Φ_mom)
   # MoM is not guaranteed to be psd:
   #@test all(eigvals(Φ_mom) .≥ -1.0e-6)
   # MoM: restrict memory usage to 1KB
@@ -213,7 +216,7 @@ end
   _, _, pcvariance_f16 = pca(snp, 3, Matrix{Float32})
   @test vecnorm(pcvariance_f16 - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
   _, _, pcvariance_f32sp = pca_sp(snp, 3, SparseMatrixCSC{Float32, UInt32})
-  @test vecnorm(pcvariance_f32 - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
+  @test vecnorm(pcvariance_f32sp - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
 end
 
 @testset "SnpData" begin
@@ -235,14 +238,16 @@ end
 end
 
 # somehow the rm function causes error on Windows
-@unix_only @testset "Write Plink" begin
-  hapmapdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
-  testfile = Pkg.dir("SnpArrays") * "/test/testhapmap"
-  writeplink(testfile, hapmapdata)
-  hapmaptest = SnpArray(testfile; people = 324, snps = 13928)
-  @test all(hapmapdata.snpmatrix .== hapmaptest)
-  rm(testfile * ".bed")
-  rm(testfile * ".bim")
+@static if is_unix()
+  @testset "Write Plink" begin
+    hapmapdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+    testfile = Pkg.dir("SnpArrays") * "/test/testhapmap"
+    writeplink(testfile, hapmapdata)
+    hapmaptest = SnpArray(testfile; people = 324, snps = 13928)
+    @test all(hapmapdata.snpmatrix .== hapmaptest)
+    rm(testfile * ".bed")
+    rm(testfile * ".bim")
+  end
 end
 
 end # SnpArraysTest module

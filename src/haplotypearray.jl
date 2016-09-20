@@ -24,6 +24,10 @@ function SnpArray(h::HaplotypeArray)
   return s
 end
 
+function HaplotypeArray(dims...)
+  HaplotypeArray(falses(dims), falses(dims))
+end #
+
 # HaplotypeArray or a view of a HaplotypeArray
 typealias HaplotypeLike{N, H<:HaplotypeArray} Union{HaplotypeArray{N}, SubArray{NTuple{2, Bool}, N, H}}
 typealias HaplotypeMatrix HaplotypeArray{2}
@@ -133,7 +137,7 @@ function Base.copy!{T <: Real, N}(
   # convert column by column
   @inbounds for j in 1:n
     # first pass: find minor allele and its frequency
-    maf, minor_allele = summarize(sub(A, :, j))
+    maf, minor_allele = summarize(view(A, :, j))
     # second pass: convert, center, scale
     ct = convert(T, 2.0maf)
     wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
@@ -168,7 +172,7 @@ function Base.convert{T <: Real, TI <: Integer}(
   @inbounds for j in 1:n
     colptr[j] = convert(TI, length(nzval) + 1)
     # first pass: find minor allele and its frequency
-    maf, minor_allele = summarize(sub(A, :, j))
+    maf, minor_allele = summarize(view(A, :, j))
     # second pass: impute, convert
     for i in 1:m
       (a1, a2) = A[i, j]

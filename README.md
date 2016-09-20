@@ -17,7 +17,7 @@ Within Julia, use the package manager to install SnpArrays:
 
     Pkg.clone("https://github.com/OpenMendel/SnpArrays.jl.git")
 
-This package supports Julia v0.4.
+This package supports Julia v0.4 and v0.5.
 
 ## Citation
 
