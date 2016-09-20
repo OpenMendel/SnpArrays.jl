@@ -1,10 +1,11 @@
 module SnpArrays
 
 using Compat
-import Compat:view, svds, issymmetric
+import Compat: view
 
 import IterativeSolvers: MatrixFcn
 import Base: filter
+@compat import Base.issym
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
   SnpArray, SnpData, summarize, writeplink,
   SnpLike
@@ -590,17 +591,31 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
   # memory-mapped genotype matrix G, centered and scaled
   G = Mmap.mmap(t, (n, p))
   copy!(G, A; model = :additive, impute = true, center = true, scale = true)
-  # partial SVD
-  Gsvd, = svds(G; nsv = pcs)
-  # make first entry of each eigenvector nonneagtive for identifiability
-  identify!(Gsvd[:Vt])
-  pcscore = G * Gsvd[:Vt]
-  # square singular values and scale by n - 1 to get eigenvalues of the
-  # covariance matrix
-  @inbounds @simd for i in 1:pcs
-    Gsvd[:S][i] = Gsvd[:S][i] * Gsvd[:S][i] / (n - 1)
+  if VERSION ≥ v"0.5.0"
+    # partial SVD
+    Gsvd, = @compat svds(G; nsv = pcs)
+    # make first entry of each eigenvector nonnegative for identifiability
+    identify!(Gsvd[:Vt])
+    pcscore = G * Gsvd[:Vt]
+    # square singular values and scale by n - 1 to get eigenvalues of the
+    # covariance matrix
+    @inbounds @simd for i in 1:pcs
+      Gsvd[:S][i] = Gsvd[:S][i] * Gsvd[:S][i] / (n - 1)
+    end
+    return pcscore, Gsvd[:Vt], Gsvd[:S]
+  else
+    # partial SVD
+    _, pcvariance, pcloading = svds(G, nsv = pcs)
+    # make first entry of each eigenvector nonneagtive for identifiability
+    identify!(pcloading)
+    pcscore = G * pcloading
+    # square singular values and scale by n - 1 to get eigenvalues of the
+    # covariance matrix
+    @inbounds @simd for i in 1:pcs
+      pcvariance[i] = pcvariance[i] * pcvariance[i] / (n - 1)
+    end
+    return pcscore, pcloading, pcvariance
   end
-  return pcscore, Gsvd[:Vt], Gsvd[:S]
 end # function pca
 
 function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
@@ -656,7 +671,8 @@ end # function AcstAcs_mul_B!
 """
 Cheating: to bypass the isssym() error thrown by arpack.jl
 """
-Base.issymmetric{T}(fcn::MatrixFcn{T}) = true
+@compat Base.issym{T}(fcn::MatrixFcn{T}) = true
+#issym{T}(fcn::MatrixFcn{T}) = true
 
 """
 Standardized A (centered by `center` and scaled by `weight`) multiply B.

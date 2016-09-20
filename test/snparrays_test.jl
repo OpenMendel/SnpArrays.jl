@@ -1,7 +1,7 @@
 module SnpArraysTest
 
 using Compat
-import Compat:view, issymmetric, is_unix
+import Compat:view, is_unix
 
 using SnpArrays
 if VERSION >= v"0.5.0"
@@ -189,7 +189,7 @@ end
   #@code_warntype _grm(snp, 2.0^30)
   @inferred _grm(snp, 2.0^30)
   Φ_grm = grm(snp; method = :GRM)
-  @test issymmetric(Φ_grm)
+  @test @compat issymmetric(Φ_grm)
   @test all(eigvals(Φ_grm) .≥ -1.0e-6)
   # GRM: restrict memory usage to 5KB
   Φ_grm_memlim = grm(snp; method = :GRM, memory_limit = 5 * 2^10)
@@ -198,7 +198,7 @@ end
   #@code_warntype _mom(snp, 2.0^30)
   @inferred _mom(snp, 2.0^30)
   Φ_mom = grm(snp; method = :MoM)
-  @test issymmetric(Φ_mom)
+  @test @compat issymmetric(Φ_mom)
   # MoM is not guaranteed to be psd:
   #@test all(eigvals(Φ_mom) .≥ -1.0e-6)
   # MoM: restrict memory usage to 1KB
