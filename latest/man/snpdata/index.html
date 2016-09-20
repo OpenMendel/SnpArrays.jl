@@ -230,7 +230,7 @@
           
           <p><a id='SnpData-1'></a></p>
 <h1 id="snpdata">SnpData</h1>
-<p><code>SnpData</code> stores all SNP information besides genotypes. We initialize <code>SnpData</code> from Plink binary files. Note all three Plink files <code>.bed</code>, <code>.bim</code> and <code>.fam</code> need to be present.</p>
+<p><code>SnpData</code> stores all SNP information in addition to genotypes. We initialize <code>SnpData</code> from Plink binary files. Note all three Plink files <code>.bed</code>, <code>.bim</code> and <code>.fam</code> need to be present.</p>
 <div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">SnpArrays</span>
 <span class="n">hapmap_snpdata</span> <span class="o">=</span> <span class="n">SnpData</span><span class="p">(</span><span class="s">&quot;hapmap3&quot;</span><span class="p">)</span>
 <span class="n">fieldnames</span><span class="p">(</span><span class="n">hapmap_snpdata</span><span class="p">)</span>
