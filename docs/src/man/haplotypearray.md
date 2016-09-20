@@ -29,12 +29,12 @@ h = HaplotypeArray(bitrand(5, 3), bitrand(5, 3))
 
 
 
-    5x3 SnpArrays.HaplotypeArray{2}:
-     (true,true)    (false,false)  (true,false)
-     (true,true)    (false,false)  (true,false)
-     (true,false)   (true,false)   (true,false)
-     (true,false)   (false,false)  (true,false)
-     (false,false)  (false,true)   (true,true) 
+    5×3 SnpArrays.HaplotypeArray{2}:
+     (false,true)   (true,false)   (true,true)  
+     (false,false)  (false,false)  (false,false)
+     (true,false)   (true,false)   (true,false) 
+     (true,true)    (false,false)  (true,false) 
+     (true,true)    (false,true)   (true,false) 
 
 
 
@@ -49,12 +49,12 @@ h = HaplotypeArray(s)
 
 
 
-    5x3 SnpArrays.HaplotypeArray{2}:
-     (true,false)  (true,false)   (true,true)  
-     (true,false)  (true,true)    (true,false) 
-     (false,true)  (false,true)   (true,true)  
-     (true,false)  (false,false)  (false,false)
-     (true,false)  (false,true)   (true,true)  
+    5×3 SnpArrays.HaplotypeArray{2}:
+     (false,true)  (true,true)    (true,true) 
+     (true,true)   (true,true)    (true,true) 
+     (true,true)   (false,false)  (true,false)
+     (false,true)  (true,true)    (true,true) 
+     (true,true)   (false,false)  (false,true)
 
 
 
@@ -68,12 +68,12 @@ isnan(s)
 
 
 
-    5x3 BitArray{2}:
-      true   true  false
-      true  false   true
+    5×3 BitArray{2}:
      false  false  false
-      true  false  false
-      true  false  false
+     false  false  false
+     false  false   true
+     false  false  false
+     false  false  false
 
 
 
@@ -85,7 +85,7 @@ isnan(h)
 
 
 
-    5x3 BitArray{2}:
+    5×3 BitArray{2}:
      false  false  false
      false  false  false
      false  false  false
@@ -105,7 +105,7 @@ isnan(s)
 
 
 
-    5x3 BitArray{2}:
+    5×3 BitArray{2}:
      false  false  false
      false  false  false
      false  false  false
@@ -124,7 +124,7 @@ HaplotypeArray(5, 3)
 
 
 
-    5x3 SnpArrays.HaplotypeArray{2}:
+    5×3 SnpArrays.HaplotypeArray{2}:
      (false,false)  (false,false)  (false,false)
      (false,false)  (false,false)  (false,false)
      (false,false)  (false,false)  (false,false)
@@ -148,7 +148,7 @@ maf, minor_allele = summarize(h)
 
 
 
-    ([0.09999999999999998,0.4,0.19999999999999996],Bool[true,true,true])
+    ([0.2,0.4,0.1],Bool[true,true,true])
 
 
 
@@ -169,12 +169,12 @@ h_f64 = convert(Matrix{Float64}, h)
 
 
 
-    5x3 Array{Float64,2}:
+    5×3 Array{Float64,2}:
+     1.0  0.0  0.0
      0.0  0.0  0.0
-     0.0  0.0  0.0
-     1.0  1.0  0.0
-     0.0  2.0  2.0
-     0.0  1.0  0.0
+     0.0  2.0  0.0
+     1.0  0.0  0.0
+     0.0  2.0  1.0
 
 
 
@@ -204,12 +204,12 @@ When `A2` is the minor allele, genotypes are translated according to
 
 
 
-    5x3 Array{Float64,2}:
+    5×3 Array{Float64,2}:
      0.0  0.0  0.0
      0.0  0.0  0.0
      0.0  0.0  0.0
-     2.0  1.0  1.0
      0.0  0.0  0.0
+     1.0  1.0  0.0
 
 
 
@@ -223,12 +223,12 @@ By default `convert` does **not** center and scale genotypes. Setting the option
 
 
 
-    5x2 Array{Float64,2}:
-     0.0  -0.707107
-     0.0  -0.707107
-     0.0  -0.707107
-     2.0   2.82843 
-     0.0  -0.707107
+    5×2 Array{Float64,2}:
+     0.0  -0.471405
+     0.0  -0.471405
+     0.0  -0.471405
+     0.0  -0.471405
+     1.0   1.88562 
 
 
 
