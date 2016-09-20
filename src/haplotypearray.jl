@@ -137,7 +137,11 @@ function Base.copy!{T <: Real, N}(
   # convert column by column
   @inbounds for j in 1:n
     # first pass: find minor allele and its frequency
-    maf, minor_allele = summarize(view(A, :, j))
+    if N == 1
+      maf, minor_allele = summarize(A)
+    elseif N == 2
+      maf, minor_allele = summarize(view(A, :, j))
+    end
     # second pass: convert, center, scale
     ct = convert(T, 2.0maf)
     wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))

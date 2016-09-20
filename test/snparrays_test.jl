@@ -156,8 +156,10 @@ end
   # summarize a SnpVector
   _, _, missings = summarize(snp[:, 1])
   @test missings == n
+  _, _, missings = summarize(view(snp, :, 1))
+  @test missings == n
   # summarize a view of SnpVector
-  snp1 = snp[:, 1]
+    snp1 = snp[:, 1]
   summarize(view(snp1, 1:10))
   # corner case: m = 0 (SnpArray is empty)
   snp = SnpArray(0, 5)
