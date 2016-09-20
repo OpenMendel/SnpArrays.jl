@@ -1,14 +1,14 @@
 module SnpArrays
 
 using Compat
-import Compat: view
+import Compat: view, issymmetric
 
 import IterativeSolvers: MatrixFcn
 import Base: filter
-@compat import Base.issym
+@compat import Base.issymmetric
+
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
-  SnpArray, SnpData, summarize, writeplink,
-  SnpLike
+  SnpArray, SnpData, SnpLike, summarize, writeplink
 
 type SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
   A1::BitArray{N}
@@ -675,8 +675,7 @@ end # function AcstAcs_mul_B!
 """
 Cheating: to bypass the isssym() error thrown by arpack.jl
 """
-@compat Base.issym{T}(fcn::MatrixFcn{T}) = true
-@compat issymmetric{T}(fcn::MatrixFcn{T}) = true
+@compat Base.issymmetric(fcn::MatrixFcn) = true
 
 """
 Standardized A (centered by `center` and scaled by `weight`) multiply B.
