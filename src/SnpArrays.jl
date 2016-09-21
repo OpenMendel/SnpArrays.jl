@@ -4,10 +4,16 @@ using Compat
 import Compat: view
 
 import IterativeSolvers: MatrixFcn
-import Base: filter, issym
+import Base: filter
+
+if VERSION ≥ v"0.5.0"
+  import Base.issymmetric
+else
+  import Base.issym
+end
 
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
-  SnpArray, SnpData, SnpLike, summarize, writeplink
+  SnpArray, SnpData, SnpLike, summarize, writeplink, issym, issymmetric
 
 type SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
   A1::BitArray{N}
@@ -674,7 +680,11 @@ end # function AcstAcs_mul_B!
 """
 Cheating: to bypass the isssym() error thrown by arpack.jl
 """
-Base.issym(fcn::MatrixFcn) = true
+#if VERSION ≥ v"0.5.0"
+  issymmetric(fcn::MatrixFcn) = true
+#else
+  issym(fcn::MatrixFcn) = true
+#end
 
 """
 Standardized A (centered by `center` and scaled by `weight`) multiply B.
