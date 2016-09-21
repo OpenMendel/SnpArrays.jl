@@ -1,7 +1,7 @@
 module SnpArraysTest
 
 using Compat
-import Compat:view, is_unix
+import Compat:view, is_unix, issymmetric
 
 using SnpArrays
 if VERSION >= v"0.5.0"
