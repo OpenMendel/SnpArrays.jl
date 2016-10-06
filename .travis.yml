@@ -5,13 +5,17 @@ os:
   - osx
 julia:
   - 0.4
-  - release
+  - 0.5
   - nightly
 matrix:
   allow_failures:
     - julia: nightly
 notifications:
-  email: false
+  email:
+    on_success: change
+    on_failure: always 
+  recipients:
+    - esobel@ucla.edu
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("SnpArrays"); Pkg.test("SnpArrays"; coverage=true)'
