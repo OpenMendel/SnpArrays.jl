@@ -182,6 +182,24 @@ end
     summarize(view(hapmap, person_idx, snp_idx))
   @test 1.0 - maximum(missings_by_snp) / length(missings_by_person) ≥ 0.98
   @test 1.0 - maximum(missings_by_person) / length(missings_by_snp) ≥ 0.98
+
+  snpdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+  filtered_data = filter(snpdata, snp_idx, person_idx)
+  n, p = sum(person_idx), sum(snp_idx)
+  @test filtered_data.people == n
+  @test filtered_data.snps == p
+  @test length(filtered_data.personid) == n
+  @test length(filtered_data.snpid) == p
+  @test length(filtered_data.chromosome) == p
+  @test length(filtered_data.genetic_distance) == p
+  @test length(filtered_data.basepairs) == p
+  @test length(filtered_data.allele1) == p
+  @test length(filtered_data.allele2) == p
+  @test length(filtered_data.maf) == p
+  @test length(filtered_data.minor_allele) == p
+  @test size(filtered_data.snpmatrix) == (n, p)
+  @test length(filtered_data.missings_per_person) == n
+  @test length(filtered_data.missings_per_snp) == p
 end
 
 @testset "grm" begin
