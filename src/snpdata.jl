@@ -75,3 +75,28 @@ function writeplink(filename::AbstractString, snpdata::SnpData)
   copy!(view(plinkbits, 2, 1:snpdata.people, :), snpdata.snpmatrix.A2)
   close(fid)
 end
+
+# TODO Add the doc string
+function filter(
+  snpdata :: SnpData,
+  snp_idx :: BitArray{1},
+  ppl_idx :: BitArray{1}
+  )
+  # subset vectors and matrices
+  snpmatrix        = snpdata.snpmatrix[ppl_idx, snp_idx]
+  personid         = snpdata.personid[ppl_idx]
+  snpid            = snpdata.snpid[snp_idx]
+  chromosome       = snpdata.chromosome[snp_idx]
+  genetic_distance = snpdata.genetic_distance[snp_idx]
+  basepairs        = snpdata.basepairs[snp_idx]
+  allele1          = snpdata.allele1[snp_idx]
+  allele2          = snpdata.allele2[snp_idx]
+
+  # compute summary fields with summarize
+  maf, minor_allele, missings_per_snp, missings_per_person = summarize(snpmatrix)
+
+  # compute size fields with size
+  people, snps = size(snpmatrix)
+
+  SnpData(people, snps, personid, snpid, chromosome, genetic_distance, basepairs, allele1, allele2, maf, minor_allele, snpmatrix, missings_per_person, missings_per_snp)
+end
