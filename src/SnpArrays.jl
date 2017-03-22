@@ -600,7 +600,7 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
   # memory-mapped genotype matrix G, centered and scaled
   G = Mmap.mmap(t, (n, p))
   copy!(G, A; model = :additive, impute = true, center = true, scale = true)
-  if VERSION ≥ v"0.6.0"
+  if VERSION > v"0.5"
      # partial SVD
      # In v0.6, G = Gsvd[:U] * diagm(Gsvd[:S]) * Gsvd[:Vt]
      Gsvd, = @compat svds(G; nsv = pcs)
