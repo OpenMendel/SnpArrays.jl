@@ -600,8 +600,22 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
   # memory-mapped genotype matrix G, centered and scaled
   G = Mmap.mmap(t, (n, p))
   copy!(G, A; model = :additive, impute = true, center = true, scale = true)
-  if VERSION ≥ v"0.5.0"
+  if VERSION ≥ v"0.6.0"
+     # partial SVD
+     # In v0.6, G = Gsvd[:U] * diagm(Gsvd[:S]) * Gsvd[:Vt]
+     Gsvd, = @compat svds(G; nsv = pcs)
+     # make first entry of each eigenvector nonnegative for identifiability
+     identify!(Gsvd[:V])
+     pcscore = G * Gsvd[:V]
+     # square singular values and scale by n - 1 to get eigenvalues of the
+     # covariance matrix
+     @inbounds @simd for i in 1:pcs
+       Gsvd[:S][i] = Gsvd[:S][i]^2 / (n - 1)
+     end
+     return pcscore, Gsvd[:V], Gsvd[:S]
+  elseif VERSION ≥ v"0.5.0"
     # partial SVD
+    # In v0.6, G = Gsvd[:U] * diagm(Gsvd[:S]) * Gsvd[:V]
     Gsvd, = @compat svds(G; nsv = pcs)
     # make first entry of each eigenvector nonnegative for identifiability
     identify!(Gsvd[:Vt])
@@ -609,7 +623,7 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
     # square singular values and scale by n - 1 to get eigenvalues of the
     # covariance matrix
     @inbounds @simd for i in 1:pcs
-      Gsvd[:S][i] = Gsvd[:S][i] * Gsvd[:S][i] / (n - 1)
+      Gsvd[:S][i] = Gsvd[:S][i]^2 / (n - 1)
     end
     return pcscore, Gsvd[:Vt], Gsvd[:S]
   else
@@ -621,7 +635,7 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
     # square singular values and scale by n - 1 to get eigenvalues of the
     # covariance matrix
     @inbounds @simd for i in 1:pcs
-      pcvariance[i] = pcvariance[i] * pcvariance[i] / (n - 1)
+      pcvariance[i] = pcvariance[i]^2 / (n - 1)
     end
     return pcscore, pcloading, pcvariance
   end

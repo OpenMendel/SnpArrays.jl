@@ -185,21 +185,21 @@ end
 
   snpdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
   filtered_data = filter(snpdata, snp_idx, person_idx)
-  n, p = sum(person_idx), sum(snp_idx)
-  @test filtered_data.people == n
-  @test filtered_data.snps == p
-  @test length(filtered_data.personid) == n
-  @test length(filtered_data.snpid) == p
-  @test length(filtered_data.chromosome) == p
-  @test length(filtered_data.genetic_distance) == p
-  @test length(filtered_data.basepairs) == p
-  @test length(filtered_data.allele1) == p
-  @test length(filtered_data.allele2) == p
-  @test length(filtered_data.maf) == p
-  @test length(filtered_data.minor_allele) == p
-  @test size(filtered_data.snpmatrix) == (n, p)
-  @test length(filtered_data.missings_per_person) == n
-  @test length(filtered_data.missings_per_snp) == p
+  ns, ps = sum(person_idx), sum(snp_idx)
+  @test filtered_data.people == ns
+  @test filtered_data.snps == ps
+  @test length(filtered_data.personid) == ns
+  @test length(filtered_data.snpid) == ps
+  @test length(filtered_data.chromosome) == ps
+  @test length(filtered_data.genetic_distance) == ps
+  @test length(filtered_data.basepairs) == ps
+  @test length(filtered_data.allele1) == ps
+  @test length(filtered_data.allele2) == ps
+  @test length(filtered_data.maf) == ps
+  @test length(filtered_data.minor_allele) == ps
+  @test size(filtered_data.snpmatrix) == (ns, ps)
+  @test length(filtered_data.missings_per_person) == ns
+  @test length(filtered_data.missings_per_snp) == ps
  end
 
 @testset "filter SnpData" begin
