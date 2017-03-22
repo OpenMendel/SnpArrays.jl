@@ -65,14 +65,14 @@ function SnpArray(
     # v1.0 BED file
     if bits(bedheader[3]) == "00000001"
       # SNP-major
-      plinkbits = Mmap.mmap(plinkBedfile, BitArray{3},
-        (2, 4ceil(Int, 0.25people), snps), Int64(3))
+      plinkbits = Mmap.mmap(fid, BitArray{3},
+        (2, 4ceil(Int, 0.25people), snps))
       A1 = copy!(A1, view(plinkbits, 1, 1:people, :))
       A2 = copy!(A2, view(plinkbits, 2, 1:people, :))
     else
       # individual-major
-      snpbits = Mmap.mmap(plinkBedfile, BitArray{3},
-        (2, 4ceil(Int, 0.25snps), people), Int64(3))
+      snpbits = Mmap.mmap(fid, BitArray{3},
+        (2, 4ceil(Int, 0.25snps), people))
       A1 = copy!(A1, view(plinkbits, 1, 1:people, :)')
       A2 = copy!(A2, view(plinkbits, 2, 1:people, :)')
     end
