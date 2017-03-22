@@ -22,11 +22,11 @@ n, p = 100, 1000
   @test size(snp) == size(x)
   @test eltype(snp) == Tuple{Bool, Bool}
   @test endof(snp) == n * p
-  # constructor from Plink files
-  hapmap1 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
-  @test size(hapmap1) == (324, 13928)
-  hapmap2 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3"; people = 324, snps = 13928)
-  @test all(hapmap1 == hapmap2)
+  # # constructor from Plink files
+  # hapmap1 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+  # @test size(hapmap1) == (324, 13928)
+  # hapmap2 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3"; people = 324, snps = 13928)
+  # @test all(hapmap1 == hapmap2)
 end
 
 @testset "{g,s}etindex" begin
@@ -124,12 +124,12 @@ end
   @test typeof(snp_sparse) == SparseMatrixCSC{Float64, Int}
   @test snp_sparse == snp_float
   estimatesize(n, p, typeof(snp_sparse)), Base.summarysize(snp_sparse)
-  # convert in presence of missing genotypes
-  hapmap = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
-  @test any(isnan(hapmap))
-  @test any(isnan(convert(Matrix{Float64}, hapmap))) == true
-  @test any(isnan(convert(Matrix{Float64}, hapmap; impute = true))) == false
-  @test any(isnan(convert(SparseMatrixCSC{Float64, Int}, hapmap; impute = true))) == false
+  # # convert in presence of missing genotypes
+  # hapmap = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+  # @test any(isnan(hapmap))
+  # @test any(isnan(convert(Matrix{Float64}, hapmap))) == true
+  # @test any(isnan(convert(Matrix{Float64}, hapmap; impute = true))) == false
+  # @test any(isnan(convert(SparseMatrixCSC{Float64, Int}, hapmap; impute = true))) == false
 end
 
 @testset "randgeno" begin
@@ -241,7 +241,7 @@ end
   _, _, pcvariance_f64 = pca(snp, 3)
   _, _, pcvariance_f32 = pca(snp, 3, Matrix{Float32})
   @test vecnorm(pcvariance_f32 - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
-  _, _, pcvariance_f16 = pca(snp, 3, Matrix{Float32})
+  _, _, pcvariance_f16 = pca(snp, 3, Matrix{Float16})
   @test vecnorm(pcvariance_f16 - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
   _, _, pcvariance_f32sp = pca_sp(snp, 3, SparseMatrixCSC{Float32, UInt32})
   @test vecnorm(pcvariance_f32sp - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
