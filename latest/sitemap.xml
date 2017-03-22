@@ -3,8 +3,8 @@
 
     
     <url>
-     <loc>None/</loc>
-     <lastmod>2016-09-21</lastmod>
+     <loc>/</loc>
+     <lastmod>2017-03-22</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -12,20 +12,20 @@
     
         
     <url>
-     <loc>None/man/snparray/</loc>
-     <lastmod>2016-09-21</lastmod>
+     <loc>/man/snparray/</loc>
+     <lastmod>2017-03-22</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/man/snpdata/</loc>
-     <lastmod>2016-09-21</lastmod>
+     <loc>/man/snpdata/</loc>
+     <lastmod>2017-03-22</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/man/haplotypearray/</loc>
-     <lastmod>2016-09-21</lastmod>
+     <loc>/man/haplotypearray/</loc>
+     <lastmod>2017-03-22</lastmod>
      <changefreq>daily</changefreq>
     </url>
         

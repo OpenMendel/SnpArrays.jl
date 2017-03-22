@@ -1,292 +1,458 @@
+
 <!DOCTYPE html>
-<!--[if lt IE 7 ]><html class="no-js ie6"><![endif]-->
-<!--[if IE 7 ]><html class="no-js ie7"><![endif]-->
-<!--[if IE 8 ]><html class="no-js ie8"><![endif]-->
-<!--[if IE 9 ]><html class="no-js ie9"><![endif]-->
-<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js"> <!--<![endif]-->
+<html class="no-js">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
     
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <title>SnpArray - SnpArrays.jl</title>
-      
+        <meta name="description" content="Compressed storage for SNP data">
       
       
       
         <meta name="author" content="Hua Zhou">
       
-    
-    <meta property="og:url" content="None">
-    <meta property="og:title" content="SnpArrays.jl">
-    <meta property="og:image" content="None/../../">
-    <meta name="apple-mobile-web-app-title" content="SnpArrays.jl">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    
-    <link rel="shortcut icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
-    <link rel="icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
-    <style>
-      @font-face {
-      	font-family: 'Icon';
-      	src: url('../../assets/fonts/icon.eot?52m981');
-      	src: url('../../assets/fonts/icon.eot?#iefix52m981')
-               format('embedded-opentype'),
-      		   url('../../assets/fonts/icon.woff?52m981')
-               format('woff'),
-      		   url('../../assets/fonts/icon.ttf?52m981')
-               format('truetype'),
-      		   url('../../assets/fonts/icon.svg?52m981#icon')
-               format('svg');
-      	font-weight: normal;
-      	font-style: normal;
-      }
-    </style>
-    <link rel="stylesheet" href="../../assets/stylesheets/application-a422ff04cc.css">
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/palettes-05ab2406df.css">
+      
+        <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      
+      <meta name="generator" content="mkdocs-0.16.2, mkdocs-material-1.4.1">
     
     
       
+        <title>SnpArray - SnpArrays.jl</title>
       
+    
+    
+      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application-76741b64bc.css">
       
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
-      <style>
-        body, input {
-          font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
-        }
-        pre, code {
-          font-family: 'Ubuntu Mono', 'Courier New', 'Courier', monospace;
-        }
-      </style>
+        <link rel="stylesheet" href="../../assets/stylesheets/application-66fa0d9bba.palette.css">
+      
+    
+    
+      
+        
+        
+        
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     
     
       <link rel="stylesheet" href="../../assets/Documenter.css">
     
-    <script src="../../assets/javascripts/modernizr-4ab42b99fd.js"></script>
     
   </head>
   
   
   
-  <body class="palette-primary-indigo palette-accent-blue">
-    
-      
-      
-    
-    <div class="backdrop">
-      <div class="backdrop-paper"></div>
-    </div>
-    <input class="toggle" type="checkbox" id="toggle-drawer">
-    <input class="toggle" type="checkbox" id="toggle-search">
-    <label class="toggle-button overlay" for="toggle-drawer"></label>
-    <header class="header">
-      <nav aria-label="Header">
-  <div class="bar default">
-    <div class="button button-menu" role="button" aria-label="Menu">
-      <label class="toggle-button icon icon-menu" for="toggle-drawer">
-        <span></span>
-      </label>
-    </div>
-    <div class="stretch">
-      <div class="title">
-        
-          <span class="path">
-            
-              
-                Manual <i class="icon icon-link"></i>
-              
-            
-          </span>
-        
-        SnpArray
-      </div>
-    </div>
-    
-    
-    <div class="button button-search" role="button" aria-label="Search">
-      <label class="toggle-button icon icon-search" title="Search" for="toggle-search"></label>
-    </div>
-  </div>
-  <div class="bar search">
-    <div class="button button-close" role="button" aria-label="Close">
-      <label class="toggle-button icon icon-back" for="toggle-search"></label>
-    </div>
-    <div class="stretch">
-      <div class="field">
-        <input class="query" type="text" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck>
-      </div>
-    </div>
-    <div class="button button-reset" role="button" aria-label="Search">
-      <button class="toggle-button icon icon-close" id="reset-search"></button>
-    </div>
-  </div>
-</nav>
-    </header>
-    <main class="main">
-      
-      <div class="drawer">
-        <nav aria-label="Navigation">
   
-  <a href="https://github.com/OpenMendel/SnpArrays.jl" class="project">
-    <div class="banner">
-      
-      <div class="name">
-        <strong>
-          SnpArrays.jl
-          <span class="version">
-            
-          </span>
-        </strong>
+    <body data-md-color-primary="indigo" data-md-color-accent="blue">
+  
+    <svg class="md-svg">
+      <defs>
         
-          <br>
-          OpenMendel/SnpArrays.jl
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
+    <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <a href="../.." title="SnpArrays.jl" class="md-icon md-icon--home md-header-nav__button">
+          </a>
         
       </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <span class="md-flex__ellipsis md-header-nav__title">
+          
+            
+              
+                <span class="md-header-nav__parent">
+                  Manual
+                </span>
+              
+            
+            SnpArray
+          
+        </span>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
+          
+<div class="md-search" data-md-component="search">
+  <div class="md-search__overlay"></div>
+  <div class="md-search__inner">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
+      <label class="md-icon md-search__icon" for="search"></label>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <div class="md-header-nav__source">
+          
+            
+
+
+  
+
+
+  <a href="https://github.com/OpenMendel/SnpArrays.jl" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      GitHub
     </div>
   </a>
-  <div class="scrollable">
-    <div class="wrapper">
-      
-        <ul class="repo">
-          <li class="repo-download">
-            
-            <a href="https://github.com/OpenMendel/SnpArrays.jl/archive/master.zip" target="_blank" title="Download" data-action="download">
-              <i class="icon icon-download"></i> Download
-            </a>
-          </li>
-          <li class="repo-stars">
-            <a href="https://github.com/OpenMendel/SnpArrays.jl/stargazers" target="_blank" title="Stargazers" data-action="star">
-              <i class="icon icon-star"></i> Stars
-              <span class="count">&ndash;</span>
-            </a>
-          </li>
-        </ul>
-        <hr>
-      
-      <div class="toc">
-        <ul>
-          
-            
-  <li>
-    <a class="" title="Home" href="../..">
-      Home
-    </a>
-    
-  </li>
 
           
-            
-  <li>
-    <span class="section">Manual</span>
-    <ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
       
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="drawer">
+    
+      <i class="md-icon md-icon--home md-nav__button"></i>
+    
+    SnpArrays.jl
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+
+  <a href="https://github.com/OpenMendel/SnpArrays.jl" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      GitHub
+    </div>
+  </a>
+
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Manual
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Manual
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
         
-  <li>
-    <a class="current" title="SnpArray" href="./">
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        SnpArray
+      </label>
+    
+    <a href="./" title="SnpArray" class="md-nav__link md-nav__link--active">
       SnpArray
     </a>
     
       
-        
-      
-      
-        <ul>
-          
-            <li class="anchor">
-              <a title="Constructor" href="#constructor">
-                Constructor
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Summary statistics" href="#summary-statistics">
-                Summary statistics
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Filtering" href="#filtering">
-                Filtering
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Random genotypes generation" href="#random-genotypes-generation">
-                Random genotypes generation
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Subsetting" href="#subsetting">
-                Subsetting
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Assignment" href="#assignment">
-                Assignment
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Convert, copy and imputation" href="#convert-copy-and-imputation">
-                Convert, copy and imputation
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Empirical kinship matrix" href="#empirical-kinship-matrix">
-                Empirical kinship matrix
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Principal components" href="#principal-components">
-                Principal components
-              </a>
-            </li>
-          
-        </ul>
-      
+<nav class="md-nav md-nav--secondary">
+  
+  
     
-  </li>
-
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
       
-        
-  <li>
-    <a class="" title="SnpData" href="../snpdata/">
-      SnpData
-    </a>
-    
-  </li>
-
+        <li class="md-nav__item">
+  <a href="#constructor" title="Constructor" class="md-nav__link">
+    Constructor
+  </a>
+  
+</li>
       
-        
-  <li>
-    <a class="" title="HaplotypeArray" href="../haplotypearray/">
-      HaplotypeArray
-    </a>
-    
-  </li>
-
+        <li class="md-nav__item">
+  <a href="#summary-statistics" title="Summary statistics" class="md-nav__link">
+    Summary statistics
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filtering" title="Filtering" class="md-nav__link">
+    Filtering
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#random-genotypes-generation" title="Random genotypes generation" class="md-nav__link">
+    Random genotypes generation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subsetting" title="Subsetting" class="md-nav__link">
+    Subsetting
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assignment" title="Assignment" class="md-nav__link">
+    Assignment
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#convert-copy-and-imputation" title="Convert, copy and imputation" class="md-nav__link">
+    Convert, copy and imputation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#empirical-kinship-matrix" title="Empirical kinship matrix" class="md-nav__link">
+    Empirical kinship matrix
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#principal-components" title="Principal components" class="md-nav__link">
+    Principal components
+  </a>
+  
+</li>
+      
+      
       
     </ul>
+  
+</nav>
+    
   </li>
 
-          
-        </ul>
         
-      </div>
-    </div>
-  </div>
-</nav>
-      </div>
-      <article class="article">
-        <div class="wrapper">
           
-          <p><a id='SnpArray-1'></a></p>
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../snpdata/" title="SnpData" class="md-nav__link">
+      SnpData
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../haplotypearray/" title="HaplotypeArray" class="md-nav__link">
+      HaplotypeArray
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#constructor" title="Constructor" class="md-nav__link">
+    Constructor
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-statistics" title="Summary statistics" class="md-nav__link">
+    Summary statistics
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filtering" title="Filtering" class="md-nav__link">
+    Filtering
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#random-genotypes-generation" title="Random genotypes generation" class="md-nav__link">
+    Random genotypes generation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subsetting" title="Subsetting" class="md-nav__link">
+    Subsetting
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assignment" title="Assignment" class="md-nav__link">
+    Assignment
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#convert-copy-and-imputation" title="Convert, copy and imputation" class="md-nav__link">
+    Convert, copy and imputation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#empirical-kinship-matrix" title="Empirical kinship matrix" class="md-nav__link">
+    Empirical kinship matrix
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#principal-components" title="Principal components" class="md-nav__link">
+    Principal components
+  </a>
+  
+</li>
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/OpenMendel/SnpArrays.jl/edit/master/docs/man/snparray.md" title="Edit this page" class="md-icon md-content__icon">edit</a>
+                
+                
+                <p><a id='SnpArray-1'></a></p>
 <h1 id="snparray">SnpArray</h1>
 <p><code>SnpArray</code> is an array of <code>Tuple{Bool,Bool}</code> and adopts the same coding as the <a href="http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml">Plink binary format</a>. If <code>A1</code> and <code>A2</code> are the two alleles, the coding rule is  </p>
 <table>
@@ -427,7 +593,7 @@
 <ul>
 <li><code>SnpArray</code> can be initialized from a matrix of A1 allele counts.</li>
 </ul>
-<div class="codehilite"><pre><span></span><span class="n">SnpArray</span><span class="p">(</span><span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<div class="codehilite"><pre><span></span><span class="n">SnpArray</span><span class="p">(</span><span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 </pre></div>
 
 
@@ -460,10 +626,10 @@
 <h2 id="summary-statistics">Summary statistics</h2>
 <p><code>summarize</code> function computes the following summary statistics of a <code>SnpArray</code>:  </p>
 <ul>
-<li><code>maf</code>: minor allele frequencies, taking into account of missingness.  </li>
-<li><code>minor_allele</code>: a <code>BitVector</code> indicating the minor allele for each SNP.   <code>minor_allele[j]==true</code> means A1 is the minor allele for SNP j; <code>minor_allele[j]==false</code> means A2 is the minor allele for SNP j.  </li>
-<li><code>missings_by_snp</code>: number of missing genotypes for each snp.  </li>
-<li><code>missings_by_person</code>: number of missing genotypes for each person.  </li>
+<li><code>maf</code>: minor allele frequencies, taking into account of missingness.</li>
+<li><code>minor_allele</code>: a <code>BitVector</code> indicating the minor allele for each SNP.   <code>minor_allele[j]==true</code> means A1 is the minor allele for SNP j; <code>minor_allele[j]==false</code> means A2 is the minor allele for SNP j.</li>
+<li><code>missings_by_snp</code>: number of missing genotypes for each snp.</li>
+<li><code>missings_by_person</code>: number of missing genotypes for each person.</li>
 </ul>
 <div class="codehilite"><pre><span></span><span class="n">maf</span><span class="p">,</span> <span class="n">minor_allele</span><span class="p">,</span> <span class="n">missings_by_snp</span><span class="p">,</span> <span class="n">missings_by_person</span> <span class="o">=</span> <span class="n">summarize</span><span class="p">(</span><span class="n">hapmap</span><span class="p">)</span>
 <span class="c"># minor allele frequencies</span>
@@ -534,7 +700,7 @@
 
 
 <p><code>randgeno(maf, minor_allele)</code> generates a random genotype according to minor allele frequency <code>maf</code> and whether the minor allele is A1 (<code>minor_allele==true</code>) or A2 (<code>minor_allele==false</code>).</p>
-<div class="codehilite"><pre><span></span><span class="n">randgeno</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">true</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="n">randgeno</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="kc">true</span><span class="p">)</span>
 </pre></div>
 
 
@@ -543,7 +709,7 @@
 
 
 <p><code>randgeno(n, maf, minor_allele)</code> generates a vector of random genotypes according to a common minor allele frequency <code>maf</code> and the minor allele.</p>
-<div class="codehilite"><pre><span></span><span class="n">randgeno</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="n">true</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="n">randgeno</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="kc">true</span><span class="p">)</span>
 </pre></div>
 
 
@@ -601,7 +767,7 @@
 <h2 id="subsetting">Subsetting</h2>
 <p>Subsetting a <code>SnpArray</code> works the same way as subsetting any other arrays.</p>
 <div class="codehilite"><pre><span></span><span class="c"># genotypes of the 1st person</span>
-<span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+<span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">:</span><span class="p">]</span>
 </pre></div>
 
 
@@ -636,7 +802,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># genotypes of the 5th SNP</span>
-<span class="n">hapmap</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="n">hapmap</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
 </pre></div>
 
 
@@ -671,7 +837,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># subsetting both persons and SNPs</span>
-<span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span><span class="mi">10</span><span class="p">]</span>
+<span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="o">:</span><span class="mi">10</span><span class="p">]</span>
 </pre></div>
 
 
@@ -685,7 +851,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># filter out rare SNPs with MAF &lt; 0.05</span>
-<span class="n">hapmap</span><span class="p">[:,</span> <span class="n">maf</span> <span class="o">.</span><span class="n">≥</span> <span class="mf">0.05</span><span class="p">]</span>
+<span class="n">hapmap</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="n">maf</span> <span class="o">.≥</span> <span class="mf">0.05</span><span class="p">]</span>
 </pre></div>
 
 
@@ -720,7 +886,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># filter out individuals with genotyping success rate &lt; 0.90</span>
-<span class="n">hapmap</span><span class="p">[</span><span class="n">missings_by_person</span> <span class="o">/</span> <span class="n">people</span> <span class="o">.&lt;</span> <span class="mf">0.1</span><span class="p">,</span> <span class="p">:]</span>
+<span class="n">hapmap</span><span class="p">[</span><span class="n">missings_by_person</span> <span class="o">/</span> <span class="n">people</span> <span class="o">.&lt;</span> <span class="mf">0.1</span><span class="p">,</span> <span class="o">:</span><span class="p">]</span>
 </pre></div>
 
 
@@ -755,7 +921,7 @@
 
 
 <p><code>sub()</code> and <code>slice()</code> create views of subarray without copying data and improve efficiency in many calculations.</p>
-<div class="codehilite"><pre><span></span><span class="n">mafcommon</span><span class="p">,</span> <span class="o">=</span> <span class="n">summarize</span><span class="p">(</span><span class="n">hapmap</span><span class="p">[:,</span> <span class="n">maf</span> <span class="o">.</span><span class="n">≥</span> <span class="mf">0.05</span><span class="p">])</span>
+<div class="codehilite"><pre><span></span><span class="n">mafcommon</span><span class="p">,</span> <span class="o">=</span> <span class="n">summarize</span><span class="p">(</span><span class="n">hapmap</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="n">maf</span> <span class="o">.≥</span> <span class="mf">0.05</span><span class="p">])</span>
 <span class="n">mafcommon</span><span class="o">&#39;</span>
 </pre></div>
 
@@ -776,7 +942,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span><span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">false</span><span class="p">,</span> <span class="n">true</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="kc">true</span><span class="p">)</span>
 <span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 </pre></div>
 
@@ -785,7 +951,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span><span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">NaN</span>
+<div class="codehilite"><pre><span></span><span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NaN</span>
 <span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 </pre></div>
 
@@ -808,16 +974,20 @@
 <h2 id="convert-copy-and-imputation">Convert, copy and imputation</h2>
 <p>In most analyses we convert a whole <code>SnpArray</code> or slices of it to numeric arrays (matrix of <strong>minor allele counts</strong>) for statistical analysis. Keep in mind that the storage of resultant data can be up to 32 fold larger than that of the original <code>SnpArray</code>. Fortunately, rich collection of data types in <code>Julia</code> allow us choose one that fits into memory. Below are estimates of memory usage for some common data types with <code>n</code> persons and <code>p</code> SNPs. Here MAF denotes the <strong>average</strong> minor allele frequencies.</p>
 <ul>
-<li><code>SnpArray</code>: $0.25np$ bytes  </li>
-<li><code>Matrix{Int8}</code>: $np$ bytes  </li>
-<li><code>Matrix{Float16}</code>: $2np$ bytes  </li>
-<li><code>Matrix{Float32}</code>: $4np$ bytes  </li>
-<li><code>Matrix{Float64}</code>: $8np$ bytes  </li>
-<li><code>SparseMatrixCSC{Float64,Int64}</code>: $16 \cdot \text{NNZ} + 8(p+1) \approx 16np(2\text{MAF}(1-\text{MAF})+\text{MAF}^2) + 8(p+1) = 16np \cdot \text{MAF}(2-\text{MAF}) + 8(p+1)$ bytes. When the average MAF=0.25, this is about $7np$ bytes. When MAF=0.025, this is about $0.8np$ bypes, 10 fold smaller than the <code>Matrix{Float64}</code> type.  </li>
-<li><code>SparseMatrixCSC{Int8,UInt32}</code>: $5 \cdot \text{NNZ} + 4(p+1) \approx 5np(2\text{MAF}(1-\text{MAF})+\text{MAF}^2) + 4(p+1) = 5np \cdot \text{MAF}(2-\text{MAF}) + 4(p+1)$ bytes. When the average MAF=0.25, this is about $2.2np$ bytes. When MAF=0.08, this is about $0.8np$ bypes, 10 fold smaller than <code>Matrix{Float64}</code> type.  </li>
-<li>Two <code>SparseMatrixCSC{Bool,Int64}</code>: $2np \cdot \text{MAF} \cdot 9 + 16(p+1) = 18 np \cdot \text{MAF} + 16(p+1)$ bytes. When the average MAF=0.25, this is about $4.5np$ bytes. When MAF=0.045, this is about $0.8np$ bytes, 10 fold smaller than <code>Matrix{Float64}</code> type.  </li>
+<li><code>SnpArray</code>: $0.25np$ bytes</li>
+<li><code>Matrix{Int8}</code>: $np$ bytes</li>
+<li><code>Matrix{Float16}</code>: $2np$ bytes</li>
+<li><code>Matrix{Float32}</code>: $4np$ bytes</li>
+<li><code>Matrix{Float64}</code>: $8np$ bytes</li>
+<li><code>SparseMatrixCSC{Float64,Int64}</code>: $16 \cdot \text{NNZ} + 8(p+1) \approx 16np(2\text{MAF}(1-\text{MAF})+\text{MAF}^2) + 8(p+1) = 16np \cdot \text{MAF}(2-\text{MAF}) + 8(p+1)$ bytes. When the average MAF=0.25, this is about $7np$ bytes. When MAF=0.025, this is about $0.8np$ bypes, 10 fold smaller than the <code>Matrix{Float64}</code> type.</li>
+<li><code>SparseMatrixCSC{Int8,UInt32}</code>: $5 \cdot \text{NNZ} + 4(p+1) \approx 5np(2\text{MAF}(1-\text{MAF})+\text{MAF}^2) + 4(p+1) = 5np \cdot \text{MAF}(2-\text{MAF}) + 4(p+1)$ bytes. When the average MAF=0.25, this is about $2.2np$ bytes. When MAF=0.08, this is about $0.8np$ bypes, 10 fold smaller than <code>Matrix{Float64}</code> type.</li>
+<li>Two <code>SparseMatrixCSC{Bool,Int64}</code>: $2np \cdot \text{MAF} \cdot 9 + 16(p+1) = 18 np \cdot \text{MAF} + 16(p+1)$ bytes. When the average MAF=0.25, this is about $4.5np$ bytes. When MAF=0.045, this is about $0.8np$ bytes, 10 fold smaller than <code>Matrix{Float64}</code> type.</li>
 </ul>
-<p>To be concrete, consider 2 typical data sets:   * COPD (GWAS): $n = 6670$ individuals, $p = 630998$ SNPs, average MAF is 0.2454. * GAW19 (sequencing study): $n = 959$ individuals, $p = 8348674$ SNPs, average MAF is 0.085.  </p>
+<p>To be concrete, consider 2 typical data sets:  </p>
+<ul>
+<li>COPD (GWAS): $n = 6670$ individuals, $p = 630998$ SNPs, average MAF is 0.2454.</li>
+<li>GAW19 (sequencing study): $n = 959$ individuals, $p = 8348674$ SNPs, average MAF is 0.085.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -851,7 +1021,7 @@
 </table>
 <p>Apparently for data sets with a majority of rare variants, converting to sparse matrices saves memory and often brings computational advantages too. In the <code>SparseMatrixCSC</code> format, the integer type of the row indices <code>rowval</code> and column pointer <code>colptr</code> should have maximal allowable value larger than the number of nonzeros in the matrix. The <code>InexactError()</code> error encountered during conversion often indicates that the integer type has a too small range. The utility function <code>estimatesize</code> conveniently estimates memory usage in bytes for the input data type.</p>
 <div class="codehilite"><pre><span></span><span class="c"># estimated memory usage if convert to Matrix{Float64}</span>
-<span class="n">estimatesize</span><span class="p">(</span><span class="n">people</span><span class="p">,</span> <span class="n">snps</span><span class="p">,</span> <span class="n">Matrix</span><span class="p">{</span><span class="kt">Float64</span><span class="p">})</span>
+<span class="n">estimatesize</span><span class="p">(</span><span class="n">people</span><span class="p">,</span> <span class="n">snps</span><span class="p">,</span> <span class="kt">Matrix</span><span class="p">{</span><span class="kt">Float64</span><span class="p">})</span>
 </pre></div>
 
 
@@ -860,7 +1030,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># convert to Matrix{Float64}</span>
-<span class="n">hapmapf64</span> <span class="o">=</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Matrix</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">)</span>
+<span class="n">hapmapf64</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="kt">Matrix</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">)</span>
 </pre></div>
 
 
@@ -913,7 +1083,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># estimated memory usage if convert to SparseMatrixCSC{Float32, UInt32} matrix</span>
-<span class="n">estimatesize</span><span class="p">(</span><span class="n">people</span><span class="p">,</span> <span class="n">snps</span><span class="p">,</span> <span class="n">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Float32</span><span class="p">,</span> <span class="n">UInt32</span><span class="p">},</span> <span class="n">mean</span><span class="p">(</span><span class="n">maf</span><span class="p">))</span>
+<span class="n">estimatesize</span><span class="p">(</span><span class="n">people</span><span class="p">,</span> <span class="n">snps</span><span class="p">,</span> <span class="kt">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Float32</span><span class="p">,</span> <span class="kt">UInt32</span><span class="p">},</span> <span class="n">mean</span><span class="p">(</span><span class="n">maf</span><span class="p">))</span>
 </pre></div>
 
 
@@ -922,7 +1092,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># convert to SparseMatrixCSC{Float32, UInt32} matrix</span>
-<span class="n">hapmapf32sp</span> <span class="o">=</span> <span class="nb">convert</span><span class="p">(</span><span class="n">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Float32</span><span class="p">,</span> <span class="n">UInt32</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">)</span>
+<span class="n">hapmapf32sp</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="kt">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Float32</span><span class="p">,</span> <span class="kt">UInt32</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">)</span>
 </pre></div>
 
 
@@ -972,7 +1142,7 @@
 
 
 <p>One can enforce <strong>crude imputation</strong> by setting the optional argument <code>impute=true</code>. Imputation is done by generating two random alleles according to the minor allele frequency. This is a neutral but not an optimal strategy, and users should impute missing genotypes by more advanced methods.</p>
-<div class="codehilite"><pre><span></span><span class="n">hapmapf64impute</span> <span class="o">=</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Matrix</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">;</span> <span class="n">impute</span> <span class="o">=</span> <span class="n">true</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="n">hapmapf64impute</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="kt">Matrix</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">;</span> <span class="n">impute</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span>
 <span class="n">countnz</span><span class="p">(</span><span class="n">isnan</span><span class="p">(</span><span class="n">hapmapf64impute</span><span class="p">))</span>
 </pre></div>
 
@@ -1065,7 +1235,7 @@
 </tr>
 </tbody>
 </table>
-<div class="codehilite"><pre><span></span><span class="p">[</span><span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="p">:</span><span class="n">additive</span><span class="p">)</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="p">:</span><span class="n">dominant</span><span class="p">)</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="p">:</span><span class="n">recessive</span><span class="p">)]</span>
+<div class="codehilite"><pre><span></span><span class="p">[</span><span class="n">convert</span><span class="p">(</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="o">:</span><span class="n">additive</span><span class="p">)</span> <span class="n">convert</span><span class="p">(</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="o">:</span><span class="n">dominant</span><span class="p">)</span> <span class="n">convert</span><span class="p">(</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="o">:</span><span class="n">recessive</span><span class="p">)]</span>
 </pre></div>
 
 
@@ -1084,7 +1254,7 @@
 
 
 <p>By default <code>convert()</code> does <strong>not</strong> center and scale genotypes. Setting the optional arguments <code>center=true, scale=true</code> centers genotypes at 2MAF and scales them by $[2 \cdot \text{MAF} \cdot (1 - \text{MAF})]^{-1/2}$. Mono-allelic SNPs (MAF=0) are not scaled.</p>
-<div class="codehilite"><pre><span></span><span class="p">[</span><span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">])</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">];</span> <span class="n">center</span> <span class="o">=</span> <span class="n">true</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">true</span><span class="p">)]</span>
+<div class="codehilite"><pre><span></span><span class="p">[</span><span class="n">convert</span><span class="p">(</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span> <span class="n">convert</span><span class="p">(</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="mi">5</span><span class="p">];</span> <span class="n">center</span> <span class="o">=</span> <span class="kc">true</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)]</span>
 </pre></div>
 
 
@@ -1120,8 +1290,8 @@
 
 <p><code>copy!()</code> is the in-place version of <code>convert()</code>. Options such as GWAS loop over SNPs and perform statistical anlaysis for each SNP. This can be achieved by</p>
 <div class="codehilite"><pre><span></span><span class="n">g</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">people</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="n">snps</span>
-    <span class="n">copy!</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">hapmap</span><span class="p">[:,</span> <span class="n">j</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="p">:</span><span class="n">additive</span><span class="p">,</span> <span class="n">impute</span> <span class="o">=</span> <span class="n">true</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="n">snps</span>
+    <span class="n">copy!</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">hapmap</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="n">j</span><span class="p">];</span> <span class="n">model</span> <span class="o">=</span> <span class="o">:</span><span class="n">additive</span><span class="p">,</span> <span class="n">impute</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span>
     <span class="c"># do statistical anlaysis</span>
 <span class="k">end</span>
 </pre></div>
@@ -1132,11 +1302,8 @@
 <p><code>grm</code> function computes the empirical kinship matrix using either the genetic relationship matrix, <code>grm(A, model=:GRM)</code>, or the method of moment method, <code>grm(A, model=:MoM)</code>. </p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
+<p>Missing genotypes are imputed according to minor allele frequencies on the fly.</p>
 </div>
-<div class="codehilite"><pre><span></span>Missing genotypes are imputed according to minor allele frequencies on the fly.
-</pre></div>
-
-
 <div class="codehilite"><pre><span></span><span class="c"># GRM using all SNPs</span>
 <span class="n">grm</span><span class="p">(</span><span class="n">hapmap</span><span class="p">)</span>
 </pre></div>
@@ -1173,7 +1340,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># GRM using every other SNP</span>
-<span class="n">grm</span><span class="p">(</span><span class="n">view</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="n">snps</span><span class="p">))</span>
+<span class="n">grm</span><span class="p">(</span><span class="n">view</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="o">:</span><span class="mi">2</span><span class="o">:</span><span class="n">snps</span><span class="p">))</span>
 </pre></div>
 
 
@@ -1208,7 +1375,7 @@
 
 
 <div class="codehilite"><pre><span></span><span class="c"># MoM using all SNPs</span>
-<span class="n">grm</span><span class="p">(</span><span class="n">hapmap</span><span class="p">;</span> <span class="n">method</span> <span class="o">=</span> <span class="p">:</span><span class="n">MoM</span><span class="p">)</span>
+<span class="n">grm</span><span class="p">(</span><span class="n">hapmap</span><span class="p">;</span> <span class="n">method</span> <span class="o">=</span> <span class="o">:</span><span class="n">MoM</span><span class="p">)</span>
 </pre></div>
 
 
@@ -1246,8 +1413,8 @@
 <h2 id="principal-components">Principal components</h2>
 <p>Principal compoenent analysis is widely used in genome-wide association analysis (GWAS) for adjusting population substructure. <code>pca(A, pcs)</code> computes the top <code>pcs</code> principal components of a <code>SnpArray</code>. Each SNP is centered at $2\text{MAF}$ and scaled by $[2\text{MAF}(1-\text{MAF})]^{-1/2}$. The output is  </p>
 <ul>
-<li><code>pcscore</code>: top <code>pcs</code> eigen-SNPs, or principal scores, in each column  </li>
-<li><code>pcloading</code>: top <code>pcs</code> eigen-vectors, or principal loadings, in each column  </li>
+<li><code>pcscore</code>: top <code>pcs</code> eigen-SNPs, or principal scores, in each column</li>
+<li><code>pcloading</code>: top <code>pcs</code> eigen-vectors, or principal loadings, in each column</li>
 <li><code>pcvariance</code>: top <code>pcs</code> eigen-values, or principal variances</li>
 </ul>
 <p>Missing genotypes are imputed according the minor allele frequencies on the fly. This implies that, in the presence of missing genotypes, running the function on the same <code>SnpArray</code> twice may produce slightly different answers. For reproducibility, it is a good practice to set the random seed before each function that does imputation on the fly.</p>
@@ -1267,7 +1434,7 @@
 
 <p>To use eigen-SNPs for plotting or as covariates in GWAS, we typically scale them by their standard deviations so that they have mean zero and unit variance.</p>
 <div class="codehilite"><pre><span></span><span class="c"># standardize eigen-SNPs before plotting or GWAS</span>
-<span class="n">scale!</span><span class="p">(</span><span class="n">pcscore</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">./</span> <span class="n">√</span><span class="p">(</span><span class="n">pcvariance</span><span class="p">))</span>
+<span class="n">scale!</span><span class="p">(</span><span class="n">pcscore</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">./</span> <span class="o">√</span><span class="p">(</span><span class="n">pcvariance</span><span class="p">))</span>
 <span class="n">std</span><span class="p">(</span><span class="n">pcscore</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
@@ -1284,7 +1451,7 @@
 <div class="codehilite"><pre><span></span><span class="c"># use single precision matrix and display the principal variances</span>
 <span class="c"># approximately same answer as double precision</span>
 <span class="n">srand</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
-<span class="n">pca</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">Matrix</span><span class="p">{</span><span class="kt">Float32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">pca</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kt">Matrix</span><span class="p">{</span><span class="kt">Float32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
 </pre></div>
 
 
@@ -1300,7 +1467,7 @@
 </ul>
 <div class="codehilite"><pre><span></span><span class="c"># principal components using every other SNP capture about half the variance</span>
 <span class="n">srand</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
-<span class="n">pca</span><span class="p">(</span><span class="n">sub</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">:</span><span class="n">snps</span><span class="p">),</span> <span class="mi">3</span><span class="p">)[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">pca</span><span class="p">(</span><span class="n">sub</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="o">:</span><span class="mi">2</span><span class="o">:</span><span class="n">snps</span><span class="p">),</span> <span class="mi">3</span><span class="p">)[</span><span class="mi">3</span><span class="p">]</span>
 </pre></div>
 
 
@@ -1312,11 +1479,11 @@
 
 
 <ul>
-<li>Use sparse matrix. For large data sets with majority of rare variants, <code>pca_sp</code> is more efficient by first converting <code>SnpArray</code> to a sparse matrix (default is <code>SparseMatrixCSC{Float64, Int64}</code>) and then computing principal components using iterative algorithms. </li>
+<li>Use sparse matrix. For large data sets with majority of rare variants, <code>pca_sp</code> is more efficient by first converting <code>SnpArray</code> to a sparse matrix (default is <code>SparseMatrixCSC{Float64, Int64}</code>) and then computing principal components using iterative algorithms.</li>
 </ul>
 <div class="codehilite"><pre><span></span><span class="c"># approximately same answer if we use Float16 sparse matrix</span>
 <span class="n">srand</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
-<span class="n">pca_sp</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">SparseMatrixCSC</span><span class="p">{</span><span class="n">Float16</span><span class="p">,</span> <span class="n">UInt32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">pca_sp</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kt">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Float16</span><span class="p">,</span> <span class="kt">UInt32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
 </pre></div>
 
 
@@ -1329,7 +1496,7 @@
 
 <div class="codehilite"><pre><span></span><span class="c"># approximately same answer if we use Int8 sparse matrix</span>
 <span class="n">srand</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
-<span class="n">pca_sp</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Int8</span><span class="p">,</span> <span class="n">UInt32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">pca_sp</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kt">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Int8</span><span class="p">,</span> <span class="kt">UInt32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
 </pre></div>
 
 
@@ -1342,83 +1509,85 @@
 
 <div class="codehilite"><pre><span></span>
 </pre></div>
-          <aside class="copyright" role="note">
-            
-            Documentation built with
-            <a href="http://www.mkdocs.org" target="_blank">MkDocs</a>
-            using the
-            <a href="http://squidfunk.github.io/mkdocs-material/" target="_blank">
-              Material
-            </a>
-            theme.
-          </aside>
-          
-            <footer class="footer">
+                
+                  
+                
               
-  <nav class="pagination" aria-label="Footer">
-    <div class="previous">
+              
+                
+              
+            </article>
+          </div>
+        </div>
+      </main>
       
-        <a href="../.." title="Home">
-          <span class="direction">
-            Previous
-          </span>
-          <div class="page">
-            <div class="button button-previous" role="button" aria-label="Previous">
-              <i class="icon icon-back"></i>
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../.." title="Home" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
-            <div class="stretch">
-              <div class="title">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
                 Home
-              </div>
+              </span>
             </div>
-          </div>
-        </a>
-      
-    </div>
-    <div class="next">
-      
-        <a href="../snpdata/" title="SnpData">
-          <span class="direction">
-            Next
-          </span>
-          <div class="page">
-            <div class="stretch">
-              <div class="title">
+          </a>
+        
+        
+          <a href="../snpdata/" title="SnpData" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
                 SnpData
-              </div>
+              </span>
             </div>
-            <div class="button button-next" role="button" aria-label="Next">
-              <i class="icon icon-forward"></i>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
             </div>
-          </div>
-        </a>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="http://www.mkdocs.org" title="MkDocs">MkDocs</a>
+        and
+        <a href="http://squidfunk.github.io/mkdocs-material/" title="Material for MkDocs">
+          Material for MkDocs</a>
+      </div>
+      
+        
       
     </div>
-  </nav>
-
-            </footer>
-          
-        </div>
-      </article>
-      <div class="results" role="status" aria-live="polite">
-        <div class="scrollable">
-          <div class="wrapper">
-            <div class="meta"></div>
-            <div class="list"></div>
-          </div>
-        </div>
-      </div>
-    </main>
-    <script>
-      var base_url = '../..';
-      var repo_id  = 'OpenMendel/SnpArrays.jl';
-    </script>
-    <script src="../../assets/javascripts/application-997097ee0c.js"></script>
+  </div>
+</footer>
+      
+    </div>
     
-      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+      <script src="../../assets/javascripts/application-3964c0cb56.js"></script>
+      <script>app.initialize({url:{base:"../.."}})</script>
+      
+        <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
     
-      <script src="../../assets/mathjaxhelper.js"></script>
     
+      
     
   </body>
 </html>
