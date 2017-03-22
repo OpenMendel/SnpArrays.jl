@@ -173,7 +173,7 @@ end
   @test isempty(maf)
 end
 
-@testset "filter" begin
+@testset "filter SnpArray" begin
   hapmap = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
   #@code_warntype filter(hapmap, 0.98, 0.98, 5)
   @inferred filter(hapmap, 0.98, 0.98, 5)
@@ -200,6 +200,14 @@ end
   @test size(filtered_data.snpmatrix) == (n, p)
   @test length(filtered_data.missings_per_person) == n
   @test length(filtered_data.missings_per_snp) == p
+ end
+
+@testset "filter SnpData" begin
+  snpdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+  filtered_data = filter(snpdata, 0.98, 0.98, 5)
+  _, _, missings_by_snp, missings_by_person = summarize(filtered_data.snpmatrix)
+  @test 1.0 - maximum(missings_by_snp) / length(missings_by_person) ≥ 0.98
+  @test 1.0 - maximum(missings_by_person) / length(missings_by_snp) ≥ 0.98
 end
 
 @testset "grm" begin
