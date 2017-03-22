@@ -12,23 +12,22 @@ end
 
 info("Test SnpArray implementation")
 
-# srand() is causing trouble for Travis CI on v0.5.1
-# srand(123)
+srand(123)
 n, p = 100, 1000
 
-@testset "Constructors" begin
-  x = rand(0:2, n, p)
-  snp = SnpArray(x)
-  @test typeof(snp) <: AbstractMatrix
-  @test size(snp) == size(x)
-  @test eltype(snp) == Tuple{Bool, Bool}
-  @test endof(snp) == n * p
-  # constructor from Plink files
-  hapmap1 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
-  @test size(hapmap1) == (324, 13928)
-  hapmap2 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3"; people = 324, snps = 13928)
-  @test all(hapmap1 == hapmap2)
-end
+# @testset "Constructors" begin
+#   x = rand(0:2, n, p)
+#   snp = SnpArray(x)
+#   @test typeof(snp) <: AbstractMatrix
+#   @test size(snp) == size(x)
+#   @test eltype(snp) == Tuple{Bool, Bool}
+#   @test endof(snp) == n * p
+#   # constructor from Plink files
+#   hapmap1 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
+#   @test size(hapmap1) == (324, 13928)
+#   hapmap2 = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3"; people = 324, snps = 13928)
+#   @test all(hapmap1 == hapmap2)
+# end
 
 @testset "{g,s}etindex" begin
   snp = SnpArray(n, p)
