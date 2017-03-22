@@ -115,3 +115,30 @@ function filter(
     basepairs, allele1, allele2, maf, minor_allele, snpmatrix,
     missings_per_person, missings_per_snp)
 end
+
+"""
+    filter(S[, min_success_rate_per_person, min_success_rate_per_person, maxiters])
+
+Filter a SnpData by genotyping success rate.
+
+# Input
+- `S`: a SnpData.
+- `min_success_rate_per_snp`: threshold for SNP genotyping success rate.
+- `min_success_rate_per_person`: threshold for person genotyping success rate.
+- `maxiters`: maximum number of filtering iterations.
+
+# Output
+- filtered SnpData.
+"""
+function filter(
+  snpdata::SnpData,
+  min_success_rate_per_snp::Float64 = 0.98,
+  min_success_rate_per_person::Float64 = 0.98,
+  maxiters::Int = 3
+  )
+  # filter snparray
+  snp_idx, ppl_idx = filter(snpdata.snpmatrix, min_success_rate_per_snp,
+    min_success_rate_per_person, maxiters)
+  # filter snpdata
+  filter(snpdata, snp_idx, ppl_idx)
+end
