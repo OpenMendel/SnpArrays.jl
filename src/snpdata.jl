@@ -76,11 +76,24 @@ function writeplink(filename::AbstractString, snpdata::SnpData)
   close(fid)
 end
 
-# TODO Add the doc string
+"""
+    filter(snpdata, snp_idx, ppl_idx)
+
+Filter a SnpData `snpdata` according SNP (column) index vector `snp_idx` and
+person (column) index vector `ppl_idx`.
+
+# Input
+- `snpdata`: a SnpData.
+- `snp_idx`: a Bitvector of SNP index.
+- `ppl_idx`: a BitVector of person index.
+
+# Output
+- filtered snpdata.
+"""
 function filter(
   snpdata :: SnpData,
-  snp_idx :: BitArray{1},
-  ppl_idx :: BitArray{1}
+  snp_idx :: BitVector,
+  ppl_idx :: BitVector
   )
   # subset vectors and matrices
   snpmatrix        = snpdata.snpmatrix[ppl_idx, snp_idx]
@@ -98,5 +111,7 @@ function filter(
   # compute size fields with size
   people, snps = size(snpmatrix)
 
-  SnpData(people, snps, personid, snpid, chromosome, genetic_distance, basepairs, allele1, allele2, maf, minor_allele, snpmatrix, missings_per_person, missings_per_snp)
+  SnpData(people, snps, personid, snpid, chromosome, genetic_distance,
+    basepairs, allele1, allele2, maf, minor_allele, snpmatrix,
+    missings_per_person, missings_per_snp)
 end
