@@ -12,7 +12,8 @@ end
 
 info("Test SnpArray implementation")
 
-srand(123)
+# srand() is causing trouble for Travis CI on v0.5.1
+# srand(123)
 n, p = 100, 1000
 
 @testset "Constructors" begin
