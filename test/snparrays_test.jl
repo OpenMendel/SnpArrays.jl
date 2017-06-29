@@ -3,12 +3,7 @@ module SnpArraysTest
 using Compat
 import Compat:view, is_unix, issymmetric
 
-using SnpArrays
-if VERSION >= v"0.5.0"
-    using Base.Test
-else
-    using BaseTestNext
-end
+using SnpArrays, Base.Test
 
 info("Test SnpArray implementation")
 
@@ -127,9 +122,9 @@ end
   # convert in presence of missing genotypes
   hapmap = SnpArray(Pkg.dir("SnpArrays") * "/docs/hapmap3")
   @test any(isnan(hapmap))
-  @test any(isnan(convert(Matrix{Float64}, hapmap))) == true
-  @test any(isnan(convert(Matrix{Float64}, hapmap; impute = true))) == false
-  @test any(isnan(convert(SparseMatrixCSC{Float64, Int}, hapmap; impute = true))) == false
+  @test any(isnan.(convert(Matrix{Float64}, hapmap))) == true
+  @test any(isnan.(convert(Matrix{Float64}, hapmap; impute = true))) == false
+  @test any(isnan.(convert(SparseMatrixCSC{Float64, Int}, hapmap; impute = true))) == false
 end
 
 @testset "randgeno" begin
@@ -221,7 +216,7 @@ end
   @test all(eigvals(Φ_grm) .≥ -1.0e-6)
   # GRM: restrict memory usage to 5KB
   Φ_grm_memlim = grm(snp; method = :GRM, memory_limit = 5 * 2^10)
-  @test_approx_eq_eps vecnorm(Φ_grm - Φ_grm_memlim) 0.0 1.0e-8
+  @test vecnorm(Φ_grm - Φ_grm_memlim) ≈ 0.0 atol = 1e-8
   # empirical kinship by MoM
   #@code_warntype _mom(snp, 2.0^30)
   @inferred _mom(snp, 2.0^30)
@@ -231,7 +226,7 @@ end
   #@test all(eigvals(Φ_mom) .≥ -1.0e-6)
   # MoM: restrict memory usage to 1KB
   Φ_mom_memlim = grm(snp; method = :MoM, memory_limit = 5 * 2^10)
-  @test_approx_eq_eps vecnorm(Φ_mom - Φ_mom_memlim) 0.0 1.0e-8
+  @test vecnorm(Φ_mom - Φ_mom_memlim) ≈ 0 atol = 1e-8
 end
 
 @testset "pca" begin
@@ -240,12 +235,12 @@ end
   # PCA
   _, _, pcvariance_f64 = pca(snp, 3)
   _, _, pcvariance_f32 = pca(snp, 3, Matrix{Float32})
-  @test vecnorm(pcvariance_f32 - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
+  @test vecnorm(pcvariance_f32 - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1e-4
   # svds function only works with single and double precision matrix
   # _, _, pcvariance_f16 = pca(snp, 3, Matrix{Float16})
   # @test vecnorm(pcvariance_f16 - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
   _, _, pcvariance_f32sp = pca_sp(snp, 3, SparseMatrixCSC{Float32, UInt32})
-  @test vecnorm(pcvariance_f32sp - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1.0e-4
+  @test vecnorm(pcvariance_f32sp - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1e-4
 end
 
 @testset "SnpData" begin

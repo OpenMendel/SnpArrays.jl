@@ -3,7 +3,8 @@ module SnpArrays
 using Compat
 import Compat: view
 
-import IterativeSolvers: MatrixFcn
+using LinearMaps
+
 import Base: filter
 
 if VERSION ≥ v"0.5.0"
@@ -21,9 +22,9 @@ type SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
 end
 
 # SnpArray or a view of a SnpArray
-typealias SnpLike{N, S<:SnpArray} Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N, S}}
-typealias SnpMatrix SnpArray{2}
-typealias SnpVector SnpArray{1}
+SnpLike{N, S<:SnpArray} = Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N, S}}
+SnpMatrix = SnpArray{2}
+SnpVector = SnpArray{1}
 
 """
 Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
@@ -96,7 +97,7 @@ Base.size(A::SnpArray, d::Int)         = size(A.A1, d)
 Base.ndims(A::SnpArray)                = ndims(A.A1)
 Base.endof(A::SnpArray)                = length(A)
 Base.eltype(A::SnpArray)               = NTuple{2, Bool}
-Base.linearindexing(::Type{SnpArray})  = Base.LinearFast()
+Base.IndexStyle(::Type{SnpArray})      = Base.IndexLinear()
 
 @inline function Base.getindex(A::SnpArray, i::Int)
   (getindex(A.A1, i), getindex(A.A2, i))
@@ -467,9 +468,9 @@ function filter(
       break
     else
       # some remaining SNPs and people still below success rate threshold
-      snp_index[snp_index] &= (storage[3] / countnz(person_index)
+      snp_index[snp_index] .&= (storage[3] / countnz(person_index)
         .< 1.0 - min_success_rate_per_snp)
-      person_index[person_index] &= (storage[4] / countnz(snp_index)
+      person_index[person_index] .&= (storage[4] / countnz(snp_index)
         .< 1.0 - min_success_rate_per_person)
       r == maxiters && "maxiters reached; some SNPs and/or people may still have
         genotyping success rates below threshold."
@@ -647,15 +648,20 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
   # genotype matrix *not* centered or scaled
   G = convert(t, A; model = :additive, impute = true)
   # center and scale
-  maf, = summarize(A)
-  center = 2.0maf
-  weight = map((x) -> x == 0.0 ? 1.0 : 1.0 / √(2.0x * (1.0 - x)), maf)
-  # standardized genotype matrix
-  tmpv = zeros(eltype(center), n) # pre-allocate space for intermediate vector
-  Gs = MatrixFcn{eltype(center)}(p, p,
-    (output, v) -> AcstAcs_mul_B!(output, G, v, center, weight, tmpv))
+  maf,   = summarize(A)
+  center = zeros(T, p)
+  weight = zeros(T, p)
+  @inbounds @simd for i in 1:p
+      center[i] = 2maf[i]
+      weight[i] = maf[i] == 0? 1 : 1 / sqrt(2maf[i] * (1 - maf[i]))
+  end
+  # linear map defined by standardized genotype matrix
+  tmpv   = zeros(T, p) # pre-allocate space for intermediate vector
+  Gcsv!  = (output, v) ->  Acs_mul_B!(output, G, v, center, weight, tmpv)
+  Gcstw! = (output, w) -> Acsc_mul_B!(output, G, w, center, weight)
+  Gs     = LinearMap(Gcsv!, Gcstw!, n, p, T; ismutating=true)
   # PCs
-  pcvariance, pcloading, = eigs(Gs, nev = pcs)
+  pcvariance, pcloading, = eigs(Gs' * Gs, nev = pcs)
   # make first entry of each eigenvector nonneagtive for identifiability
   identify!(pcloading)
   # pcscore = Gs * pcloading
@@ -669,51 +675,15 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
 end # function pca_sp
 
 """
-Gram matrix Acs'Acs multiply B, where Acs is the centered and scaled A.
-"""
-function AcstAcs_mul_B!{T}(output::AbstractVector{T}, A::AbstractMatrix,
-  b::AbstractVector{T}, center::AbstractVector{T}, weight::AbstractVector{T},
-  tmp::Vector{T} = zeros(eltype(b), size(A, 1)))
-  # output is used as a temporary vector here
-  @inbounds @simd for i in eachindex(output)
-    output[i] = weight[i] * b[i]
-  end
-  A_mul_B!(tmp, A, output)
-  shift = dot(center, output)
-  @inbounds @simd for i in eachindex(tmp)
-    tmp[i] -= shift
-  end
-  # now output is the real output
-  Ac_mul_B!(output, A, tmp)
-  @inbounds @simd for i in eachindex(output)
-    output[i] *= weight[i]
-  end
-  output
-end # function AcstAcs_mul_B!
-
-"""
-Cheating: to bypass the isssym() error thrown by arpack.jl
-"""
-#if VERSION ≥ v"0.5.0"
-  issymmetric(fcn::MatrixFcn) = true
-#else
-  issym(fcn::MatrixFcn) = true
-#end
-
-"""
 Standardized A (centered by `center` and scaled by `weight`) multiply B.
 """
 function Acs_mul_B!{T, N}(output::AbstractArray{T, N}, A::AbstractMatrix,
   B::AbstractArray{T, N}, center::Vector{T}, weight::Vector{T},
-  tmp::AbstractArray{T, N} = zeros(eltype(B), size(B)))
-  @inbounds @simd for j in 1:size(B, 2)
-    for i in 1:size(B, 1)
-      tmp[i, j] = weight[i] * B[i, j]
-    end
-  end
-  A_mul_B!(output, A, tmp)
+  storage::AbstractArray{T, N} = similar(B))
+  A_mul_B!(storage, Diagonal(weight), B)
+  A_mul_B!(output, A, storage)
   @inbounds for j in 1:size(output, 2)
-    shift = dot(center, view(tmp, :, j))
+    shift = dot(center, view(storage, :, j))
     @simd for i in 1:size(output, 1)
       output[i, j] -= shift
     end
@@ -726,12 +696,12 @@ Transpose of standardized matrix A (centered by `center` and scaled by `weight`)
 multiply B.
 """
 function Acsc_mul_B!(output::AbstractVector, A::AbstractMatrix,
-  b::AbstractVector, center::AbstractVector, weight::AbstractVector,
-  tmpvec::AbstractVector = zeros(eltype(A), size(A, 2)))
-  Ac_mul_B!(tmpvec, A, b)
+  b::AbstractVector, center::AbstractVector, weight::AbstractVector)
+  Ac_mul_B!(output, A, b)
   shift = sum(b)
-  @inbounds @simd for i in eachindex(tmpvec)
-    tmpvec[i] = (tmpvec[i] - shift * center[i]) * weight[i]
+  @inbounds @simd for i in eachindex(output)
+    output[i] -= shift * center[i]
+    output[i] *= weight[i]
   end
   output
 end # function Acsc_mul_B!
