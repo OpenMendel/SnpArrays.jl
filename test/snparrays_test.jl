@@ -212,11 +212,11 @@ end
   #@code_warntype _grm(snp, 2.0^30)
   @inferred _grm(snp, 2.0^30)
   Φ_grm = grm(snp; method = :GRM)
-  @test @compat issymmetric(Φ_grm)
+  @test issymmetric(Φ_grm)
   @test all(eigvals(Φ_grm) .≥ -1.0e-6)
   # GRM: restrict memory usage to 5KB
   Φ_grm_memlim = grm(snp; method = :GRM, memory_limit = 5 * 2^10)
-  @test vecnorm(Φ_grm - Φ_grm_memlim) ≈ 0.0 atol = 1e-8
+  @test abs(vecnorm(Φ_grm - Φ_grm_memlim)) ≤ 1e-8
   # empirical kinship by MoM
   #@code_warntype _mom(snp, 2.0^30)
   @inferred _mom(snp, 2.0^30)
@@ -226,7 +226,7 @@ end
   #@test all(eigvals(Φ_mom) .≥ -1.0e-6)
   # MoM: restrict memory usage to 1KB
   Φ_mom_memlim = grm(snp; method = :MoM, memory_limit = 5 * 2^10)
-  @test vecnorm(Φ_mom - Φ_mom_memlim) ≈ 0 atol = 1e-8
+  @test abs(vecnorm(Φ_mom - Φ_mom_memlim)) ≤ 1e-8
 end
 
 @testset "pca" begin

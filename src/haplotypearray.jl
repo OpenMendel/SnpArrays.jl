@@ -29,9 +29,9 @@ function HaplotypeArray(dims...)
 end #
 
 # HaplotypeArray or a view of a HaplotypeArray
-HaplotypeLike{N, H<:HaplotypeArray} = Union{HaplotypeArray{N}, SubArray{NTuple{2, Bool}, N, H}}
-HaplotypeMatrix = HaplotypeArray{2}
-HaplotypeVector = HaplotypeArray{1}
+@compat HaplotypeLike{N, H<:HaplotypeArray} = Union{HaplotypeArray{N}, SubArray{NTuple{2, Bool}, N, H}}
+@compat HaplotypeMatrix = HaplotypeArray{2}
+@compat HaplotypeVector = HaplotypeArray{1}
 
 #---------------------------------------------------------------------------# methods
 # Julia docs on methods required for AbstractArray:
@@ -42,7 +42,7 @@ Base.size(A::HaplotypeArray, d::Int)         = size(A.A1, d)
 Base.ndims(A::HaplotypeArray)                = ndims(A.A1)
 Base.endof(A::HaplotypeArray)                = length(A)
 Base.eltype(A::HaplotypeArray)               = NTuple{2, Bool}
-Base.IndexStyle(::Type{HaplotypeArray})      = Base.IndexLinear()
+@compat Base.IndexStyle(::Type{HaplotypeArray})      = Base.IndexLinear()
 
 @inline function Base.getindex(A::HaplotypeArray, i::Int)
   (getindex(A.A1, i), getindex(A.A2, i))

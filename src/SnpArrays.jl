@@ -1,7 +1,6 @@
 module SnpArrays
 
 using Compat
-import Compat: view
 
 using LinearMaps
 
@@ -22,9 +21,9 @@ type SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
 end
 
 # SnpArray or a view of a SnpArray
-SnpLike{N, S<:SnpArray} = Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N, S}}
-SnpMatrix = SnpArray{2}
-SnpVector = SnpArray{1}
+@compat SnpLike{N, S<:SnpArray} = Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N, S}}
+@compat SnpMatrix = SnpArray{2}
+@compat SnpVector = SnpArray{1}
 
 """
 Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
@@ -97,7 +96,7 @@ Base.size(A::SnpArray, d::Int)         = size(A.A1, d)
 Base.ndims(A::SnpArray)                = ndims(A.A1)
 Base.endof(A::SnpArray)                = length(A)
 Base.eltype(A::SnpArray)               = NTuple{2, Bool}
-Base.IndexStyle(::Type{SnpArray})      = Base.IndexLinear()
+@compat Base.IndexStyle(::Type{SnpArray})      = Base.IndexLinear()
 
 @inline function Base.getindex(A::SnpArray, i::Int)
   (getindex(A.A1, i), getindex(A.A2, i))
