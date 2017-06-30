@@ -11,8 +11,6 @@
 
 ## Installation
 
-*Note: The three OpenMendel packages (1) [SnpArrays](https://openmendel.github.io/SnpArrays.jl/latest/), (2) [Search](https://openmendel.github.io/Search.jl), and (3) [MendelBase](https://openmendel.github.io/MendelBase.jl) must be installed before any other OpenMendel package will run. It is easiest if these three packages are installed in the above order and before any other OpenMendel package.*
-
 Within Julia, use the package manager to install SnpArrays:
 
     Pkg.clone("https://github.com/OpenMendel/SnpArrays.jl.git")
