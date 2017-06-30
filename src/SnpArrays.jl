@@ -1,16 +1,8 @@
 module SnpArrays
 
-using Compat
+using Compat, LinearMaps
 
-using LinearMaps
-
-import Base: filter
-
-if VERSION ≥ v"0.5.0"
-  import Base.issymmetric
-else
-  import Base.issym
-end
+import Base: filter, issymmetric
 
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
   SnpArray, SnpData, SnpLike, summarize, writeplink, issym, issymmetric
@@ -63,12 +55,12 @@ function SnpArray(
     # v1.0 BED file
     if bits(bedheader[3]) == "00000001"
       # SNP-major
-      plinkbits = Mmap.mmap(fid, BitArray{3}, (2, 4ceil(Int, 0.25people), snps))
+      plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25people), snps))
       A1 = plinkbits[1, 1:people, :]
       A2 = plinkbits[2, 1:people, :]
     else
       # individual-major
-      plinkbits = Mmap.mmap(fid, BitArray{3}, (2, 4ceil(Int, 0.25snps), people))
+      plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25snps), people))
       A1 = plinkbits[1, 1:snps, :]'
       A2 = plinkbits[2, 1:snps, :]'
     end
