@@ -59,22 +59,18 @@ function SnpArray(
   bedheader = read(fid, UInt8, 3)
   # PLINK coding (genotype->bits): A1/A1->00, A1/A2->01, A2/A2->11, missing->10
   # http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml
-  A1 = BitArray(people, snps)
-  A2 = BitArray(people, snps)
   if bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011"
     # v1.0 BED file
     if bits(bedheader[3]) == "00000001"
       # SNP-major
-      plinkbits = Mmap.mmap(fid, BitArray{3},
-        (2, 4ceil(Int, 0.25people), snps))
-      A1 = copy!(A1, view(plinkbits, 1, 1:people, :))
-      A2 = copy!(A2, view(plinkbits, 2, 1:people, :))
+      plinkbits = Mmap.mmap(fid, BitArray{3}, (2, 4ceil(Int, 0.25people), snps))
+      A1 = plinkbits[1, 1:people, :]
+      A2 = plinkbits[2, 1:people, :]
     else
       # individual-major
-      snpbits = Mmap.mmap(fid, BitArray{3},
-        (2, 4ceil(Int, 0.25snps), people))
-      A1 = copy!(A1, view(plinkbits, 1, 1:people, :)')
-      A2 = copy!(A2, view(plinkbits, 2, 1:people, :)')
+      plinkbits = Mmap.mmap(fid, BitArray{3}, (2, 4ceil(Int, 0.25snps), people))
+      A1 = plinkbits[1, 1:snps, :]'
+      A2 = plinkbits[2, 1:snps, :]'
     end
   else
     # TODO: v0.99 BED file: individual-major
