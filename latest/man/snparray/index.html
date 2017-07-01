@@ -1,10 +1,11 @@
 
 <!DOCTYPE html>
-<html class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
       
         <meta name="description" content="Compressed storage for SNP data">
       
@@ -15,7 +16,7 @@
       
         <link rel="shortcut icon" href="../../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.2, mkdocs-material-1.4.1">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.7.4">
     
     
       
@@ -23,12 +24,12 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
+      <script src="../../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application-76741b64bc.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application-769c285a91.css">
       
-        <link rel="stylesheet" href="../../assets/stylesheets/application-66fa0d9bba.palette.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/application-02c2a4388f.palette.css">
       
     
     
@@ -95,15 +96,16 @@
           <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
           
 <div class="md-search" data-md-component="search">
-  <div class="md-search__overlay"></div>
+  <label class="md-search__overlay" for="search"></label>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
+      <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
       <label class="md-icon md-search__icon" for="search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
+        <div class="md-search-result" data-md-component="result" data-md-lang-search="">
           <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
             Type to start searching
           </div>
@@ -115,9 +117,9 @@
 </div>
         
       </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <div class="md-header-nav__source">
-          
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
             
 
 
@@ -137,9 +139,9 @@
     </div>
   </a>
 
-          
+          </div>
         </div>
-      </div>
+      
     </div>
   </nav>
 </header>
@@ -454,7 +456,7 @@
                 
                 <p><a id='SnpArray-1'></a></p>
 <h1 id="snparray">SnpArray</h1>
-<p><code>SnpArray</code> is an array of <code>Tuple{Bool,Bool}</code> and adopts the same coding as the <a href="http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml">Plink binary format</a>. If <code>A1</code> and <code>A2</code> are the two alleles, the coding rule is  </p>
+<p><code>SnpArray</code> is an array of <code>Tuple{Bool,Bool}</code> and adopts the same coding as the <a href="http://zzz.bwh.harvard.edu/plink/binary.shtml">Plink binary format</a>. If <code>A1</code> and <code>A2</code> are the two alleles, the coding rule is  </p>
 <table>
 <thead>
 <tr>
@@ -487,16 +489,16 @@
 <h2 id="constructor">Constructor</h2>
 <p>There are various ways to initialize a <code>SnpArray</code>.  </p>
 <ul>
-<li><code>SnpArray</code> can be initialized from <a href="http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml">Plink binary files</a>, say the sample data set hapmap3:</li>
+<li><code>SnpArray</code> can be initialized from <a href="http://zzz.bwh.harvard.edu/plink/binary.shtml">Plink binary files</a>, say the sample data set hapmap3:</li>
 </ul>
-<div class="codehilite"><pre><span></span><span class="p">;</span><span class="n">ls</span> <span class="o">-</span><span class="n">al</span> <span class="n">hapmap3</span><span class="o">.*</span>
+<div class="codehilite"><pre><span></span><span class="p">;</span><span class="n">ls</span> <span class="o">-</span><span class="n">al</span> <span class="s">&quot;hapmap3.*&quot;</span>
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>-rw-r--r--  1 hzhou3  staff  1128171 Sep 20 14:54 hapmap3.bed
--rw-r--r--  1 hzhou3  staff   388672 Sep 20 14:54 hapmap3.bim
--rw-r--r--  1 hzhou3  staff     7136 Sep 20 14:54 hapmap3.fam
--rw-r--r--  1 hzhou3  staff   332960 Sep 20 14:54 hapmap3.map
+<div class="codehilite"><pre><span></span>-rw-r--r--  1 huazhou  staff  1128171 Jun 30 07:48 hapmap3.bed
+-rw-r--r--  1 huazhou  staff   388672 Jun 30 07:48 hapmap3.bim
+-rw-r--r--  1 huazhou  staff     7136 Jun 30 07:48 hapmap3.fam
+-rw-r--r--  1 huazhou  staff   332960 Jun 30 07:48 hapmap3.map
 </pre></div>
 
 
@@ -506,32 +508,32 @@
 
 
 <div class="codehilite"><pre><span></span>324×13928 SnpArrays.SnpArray{2}:
- (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
- (true,true)  (false,true)  (false,true)      (false,true)  (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (false,true)  (true,true)    …  (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- ⋮                                         ⋱                           
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
+ (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+ (true, true)  (false, true)  (false, true)      (false, true)  (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (false, true)  (true, true)    …  (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ ⋮                                            ⋱                             
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
 </pre></div>
 
 
@@ -541,7 +543,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(324,13928)
+<div class="codehilite"><pre><span></span>(324, 13928)
 </pre></div>
 
 
@@ -551,32 +553,32 @@
 
 
 <div class="codehilite"><pre><span></span>324×13928 SnpArrays.SnpArray{2}:
- (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
- (true,true)  (false,true)  (false,true)      (false,true)  (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (false,true)  (true,true)    …  (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- ⋮                                         ⋱                           
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
+ (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+ (true, true)  (false, true)  (false, true)      (false, true)  (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (false, true)  (true, true)    …  (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ ⋮                                            ⋱                             
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
 </pre></div>
 
 
@@ -586,7 +588,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(1128256,1128171)
+<div class="codehilite"><pre><span></span>(1128256, 1128171)
 </pre></div>
 
 
@@ -598,11 +600,11 @@
 
 
 <div class="codehilite"><pre><span></span>5×3 SnpArrays.SnpArray{2}:
- (false,false)  (false,false)  (false,true) 
- (true,true)    (true,true)    (false,true) 
- (false,true)   (false,false)  (false,false)
- (false,false)  (false,true)   (false,true) 
- (true,true)    (false,false)  (false,true)
+ (false, false)  (false, false)  (false, true) 
+ (true, true)    (true, true)    (false, true) 
+ (false, true)   (false, false)  (false, false)
+ (false, false)  (false, true)   (false, true) 
+ (true, true)    (false, false)  (false, true)
 </pre></div>
 
 
@@ -614,11 +616,11 @@
 
 
 <div class="codehilite"><pre><span></span>5×3 SnpArrays.SnpArray{2}:
- (false,false)  (false,false)  (false,false)
- (false,false)  (false,false)  (false,false)
- (false,false)  (false,false)  (false,false)
- (false,false)  (false,false)  (false,false)
- (false,false)  (false,false)  (false,false)
+ (false, false)  (false, false)  (false, false)
+ (false, false)  (false, false)  (false, false)
+ (false, false)  (false, false)  (false, false)
+ (false, false)  (false, false)  (false, false)
+ (false, false)  (false, false)  (false, false)
 </pre></div>
 
 
@@ -637,7 +639,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>1×13928 Array{Float64,2}:
+<div class="codehilite"><pre><span></span>1×13928 RowVector{Float64,Array{Float64,1}}:
  0.0  0.0776398  0.324074  0.191589  …  0.00154321  0.0417957  0.00617284
 </pre></div>
 
@@ -647,7 +649,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(11894,11894)
+<div class="codehilite"><pre><span></span>(11894, 11894)
 </pre></div>
 
 
@@ -695,7 +697,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(false,true)
+<div class="codehilite"><pre><span></span>(false, true)
 </pre></div>
 
 
@@ -704,7 +706,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(true,true)
+<div class="codehilite"><pre><span></span>(true, true)
 </pre></div>
 
 
@@ -714,16 +716,16 @@
 
 
 <div class="codehilite"><pre><span></span>10-element SnpArrays.SnpArray{1}:
- (false,true)
- (true,true) 
- (true,true) 
- (false,true)
- (false,true)
- (false,true)
- (false,true)
- (true,true) 
- (false,true)
- (true,true)
+ (false, true)
+ (true, true) 
+ (true, true) 
+ (false, true)
+ (false, true)
+ (false, true)
+ (false, true)
+ (true, true) 
+ (false, true)
+ (true, true)
 </pre></div>
 
 
@@ -734,32 +736,32 @@
 
 
 <div class="codehilite"><pre><span></span>324×13928 SnpArrays.SnpArray{2}:
- (true,true)  (true,true)   (true,true)    …  (true,true)   (true,true)
- (true,true)  (false,true)  (true,true)       (false,true)  (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (false,true)  (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)    …  (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (false,true)  (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (false,true)  (true,true)       (true,true)   (true,true)
- ⋮                                         ⋱                           
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (false,true)  (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)    …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (false,true)  (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)    …  (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
+ (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+ (true, true)  (false, true)  (true, true)       (false, true)  (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+ ⋮                                            ⋱                             
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (false, true)  (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
 </pre></div>
 
 
@@ -772,32 +774,32 @@
 
 
 <div class="codehilite"><pre><span></span>13928-element SnpArrays.SnpArray{1}:
- (true,true)  
- (true,true)  
- (false,false)
- (true,true)  
- (true,true)  
- (true,true)  
- (false,true) 
- (false,true) 
- (true,true)  
- (false,true) 
- (true,true)  
- (true,true)  
- (false,false)
- ⋮            
- (false,true) 
- (false,true) 
- (true,true)  
- (false,true) 
- (false,true) 
- (false,true) 
- (false,true) 
- (false,true) 
- (false,true) 
- (true,true)  
- (true,true)  
- (true,true)
+ (true, true)  
+ (true, true)  
+ (false, false)
+ (true, true)  
+ (true, true)  
+ (true, true)  
+ (false, true) 
+ (false, true) 
+ (true, true)  
+ (false, true) 
+ (true, true)  
+ (true, true)  
+ (false, false)
+ ⋮             
+ (false, true) 
+ (false, true) 
+ (true, true)  
+ (false, true) 
+ (false, true) 
+ (false, true) 
+ (false, true) 
+ (false, true) 
+ (false, true) 
+ (true, true)  
+ (true, true)  
+ (true, true)
 </pre></div>
 
 
@@ -807,32 +809,32 @@
 
 
 <div class="codehilite"><pre><span></span>324-element SnpArrays.SnpArray{1}:
- (true,true)  
- (true,true)  
- (false,true) 
- (false,true) 
- (true,true)  
- (false,false)
- (false,false)
- (true,true)  
- (true,true)  
- (true,true)  
- (true,true)  
- (true,true)  
- (false,true) 
- ⋮            
- (false,false)
- (true,true)  
- (false,true) 
- (true,true)  
- (true,true)  
- (true,true)  
- (true,true)  
- (true,true)  
- (false,true) 
- (true,true)  
- (true,true)  
- (true,true)
+ (true, true)  
+ (true, true)  
+ (false, true) 
+ (false, true) 
+ (true, true)  
+ (false, false)
+ (false, false)
+ (true, true)  
+ (true, true)  
+ (true, true)  
+ (true, true)  
+ (true, true)  
+ (false, true) 
+ ⋮             
+ (false, false)
+ (true, true)  
+ (false, true) 
+ (true, true)  
+ (true, true)  
+ (true, true)  
+ (true, true)  
+ (true, true)  
+ (false, true) 
+ (true, true)  
+ (true, true)  
+ (true, true)
 </pre></div>
 
 
@@ -842,11 +844,11 @@
 
 
 <div class="codehilite"><pre><span></span>5×6 SnpArrays.SnpArray{2}:
- (true,true)   (true,true)  (false,true)  …  (true,true)   (false,true)
- (true,true)   (true,true)  (true,true)      (true,true)   (false,true)
- (false,true)  (true,true)  (true,true)      (false,true)  (true,true) 
- (false,true)  (true,true)  (true,true)      (true,true)   (false,true)
- (true,true)   (true,true)  (true,true)      (true,true)   (false,true)
+ (true, true)   (true, true)  (false, true)  …  (true, true)   (false, true)
+ (true, true)   (true, true)  (true, true)      (true, true)   (false, true)
+ (false, true)  (true, true)  (true, true)      (false, true)  (true, true) 
+ (false, true)  (true, true)  (true, true)      (true, true)   (false, true)
+ (true, true)   (true, true)  (true, true)      (true, true)   (false, true)
 </pre></div>
 
 
@@ -856,32 +858,32 @@
 
 
 <div class="codehilite"><pre><span></span>324×12085 SnpArrays.SnpArray{2}:
- (true,true)   (false,false)  (true,true)   …  (false,true)  (false,true)
- (false,true)  (false,true)   (false,true)     (true,true)   (true,true) 
- (true,true)   (false,true)   (false,true)     (true,true)   (true,true) 
- (true,true)   (false,true)   (true,true)      (false,true)  (false,true)
- (true,true)   (false,true)   (false,true)     (true,true)   (true,true) 
- (false,true)  (true,true)    (true,true)   …  (false,true)  (false,true)
- (true,true)   (true,true)    (true,true)      (true,true)   (true,true) 
- (true,true)   (false,false)  (true,true)      (true,true)   (true,true) 
- (true,true)   (false,true)   (false,true)     (true,true)   (true,true) 
- (true,true)   (false,true)   (true,true)      (false,true)  (false,true)
- (true,true)   (false,true)   (true,true)   …  (true,true)   (true,true) 
- (true,true)   (true,true)    (false,true)     (false,true)  (false,true)
- (true,true)   (false,false)  (true,true)      (false,true)  (false,true)
- ⋮                                          ⋱                            
- (true,true)   (false,true)   (true,true)      (false,true)  (false,true)
- (true,true)   (false,false)  (true,true)      (false,true)  (false,true)
- (true,true)   (false,false)  (true,true)      (true,true)   (true,true) 
- (true,true)   (false,false)  (false,true)  …  (true,true)   (true,true) 
- (true,true)   (false,true)   (true,true)      (true,true)   (true,true) 
- (true,true)   (true,true)    (false,true)     (false,true)  (false,true)
- (true,true)   (false,true)   (false,true)     (false,true)  (false,true)
- (true,true)   (false,true)   (true,true)      (true,true)   (true,true) 
- (true,true)   (false,false)  (true,true)   …  (false,true)  (false,true)
- (true,true)   (false,true)   (false,true)     (false,true)  (false,true)
- (true,true)   (false,false)  (false,true)     (false,true)  (false,true)
- (true,true)   (false,false)  (true,true)      (true,true)   (true,true)
+ (true, true)   (false, false)  …  (false, true)  (false, true)
+ (false, true)  (false, true)      (true, true)   (true, true) 
+ (true, true)   (false, true)      (true, true)   (true, true) 
+ (true, true)   (false, true)      (false, true)  (false, true)
+ (true, true)   (false, true)      (true, true)   (true, true) 
+ (false, true)  (true, true)    …  (false, true)  (false, true)
+ (true, true)   (true, true)       (true, true)   (true, true) 
+ (true, true)   (false, false)     (true, true)   (true, true) 
+ (true, true)   (false, true)      (true, true)   (true, true) 
+ (true, true)   (false, true)      (false, true)  (false, true)
+ (true, true)   (false, true)   …  (true, true)   (true, true) 
+ (true, true)   (true, true)       (false, true)  (false, true)
+ (true, true)   (false, false)     (false, true)  (false, true)
+ ⋮                              ⋱                              
+ (true, true)   (false, true)      (false, true)  (false, true)
+ (true, true)   (false, false)     (false, true)  (false, true)
+ (true, true)   (false, false)     (true, true)   (true, true) 
+ (true, true)   (false, false)  …  (true, true)   (true, true) 
+ (true, true)   (false, true)      (true, true)   (true, true) 
+ (true, true)   (true, true)       (false, true)  (false, true)
+ (true, true)   (false, true)      (false, true)  (false, true)
+ (true, true)   (false, true)      (true, true)   (true, true) 
+ (true, true)   (false, false)  …  (false, true)  (false, true)
+ (true, true)   (false, true)      (false, true)  (false, true)
+ (true, true)   (false, false)     (false, true)  (false, true)
+ (true, true)   (false, false)     (true, true)   (true, true)
 </pre></div>
 
 
@@ -891,42 +893,42 @@
 
 
 <div class="codehilite"><pre><span></span>220×13928 SnpArrays.SnpArray{2}:
- (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
- (true,true)  (false,true)  (false,true)      (false,true)  (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (false,true)  (false,true)   …  (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
- ⋮                                         ⋱                           
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
- (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
+ (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+ (true, true)  (false, true)  (false, true)      (false, true)  (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (false, true)  (false, true)   …  (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+ ⋮                                            ⋱                             
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+ (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
 </pre></div>
 
 
-<p><code>sub()</code> and <code>slice()</code> create views of subarray without copying data and improve efficiency in many calculations.</p>
-<div class="codehilite"><pre><span></span><span class="n">mafcommon</span><span class="p">,</span> <span class="o">=</span> <span class="n">summarize</span><span class="p">(</span><span class="n">hapmap</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="n">maf</span> <span class="o">.≥</span> <span class="mf">0.05</span><span class="p">])</span>
+<p><code>view</code> creates views of subarray without copying data and improve efficiency in many calculations.</p>
+<div class="codehilite"><pre><span></span><span class="n">mafcommon</span><span class="p">,</span> <span class="o">=</span> <span class="n">summarize</span><span class="p">(</span><span class="n">view</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="o">:</span><span class="p">,</span> <span class="n">maf</span> <span class="o">.≥</span> <span class="mf">0.05</span><span class="p">))</span>
 <span class="n">mafcommon</span><span class="o">&#39;</span>
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>1×12085 Array{Float64,2}:
+<div class="codehilite"><pre><span></span>1×12085 RowVector{Float64,Array{Float64,1}}:
  0.0776398  0.324074  0.191589  …  0.310937  0.23913  0.23913  0.23913
 </pre></div>
 
@@ -938,7 +940,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(true,true)
+<div class="codehilite"><pre><span></span>(true, true)
 </pre></div>
 
 
@@ -947,7 +949,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(false,true)
+<div class="codehilite"><pre><span></span>(false, true)
 </pre></div>
 
 
@@ -956,7 +958,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(true,false)
+<div class="codehilite"><pre><span></span>(true, false)
 </pre></div>
 
 
@@ -965,7 +967,7 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(true,true)
+<div class="codehilite"><pre><span></span>(true, true)
 </pre></div>
 
 
@@ -1096,29 +1098,29 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>324×13928 sparse matrix with 1614876 Float32 nonzero entries:
-    [2    ,     2]  =  1.0
-    [6    ,     2]  =  1.0
-    [15   ,     2]  =  1.0
-    [31   ,     2]  =  1.0
-    [33   ,     2]  =  1.0
-    [35   ,     2]  =  1.0
-    [43   ,     2]  =  1.0
-    [44   ,     2]  =  1.0
-    [50   ,     2]  =  1.0
-    [54   ,     2]  =  1.0
-    ⋮
-    [135  , 13927]  =  1.0
-    [148  , 13927]  =  1.0
-    [160  , 13927]  =  1.0
-    [164  , 13927]  =  2.0
-    [167  , 13927]  =  1.0
-    [185  , 13927]  =  1.0
-    [266  , 13927]  =  1.0
-    [280  , 13927]  =  1.0
-    [288  , 13927]  =  1.0
-    [118  , 13928]  =  2.0
-    [231  , 13928]  =  2.0
+<div class="codehilite"><pre><span></span>324×13928 SparseMatrixCSC{Float32,UInt32} with 1614876 stored entries:
+  [2    ,     2]  =  1.0
+  [6    ,     2]  =  1.0
+  [15   ,     2]  =  1.0
+  [31   ,     2]  =  1.0
+  [33   ,     2]  =  1.0
+  [35   ,     2]  =  1.0
+  [43   ,     2]  =  1.0
+  [44   ,     2]  =  1.0
+  [50   ,     2]  =  1.0
+  [54   ,     2]  =  1.0
+  ⋮
+  [135  , 13927]  =  1.0
+  [148  , 13927]  =  1.0
+  [160  , 13927]  =  1.0
+  [164  , 13927]  =  2.0
+  [167  , 13927]  =  1.0
+  [185  , 13927]  =  1.0
+  [266  , 13927]  =  1.0
+  [280  , 13927]  =  1.0
+  [288  , 13927]  =  1.0
+  [118  , 13928]  =  2.0
+  [231  , 13928]  =  2.0
 </pre></div>
 
 
@@ -1133,17 +1135,17 @@
 
 <p>By default the <code>convert()</code> method converts missing genotypes to <code>NaN</code>.</p>
 <div class="codehilite"><pre><span></span><span class="c"># number of missing genotypes</span>
-<span class="n">countnz</span><span class="p">(</span><span class="n">isnan</span><span class="p">(</span><span class="n">hapmap</span><span class="p">)),</span> <span class="n">countnz</span><span class="p">(</span><span class="n">isnan</span><span class="p">(</span><span class="n">hapmapf64</span><span class="p">))</span>
+<span class="n">countnz</span><span class="p">(</span><span class="n">isnan</span><span class="o">.</span><span class="p">(</span><span class="n">hapmap</span><span class="p">)),</span> <span class="n">countnz</span><span class="p">(</span><span class="n">isnan</span><span class="o">.</span><span class="p">(</span><span class="n">hapmapf64</span><span class="p">))</span>
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(11894,11894)
+<div class="codehilite"><pre><span></span>(11894, 11894)
 </pre></div>
 
 
 <p>One can enforce <strong>crude imputation</strong> by setting the optional argument <code>impute=true</code>. Imputation is done by generating two random alleles according to the minor allele frequency. This is a neutral but not an optimal strategy, and users should impute missing genotypes by more advanced methods.</p>
 <div class="codehilite"><pre><span></span><span class="n">hapmapf64impute</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="kt">Matrix</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span> <span class="n">hapmap</span><span class="p">;</span> <span class="n">impute</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span>
-<span class="n">countnz</span><span class="p">(</span><span class="n">isnan</span><span class="p">(</span><span class="n">hapmapf64impute</span><span class="p">))</span>
+<span class="n">countnz</span><span class="p">(</span><span class="n">isnan</span><span class="o">.</span><span class="p">(</span><span class="n">hapmapf64impute</span><span class="p">))</span>
 </pre></div>
 
 
@@ -1423,18 +1425,13 @@
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>(
-[-38.7231 1.2983 7.00541; -32.6096 1.21052 3.3232; … ; -48.9263 2.06102 -2.17374; -48.8627 -0.274894 -6.49518],
-
-[2.3577e-19 3.90359e-19 2.05628e-18; 0.00143962 0.0042375 0.00311816; … ; 0.00313326 0.00427486 0.0152038; -9.09523e-5 0.00287777 -0.0037855],
-
-[1841.4,225.324,70.7084])
+<div class="codehilite"><pre><span></span>([-38.7231 1.2983 -7.00541; -32.6096 1.21052 -3.3232; … ; -48.9263 2.06102 2.17374; -48.8627 -0.274894 6.49518], [-1.64162e-18 7.41502e-19 -5.96439e-18; 0.00143962 0.0042375 -0.00311816; … ; 0.00313326 0.00427486 -0.0152038; -9.09523e-5 0.00287777 0.0037855], [1841.4, 225.324, 70.7084])
 </pre></div>
 
 
 <p>To use eigen-SNPs for plotting or as covariates in GWAS, we typically scale them by their standard deviations so that they have mean zero and unit variance.</p>
 <div class="codehilite"><pre><span></span><span class="c"># standardize eigen-SNPs before plotting or GWAS</span>
-<span class="n">scale!</span><span class="p">(</span><span class="n">pcscore</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">./</span> <span class="o">√</span><span class="p">(</span><span class="n">pcvariance</span><span class="p">))</span>
+<span class="n">scale!</span><span class="p">(</span><span class="n">pcscore</span><span class="p">,</span> <span class="mi">1</span> <span class="o">./</span> <span class="n">sqrt</span><span class="o">.</span><span class="p">(</span><span class="n">pcvariance</span><span class="p">))</span>
 <span class="n">std</span><span class="p">(</span><span class="n">pcscore</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
@@ -1456,9 +1453,9 @@
 
 
 <div class="codehilite"><pre><span></span>3-element Array{Float32,1}:
- 1841.4   
+ 1841.39  
   225.323 
-   70.7084
+   70.7085
 </pre></div>
 
 
@@ -1467,7 +1464,7 @@
 </ul>
 <div class="codehilite"><pre><span></span><span class="c"># principal components using every other SNP capture about half the variance</span>
 <span class="n">srand</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
-<span class="n">pca</span><span class="p">(</span><span class="n">sub</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="o">:</span><span class="mi">2</span><span class="o">:</span><span class="n">snps</span><span class="p">),</span> <span class="mi">3</span><span class="p">)[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">pca</span><span class="p">(</span><span class="n">view</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="o">:</span><span class="mi">2</span><span class="o">:</span><span class="n">snps</span><span class="p">),</span> <span class="mi">3</span><span class="p">)[</span><span class="mi">3</span><span class="p">]</span>
 </pre></div>
 
 
@@ -1483,31 +1480,37 @@
 </ul>
 <div class="codehilite"><pre><span></span><span class="c"># approximately same answer if we use Float16 sparse matrix</span>
 <span class="n">srand</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
-<span class="n">pca_sp</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kt">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Float16</span><span class="p">,</span> <span class="kt">UInt32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">pca_sp</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kt">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Float32</span><span class="p">,</span> <span class="kt">UInt32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>3-element Array{Float64,1}:
- 1841.4   
-  225.314 
-   70.7006
-</pre></div>
+<div class="codehilite"><pre><span></span>[1m[33mWARNING: [39m[22m[33mArray{T}(::Type{T}, m::Int) is deprecated, use Array{T}(m) instead.[39m
+Stacktrace:
+ [1] [1mdepwarn[22m[22m[1m([22m[22m::String, ::Symbol[1m)[22m[22m at [1m./deprecated.jl:70[22m[22m
+ [2] [1mArray[22m[22m[1m([22m[22m::Type{Float32}, ::Int64[1m)[22m[22m at [1m./deprecated.jl:57[22m[22m
+ [3] [1mA_mul_B![22m[22m[1m([22m[22m::SubArray{Float32,1,Array{Float32,1},Tuple{UnitRange{Int64}},true}, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::SubArray{Float32,1,Array{Float32,1},Tuple{UnitRange{Int64}},true}[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/LinearMaps/src/composition.jl:88[22m[22m
+ [4] [1maupd_wrapper[22m[22m[1m([22m[22m::Type{T} where T, ::Base.LinAlg.#matvecA!#114{LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}}, ::Base.LinAlg.##108#115, ::Base.LinAlg.##109#116, ::Int64, ::Bool, ::Bool, ::String, ::Int64, ::Int64, ::String, ::Float64, ::Int64, ::Int64, ::Array{Float32,1}[1m)[22m[22m at [1m./linalg/arpack.jl:59[22m[22m
+ [5] [1m#_eigs#107[22m[22m[1m([22m[22m::Int64, ::Int64, ::Symbol, ::Float64, ::Int64, ::Void, ::Array{Float32,1}, ::Bool, ::Base.LinAlg.#_eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./linalg/arnoldi.jl:285[22m[22m
+ [6] [1m(::Base.LinAlg.#kw##_eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#_eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./&lt;missing&gt;:0[22m[22m
+ [7] [1m#eigs#106[22m[22m[1m([22m[22m::Array{Any,1}, ::Function, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./linalg/arnoldi.jl:170[22m[22m
+ [8] [1m(::Base.LinAlg.#kw##eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./&lt;missing&gt;:0[22m[22m
+ [9] [1m#eigs#99[22m[22m at [1m./linalg/arnoldi.jl:90[22m[22m [inlined]
+ [10] [1m(::Base.LinAlg.#kw##eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}[1m)[22m[22m at [1m./&lt;missing&gt;:0[22m[22m
+ [11] [1mpca_sp[22m[22m[1m([22m[22m::SnpArrays.SnpArray{2}, ::Int64, ::Type{SparseMatrixCSC{Float32,UInt32}}[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/SnpArrays/src/SnpArrays.jl:652[22m[22m
+ [12] [1minclude_string[22m[22m[1m([22m[22m::String, ::String[1m)[22m[22m at [1m./loading.jl:515[22m[22m
+ [13] [1mexecute_request[22m[22m[1m([22m[22m::ZMQ.Socket, ::IJulia.Msg[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/IJulia/src/execute_request.jl:160[22m[22m
+ [14] [1meventloop[22m[22m[1m([22m[22m::ZMQ.Socket[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/IJulia/src/eventloop.jl:8[22m[22m
+ [15] [1m(::IJulia.##11#14)[22m[22m[1m([22m[22m[1m)[22m[22m at [1m./task.jl:335[22m[22m
+while loading In[94], in expression starting on line 3
 
 
-<div class="codehilite"><pre><span></span><span class="c"># approximately same answer if we use Int8 sparse matrix</span>
-<span class="n">srand</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
-<span class="n">pca_sp</span><span class="p">(</span><span class="n">hapmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kt">SparseMatrixCSC</span><span class="p">{</span><span class="kt">Int8</span><span class="p">,</span> <span class="kt">UInt32</span><span class="p">})[</span><span class="mi">3</span><span class="p">]</span>
-</pre></div>
 
 
-<div class="codehilite"><pre><span></span>3-element Array{Float64,1}:
- 1841.4   
-  225.323 
-   70.7057
-</pre></div>
 
-
-<div class="codehilite"><pre><span></span>
+3-element Array{Float32,1}:
+ 1841.39  
+  225.324 
+   70.7083
 </pre></div>
                 
                   
@@ -1578,7 +1581,9 @@
       
     </div>
     
-      <script src="../../assets/javascripts/application-3964c0cb56.js"></script>
+      <script src="../../assets/javascripts/application-c35428f87f.js"></script>
+      
+      
       <script>app.initialize({url:{base:"../.."}})</script>
       
         <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
