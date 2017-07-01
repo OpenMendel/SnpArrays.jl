@@ -16,6 +16,7 @@ notifications:
     on_failure: always
   recipients:
     - esobel@ucla.edu
+install: travis_wait 30 mvn install
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes --depwarn=no -e 'Pkg.clone(pwd()); Pkg.build("SnpArrays"); Pkg.test("SnpArrays"; coverage=true)'
