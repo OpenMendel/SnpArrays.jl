@@ -586,8 +586,9 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
   t::Type{Matrix{T}} = Matrix{Float64})
   n, p = size(A)
   # memory-mapped genotype matrix G, centered and scaled
-  G = Mmap.mmap(t, (n, p))
-  copy!(G, A; model = :additive, impute = true, center = true, scale = true)
+  #G = Mmap.mmap(t, (n, p))
+  #copy!(G, A; model = :additive, impute = true, center = true, scale = true)
+  G = convert(t, A; model = :additive, impute = true, center = true, scale = true)
   if VERSION ≥ v"0.6-"
      # partial SVD
      # In v0.6, G = Gsvd[:U] * diagm(Gsvd[:S]) * Gsvd[:Vt]
