@@ -1,7 +1,7 @@
 
 # SnpArray
 
-`SnpArray` is an array of `Tuple{Bool,Bool}` and adopts the same coding as the [Plink binary format](http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml). If `A1` and `A2` are the two alleles, the coding rule is  
+`SnpArray` is an array of `Tuple{Bool,Bool}` and adopts the same coding as the [Plink binary format](http://zzz.bwh.harvard.edu/plink/binary.shtml). If `A1` and `A2` are the two alleles, the coding rule is  
 
 | Genotype | SnpArray |  
 |:---:|:---:|  
@@ -18,17 +18,17 @@ For complete genotype data, for example, after imputation, consider using the [H
 
 There are various ways to initialize a `SnpArray`.  
 
-* `SnpArray` can be initialized from [Plink binary files](http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml), say the sample data set hapmap3:
+* `SnpArray` can be initialized from [Plink binary files](http://zzz.bwh.harvard.edu/plink/binary.shtml), say the sample data set hapmap3:
 
 
 ```julia
-;ls -al hapmap3.*
+;ls -al "hapmap3.*"
 ```
 
-    -rw-r--r--  1 hzhou3  staff  1128171 Sep 20 14:54 hapmap3.bed
-    -rw-r--r--  1 hzhou3  staff   388672 Sep 20 14:54 hapmap3.bim
-    -rw-r--r--  1 hzhou3  staff     7136 Sep 20 14:54 hapmap3.fam
-    -rw-r--r--  1 hzhou3  staff   332960 Sep 20 14:54 hapmap3.map
+    -rw-r--r--  1 huazhou  staff  1128171 Jun 30 07:48 hapmap3.bed
+    -rw-r--r--  1 huazhou  staff   388672 Jun 30 07:48 hapmap3.bim
+    -rw-r--r--  1 huazhou  staff     7136 Jun 30 07:48 hapmap3.fam
+    -rw-r--r--  1 huazhou  staff   332960 Jun 30 07:48 hapmap3.map
 
 
 
@@ -41,32 +41,32 @@ hapmap = SnpArray("hapmap3")
 
 
     324×13928 SnpArrays.SnpArray{2}:
-     (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
-     (true,true)  (false,true)  (false,true)      (false,true)  (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (false,true)  (true,true)    …  (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     ⋮                                         ⋱                           
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
+     (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+     (true, true)  (false, true)  (false, true)      (false, true)  (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (false, true)  (true, true)    …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     ⋮                                            ⋱                             
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
 
 
 
@@ -81,7 +81,7 @@ people, snps = size(hapmap)
 
 
 
-    (324,13928)
+    (324, 13928)
 
 
 
@@ -96,32 +96,32 @@ hapmap = SnpArray("hapmap3"; people = 324, snps = 13928)
 
 
     324×13928 SnpArrays.SnpArray{2}:
-     (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
-     (true,true)  (false,true)  (false,true)      (false,true)  (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (false,true)  (true,true)    …  (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     ⋮                                         ⋱                           
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
+     (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+     (true, true)  (false, true)  (false, true)      (false, true)  (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (false, true)  (true, true)    …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     ⋮                                            ⋱                             
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
 
 
 
@@ -136,7 +136,7 @@ Base.summarysize(hapmap), filesize("hapmap3.bed")
 
 
 
-    (1128256,1128171)
+    (1128256, 1128171)
 
 
 
@@ -151,11 +151,11 @@ SnpArray(rand(0:2, 5, 3))
 
 
     5×3 SnpArrays.SnpArray{2}:
-     (false,false)  (false,false)  (false,true) 
-     (true,true)    (true,true)    (false,true) 
-     (false,true)   (false,false)  (false,false)
-     (false,false)  (false,true)   (false,true) 
-     (true,true)    (false,false)  (false,true) 
+     (false, false)  (false, false)  (false, true) 
+     (true, true)    (true, true)    (false, true) 
+     (false, true)   (false, false)  (false, false)
+     (false, false)  (false, true)   (false, true) 
+     (true, true)    (false, false)  (false, true) 
 
 
 
@@ -170,11 +170,11 @@ s = SnpArray(5, 3)
 
 
     5×3 SnpArrays.SnpArray{2}:
-     (false,false)  (false,false)  (false,false)
-     (false,false)  (false,false)  (false,false)
-     (false,false)  (false,false)  (false,false)
-     (false,false)  (false,false)  (false,false)
-     (false,false)  (false,false)  (false,false)
+     (false, false)  (false, false)  (false, false)
+     (false, false)  (false, false)  (false, false)
+     (false, false)  (false, false)  (false, false)
+     (false, false)  (false, false)  (false, false)
+     (false, false)  (false, false)  (false, false)
 
 
 
@@ -197,7 +197,7 @@ maf'
 
 
 
-    1×13928 Array{Float64,2}:
+    1×13928 RowVector{Float64,Array{Float64,1}}:
      0.0  0.0776398  0.324074  0.191589  …  0.00154321  0.0417957  0.00617284
 
 
@@ -211,7 +211,7 @@ sum(missings_by_snp), sum(missings_by_person)
 
 
 
-    (11894,11894)
+    (11894, 11894)
 
 
 
@@ -278,7 +278,7 @@ randgeno(0.5)
 
 
 
-    (false,true)
+    (false, true)
 
 
 
@@ -292,7 +292,7 @@ randgeno(0.25, true)
 
 
 
-    (true,true)
+    (true, true)
 
 
 
@@ -307,16 +307,16 @@ randgeno(10, 0.25, true)
 
 
     10-element SnpArrays.SnpArray{1}:
-     (false,true)
-     (true,true) 
-     (true,true) 
-     (false,true)
-     (false,true)
-     (false,true)
-     (false,true)
-     (true,true) 
-     (false,true)
-     (true,true) 
+     (false, true)
+     (true, true) 
+     (true, true) 
+     (false, true)
+     (false, true)
+     (false, true)
+     (false, true)
+     (true, true) 
+     (false, true)
+     (true, true) 
 
 
 
@@ -332,32 +332,32 @@ randgeno(size(hapmap), maf, minor_allele)
 
 
     324×13928 SnpArrays.SnpArray{2}:
-     (true,true)  (true,true)   (true,true)    …  (true,true)   (true,true)
-     (true,true)  (false,true)  (true,true)       (false,true)  (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (false,true)  (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)    …  (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (false,true)  (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (false,true)  (true,true)       (true,true)   (true,true)
-     ⋮                                         ⋱                           
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (false,true)  (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)    …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (false,true)  (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)    …  (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
+     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+     (true, true)  (false, true)  (true, true)       (false, true)  (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+     ⋮                                            ⋱                             
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (false, true)  (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
 
 
 
@@ -375,32 +375,32 @@ hapmap[1, :]
 
 
     13928-element SnpArrays.SnpArray{1}:
-     (true,true)  
-     (true,true)  
-     (false,false)
-     (true,true)  
-     (true,true)  
-     (true,true)  
-     (false,true) 
-     (false,true) 
-     (true,true)  
-     (false,true) 
-     (true,true)  
-     (true,true)  
-     (false,false)
-     ⋮            
-     (false,true) 
-     (false,true) 
-     (true,true)  
-     (false,true) 
-     (false,true) 
-     (false,true) 
-     (false,true) 
-     (false,true) 
-     (false,true) 
-     (true,true)  
-     (true,true)  
-     (true,true)  
+     (true, true)  
+     (true, true)  
+     (false, false)
+     (true, true)  
+     (true, true)  
+     (true, true)  
+     (false, true) 
+     (false, true) 
+     (true, true)  
+     (false, true) 
+     (true, true)  
+     (true, true)  
+     (false, false)
+     ⋮             
+     (false, true) 
+     (false, true) 
+     (true, true)  
+     (false, true) 
+     (false, true) 
+     (false, true) 
+     (false, true) 
+     (false, true) 
+     (false, true) 
+     (true, true)  
+     (true, true)  
+     (true, true)  
 
 
 
@@ -414,32 +414,32 @@ hapmap[:, 5]
 
 
     324-element SnpArrays.SnpArray{1}:
-     (true,true)  
-     (true,true)  
-     (false,true) 
-     (false,true) 
-     (true,true)  
-     (false,false)
-     (false,false)
-     (true,true)  
-     (true,true)  
-     (true,true)  
-     (true,true)  
-     (true,true)  
-     (false,true) 
-     ⋮            
-     (false,false)
-     (true,true)  
-     (false,true) 
-     (true,true)  
-     (true,true)  
-     (true,true)  
-     (true,true)  
-     (true,true)  
-     (false,true) 
-     (true,true)  
-     (true,true)  
-     (true,true)  
+     (true, true)  
+     (true, true)  
+     (false, true) 
+     (false, true) 
+     (true, true)  
+     (false, false)
+     (false, false)
+     (true, true)  
+     (true, true)  
+     (true, true)  
+     (true, true)  
+     (true, true)  
+     (false, true) 
+     ⋮             
+     (false, false)
+     (true, true)  
+     (false, true) 
+     (true, true)  
+     (true, true)  
+     (true, true)  
+     (true, true)  
+     (true, true)  
+     (false, true) 
+     (true, true)  
+     (true, true)  
+     (true, true)  
 
 
 
@@ -453,11 +453,11 @@ hapmap[1:5, 5:10]
 
 
     5×6 SnpArrays.SnpArray{2}:
-     (true,true)   (true,true)  (false,true)  …  (true,true)   (false,true)
-     (true,true)   (true,true)  (true,true)      (true,true)   (false,true)
-     (false,true)  (true,true)  (true,true)      (false,true)  (true,true) 
-     (false,true)  (true,true)  (true,true)      (true,true)   (false,true)
-     (true,true)   (true,true)  (true,true)      (true,true)   (false,true)
+     (true, true)   (true, true)  (false, true)  …  (true, true)   (false, true)
+     (true, true)   (true, true)  (true, true)      (true, true)   (false, true)
+     (false, true)  (true, true)  (true, true)      (false, true)  (true, true) 
+     (false, true)  (true, true)  (true, true)      (true, true)   (false, true)
+     (true, true)   (true, true)  (true, true)      (true, true)   (false, true)
 
 
 
@@ -471,32 +471,32 @@ hapmap[:, maf .≥ 0.05]
 
 
     324×12085 SnpArrays.SnpArray{2}:
-     (true,true)   (false,false)  (true,true)   …  (false,true)  (false,true)
-     (false,true)  (false,true)   (false,true)     (true,true)   (true,true) 
-     (true,true)   (false,true)   (false,true)     (true,true)   (true,true) 
-     (true,true)   (false,true)   (true,true)      (false,true)  (false,true)
-     (true,true)   (false,true)   (false,true)     (true,true)   (true,true) 
-     (false,true)  (true,true)    (true,true)   …  (false,true)  (false,true)
-     (true,true)   (true,true)    (true,true)      (true,true)   (true,true) 
-     (true,true)   (false,false)  (true,true)      (true,true)   (true,true) 
-     (true,true)   (false,true)   (false,true)     (true,true)   (true,true) 
-     (true,true)   (false,true)   (true,true)      (false,true)  (false,true)
-     (true,true)   (false,true)   (true,true)   …  (true,true)   (true,true) 
-     (true,true)   (true,true)    (false,true)     (false,true)  (false,true)
-     (true,true)   (false,false)  (true,true)      (false,true)  (false,true)
-     ⋮                                          ⋱                            
-     (true,true)   (false,true)   (true,true)      (false,true)  (false,true)
-     (true,true)   (false,false)  (true,true)      (false,true)  (false,true)
-     (true,true)   (false,false)  (true,true)      (true,true)   (true,true) 
-     (true,true)   (false,false)  (false,true)  …  (true,true)   (true,true) 
-     (true,true)   (false,true)   (true,true)      (true,true)   (true,true) 
-     (true,true)   (true,true)    (false,true)     (false,true)  (false,true)
-     (true,true)   (false,true)   (false,true)     (false,true)  (false,true)
-     (true,true)   (false,true)   (true,true)      (true,true)   (true,true) 
-     (true,true)   (false,false)  (true,true)   …  (false,true)  (false,true)
-     (true,true)   (false,true)   (false,true)     (false,true)  (false,true)
-     (true,true)   (false,false)  (false,true)     (false,true)  (false,true)
-     (true,true)   (false,false)  (true,true)      (true,true)   (true,true) 
+     (true, true)   (false, false)  …  (false, true)  (false, true)
+     (false, true)  (false, true)      (true, true)   (true, true) 
+     (true, true)   (false, true)      (true, true)   (true, true) 
+     (true, true)   (false, true)      (false, true)  (false, true)
+     (true, true)   (false, true)      (true, true)   (true, true) 
+     (false, true)  (true, true)    …  (false, true)  (false, true)
+     (true, true)   (true, true)       (true, true)   (true, true) 
+     (true, true)   (false, false)     (true, true)   (true, true) 
+     (true, true)   (false, true)      (true, true)   (true, true) 
+     (true, true)   (false, true)      (false, true)  (false, true)
+     (true, true)   (false, true)   …  (true, true)   (true, true) 
+     (true, true)   (true, true)       (false, true)  (false, true)
+     (true, true)   (false, false)     (false, true)  (false, true)
+     ⋮                              ⋱                              
+     (true, true)   (false, true)      (false, true)  (false, true)
+     (true, true)   (false, false)     (false, true)  (false, true)
+     (true, true)   (false, false)     (true, true)   (true, true) 
+     (true, true)   (false, false)  …  (true, true)   (true, true) 
+     (true, true)   (false, true)      (true, true)   (true, true) 
+     (true, true)   (true, true)       (false, true)  (false, true)
+     (true, true)   (false, true)      (false, true)  (false, true)
+     (true, true)   (false, true)      (true, true)   (true, true) 
+     (true, true)   (false, false)  …  (false, true)  (false, true)
+     (true, true)   (false, true)      (false, true)  (false, true)
+     (true, true)   (false, false)     (false, true)  (false, true)
+     (true, true)   (false, false)     (true, true)   (true, true) 
 
 
 
@@ -510,47 +510,47 @@ hapmap[missings_by_person / people .< 0.1, :]
 
 
     220×13928 SnpArrays.SnpArray{2}:
-     (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
-     (true,true)  (false,true)  (false,true)      (false,true)  (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (false,true)  (false,true)   …  (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     (true,true)  (true,true)   (true,true)       (true,true)   (true,true)
-     ⋮                                         ⋱                           
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)  …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)   …  (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,true)      (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
-     (true,true)  (true,true)   (false,false)     (true,true)   (true,true)
+     (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+     (true, true)  (false, true)  (false, true)      (false, true)  (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (false, true)  (false, true)   …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     ⋮                                            ⋱                             
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)  …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
 
 
 
-`sub()` and `slice()` create views of subarray without copying data and improve efficiency in many calculations.
+`view` creates views of subarray without copying data and improve efficiency in many calculations.
 
 
 ```julia
-mafcommon, = summarize(hapmap[:, maf .≥ 0.05])
+mafcommon, = summarize(view(hapmap, :, maf .≥ 0.05))
 mafcommon'
 ```
 
 
 
 
-    1×12085 Array{Float64,2}:
+    1×12085 RowVector{Float64,Array{Float64,1}}:
      0.0776398  0.324074  0.191589  …  0.310937  0.23913  0.23913  0.23913
 
 
@@ -567,7 +567,7 @@ hapmap[1, 1]
 
 
 
-    (true,true)
+    (true, true)
 
 
 
@@ -580,7 +580,7 @@ hapmap[1, 1]
 
 
 
-    (false,true)
+    (false, true)
 
 
 
@@ -593,7 +593,7 @@ hapmap[1, 1]
 
 
 
-    (true,false)
+    (true, false)
 
 
 
@@ -606,7 +606,7 @@ hapmap[1, 1]
 
 
 
-    (true,true)
+    (true, true)
 
 
 
@@ -738,29 +738,29 @@ hapmapf32sp = convert(SparseMatrixCSC{Float32, UInt32}, hapmap)
 
 
 
-    324×13928 sparse matrix with 1614876 Float32 nonzero entries:
-    	[2    ,     2]  =  1.0
-    	[6    ,     2]  =  1.0
-    	[15   ,     2]  =  1.0
-    	[31   ,     2]  =  1.0
-    	[33   ,     2]  =  1.0
-    	[35   ,     2]  =  1.0
-    	[43   ,     2]  =  1.0
-    	[44   ,     2]  =  1.0
-    	[50   ,     2]  =  1.0
-    	[54   ,     2]  =  1.0
-    	⋮
-    	[135  , 13927]  =  1.0
-    	[148  , 13927]  =  1.0
-    	[160  , 13927]  =  1.0
-    	[164  , 13927]  =  2.0
-    	[167  , 13927]  =  1.0
-    	[185  , 13927]  =  1.0
-    	[266  , 13927]  =  1.0
-    	[280  , 13927]  =  1.0
-    	[288  , 13927]  =  1.0
-    	[118  , 13928]  =  2.0
-    	[231  , 13928]  =  2.0
+    324×13928 SparseMatrixCSC{Float32,UInt32} with 1614876 stored entries:
+      [2    ,     2]  =  1.0
+      [6    ,     2]  =  1.0
+      [15   ,     2]  =  1.0
+      [31   ,     2]  =  1.0
+      [33   ,     2]  =  1.0
+      [35   ,     2]  =  1.0
+      [43   ,     2]  =  1.0
+      [44   ,     2]  =  1.0
+      [50   ,     2]  =  1.0
+      [54   ,     2]  =  1.0
+      ⋮
+      [135  , 13927]  =  1.0
+      [148  , 13927]  =  1.0
+      [160  , 13927]  =  1.0
+      [164  , 13927]  =  2.0
+      [167  , 13927]  =  1.0
+      [185  , 13927]  =  1.0
+      [266  , 13927]  =  1.0
+      [280  , 13927]  =  1.0
+      [288  , 13927]  =  1.0
+      [118  , 13928]  =  2.0
+      [231  , 13928]  =  2.0
 
 
 
@@ -782,13 +782,13 @@ By default the `convert()` method converts missing genotypes to `NaN`.
 
 ```julia
 # number of missing genotypes
-countnz(isnan(hapmap)), countnz(isnan(hapmapf64))
+countnz(isnan.(hapmap)), countnz(isnan.(hapmapf64))
 ```
 
 
 
 
-    (11894,11894)
+    (11894, 11894)
 
 
 
@@ -797,7 +797,7 @@ One can enforce **crude imputation** by setting the optional argument `impute=tr
 
 ```julia
 hapmapf64impute = convert(Matrix{Float64}, hapmap; impute = true)
-countnz(isnan(hapmapf64impute))
+countnz(isnan.(hapmapf64impute))
 ```
 
 
@@ -1044,12 +1044,7 @@ pcscore, pcloading, pcvariance = pca(hapmap, 3)
 
 
 
-    (
-    [-38.7231 1.2983 7.00541; -32.6096 1.21052 3.3232; … ; -48.9263 2.06102 -2.17374; -48.8627 -0.274894 -6.49518],
-    
-    [2.3577e-19 3.90359e-19 2.05628e-18; 0.00143962 0.0042375 0.00311816; … ; 0.00313326 0.00427486 0.0152038; -9.09523e-5 0.00287777 -0.0037855],
-    
-    [1841.4,225.324,70.7084])
+    ([-38.7231 1.2983 -7.00541; -32.6096 1.21052 -3.3232; … ; -48.9263 2.06102 2.17374; -48.8627 -0.274894 6.49518], [-1.64162e-18 7.41502e-19 -5.96439e-18; 0.00143962 0.0042375 -0.00311816; … ; 0.00313326 0.00427486 -0.0152038; -9.09523e-5 0.00287777 0.0037855], [1841.4, 225.324, 70.7084])
 
 
 
@@ -1058,7 +1053,7 @@ To use eigen-SNPs for plotting or as covariates in GWAS, we typically scale them
 
 ```julia
 # standardize eigen-SNPs before plotting or GWAS
-scale!(pcscore, 1.0 ./ √(pcvariance))
+scale!(pcscore, 1 ./ sqrt.(pcvariance))
 std(pcscore, 1)
 ```
 
@@ -1086,9 +1081,9 @@ pca(hapmap, 3, Matrix{Float32})[3]
 
 
     3-element Array{Float32,1}:
-     1841.4   
+     1841.39  
       225.323 
-       70.7084
+       70.7085
 
 
 
@@ -1098,7 +1093,7 @@ pca(hapmap, 3, Matrix{Float32})[3]
 ```julia
 # principal components using every other SNP capture about half the variance
 srand(123)
-pca(sub(hapmap, :, 1:2:snps), 3)[3]
+pca(view(hapmap, :, 1:2:snps), 3)[3]
 ```
 
 
@@ -1117,37 +1112,35 @@ pca(sub(hapmap, :, 1:2:snps), 3)[3]
 ```julia
 # approximately same answer if we use Float16 sparse matrix
 srand(123)
-pca_sp(hapmap, 3, SparseMatrixCSC{Float16, UInt32})[3]
+pca_sp(hapmap, 3, SparseMatrixCSC{Float32, UInt32})[3]
 ```
 
-
-
-
-    3-element Array{Float64,1}:
-     1841.4   
-      225.314 
-       70.7006
-
-
-
-
-```julia
-# approximately same answer if we use Int8 sparse matrix
-srand(123)
-pca_sp(hapmap, 3, SparseMatrixCSC{Int8, UInt32})[3]
-```
-
-
-
-
-    3-element Array{Float64,1}:
-     1841.4   
-      225.323 
-       70.7057
+    [1m[33mWARNING: [39m[22m[33mArray{T}(::Type{T}, m::Int) is deprecated, use Array{T}(m) instead.[39m
+    Stacktrace:
+     [1] [1mdepwarn[22m[22m[1m([22m[22m::String, ::Symbol[1m)[22m[22m at [1m./deprecated.jl:70[22m[22m
+     [2] [1mArray[22m[22m[1m([22m[22m::Type{Float32}, ::Int64[1m)[22m[22m at [1m./deprecated.jl:57[22m[22m
+     [3] [1mA_mul_B![22m[22m[1m([22m[22m::SubArray{Float32,1,Array{Float32,1},Tuple{UnitRange{Int64}},true}, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::SubArray{Float32,1,Array{Float32,1},Tuple{UnitRange{Int64}},true}[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/LinearMaps/src/composition.jl:88[22m[22m
+     [4] [1maupd_wrapper[22m[22m[1m([22m[22m::Type{T} where T, ::Base.LinAlg.#matvecA!#114{LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}}, ::Base.LinAlg.##108#115, ::Base.LinAlg.##109#116, ::Int64, ::Bool, ::Bool, ::String, ::Int64, ::Int64, ::String, ::Float64, ::Int64, ::Int64, ::Array{Float32,1}[1m)[22m[22m at [1m./linalg/arpack.jl:59[22m[22m
+     [5] [1m#_eigs#107[22m[22m[1m([22m[22m::Int64, ::Int64, ::Symbol, ::Float64, ::Int64, ::Void, ::Array{Float32,1}, ::Bool, ::Base.LinAlg.#_eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./linalg/arnoldi.jl:285[22m[22m
+     [6] [1m(::Base.LinAlg.#kw##_eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#_eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./<missing>:0[22m[22m
+     [7] [1m#eigs#106[22m[22m[1m([22m[22m::Array{Any,1}, ::Function, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./linalg/arnoldi.jl:170[22m[22m
+     [8] [1m(::Base.LinAlg.#kw##eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./<missing>:0[22m[22m
+     [9] [1m#eigs#99[22m[22m at [1m./linalg/arnoldi.jl:90[22m[22m [inlined]
+     [10] [1m(::Base.LinAlg.#kw##eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}[1m)[22m[22m at [1m./<missing>:0[22m[22m
+     [11] [1mpca_sp[22m[22m[1m([22m[22m::SnpArrays.SnpArray{2}, ::Int64, ::Type{SparseMatrixCSC{Float32,UInt32}}[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/SnpArrays/src/SnpArrays.jl:652[22m[22m
+     [12] [1minclude_string[22m[22m[1m([22m[22m::String, ::String[1m)[22m[22m at [1m./loading.jl:515[22m[22m
+     [13] [1mexecute_request[22m[22m[1m([22m[22m::ZMQ.Socket, ::IJulia.Msg[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/IJulia/src/execute_request.jl:160[22m[22m
+     [14] [1meventloop[22m[22m[1m([22m[22m::ZMQ.Socket[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/IJulia/src/eventloop.jl:8[22m[22m
+     [15] [1m(::IJulia.##11#14)[22m[22m[1m([22m[22m[1m)[22m[22m at [1m./task.jl:335[22m[22m
+    while loading In[94], in expression starting on line 3
 
 
 
 
-```julia
 
-```
+    3-element Array{Float32,1}:
+     1841.39  
+      225.324 
+       70.7083
+
+
