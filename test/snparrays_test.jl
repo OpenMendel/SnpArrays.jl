@@ -74,7 +74,7 @@ end
   @test isnan((false, false)) == false
 end
 
-@testset "convert" begin
+@testset "convert genotype entries" begin
   #@code_llvm convert(Float64, (false, false), true, :additive)
   # A1 is the minor allele
   @test convert(Float64, (false, false), true, :additive) == 2.0
@@ -102,6 +102,9 @@ end
   @test convert(Float64, (false, true), false, :recessive) == 0.0
   @test convert(Float64, (true, true), false, :recessive) == 1.0
   @test isnan(convert(Float64, (true, false), false, :recessive))
+end
+
+@testset "convert to matrices" begin
   # convert to real matrix
   maf, minor_allele = 0.5rand(p), bitrand(p)
   snp = randgeno(n, p, maf, minor_allele)
@@ -230,6 +233,7 @@ end
 end
 
 @testset "pca" begin
+  n, p = 10, 100
   maf, minor_allele = 0.5rand(p), bitrand(p)
   snp = randgeno(n, p, maf, minor_allele)
   # PCA
