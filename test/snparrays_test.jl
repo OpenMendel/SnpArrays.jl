@@ -74,7 +74,7 @@ end
   @test isnan((false, false)) == false
 end
 
-@testset "convert genotype entries" begin
+@testset "convert genotypes" begin
   #@code_llvm convert(Float64, (false, false), true, :additive)
   # A1 is the minor allele
   @test convert(Float64, (false, false), true, :additive) == 2.0
