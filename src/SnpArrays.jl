@@ -74,7 +74,6 @@ function SnpArray(
   SnpArray(A1, A2)
 end # function SnpArray
 
-
 #---------------------------------------------------------------------------# methods
 # Julia docs on methods required for AbstractArray:
 # http://docs.julialang.org/en/release-0.4/manual/interfaces/#man-interfaces-abstractarray
@@ -586,48 +585,16 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
   t::Type{Matrix{T}} = Matrix{Float64})
   n, p = size(A)
   # memory-mapped genotype matrix G, centered and scaled
-  #G = Mmap.mmap(t, (n, p))
-  #copy!(G, A; model = :additive, impute = true, center = true, scale = true)
-  G = convert(t, A; model = :additive, impute = true, center = true, scale = true)
-  if VERSION ≥ v"0.6-"
-     # partial SVD
-     # In v0.6, G = Gsvd[:U] * diagm(Gsvd[:S]) * Gsvd[:Vt]
-     Gsvd, = @compat svds(G; nsv = pcs)
-     # make first entry of each eigenvector nonnegative for identifiability
-     identify!(Gsvd[:V])
-     pcscore = G * Gsvd[:V]
-     # square singular values and scale by n - 1 to get eigenvalues of the
-     # covariance matrix
-     @inbounds @simd for i in 1:pcs
-       Gsvd[:S][i] = Gsvd[:S][i]^2 / (n - 1)
-     end
-     return pcscore, Gsvd[:V], Gsvd[:S]
- elseif v"0.5" ≤ VERSION < v"0.6-"
-    # partial SVD
-    # In v0.5, G = Gsvd[:U] * diagm(Gsvd[:S]) * Gsvd[:V]
-    Gsvd, = @compat svds(G; nsv = pcs)
-    # make first entry of each eigenvector nonnegative for identifiability
-    identify!(Gsvd[:Vt])
-    pcscore = G * Gsvd[:Vt]
-    # square singular values and scale by n - 1 to get eigenvalues of the
-    # covariance matrix
-    @inbounds @simd for i in 1:pcs
-      Gsvd[:S][i] = Gsvd[:S][i]^2 / (n - 1)
-    end
-    return pcscore, Gsvd[:Vt], Gsvd[:S]
-  else
-    # partial SVD
-    _, pcvariance, pcloading = svds(G, nsv = pcs)
-    # make first entry of each eigenvector nonneagtive for identifiability
-    identify!(pcloading)
-    pcscore = G * pcloading
-    # square singular values and scale by n - 1 to get eigenvalues of the
-    # covariance matrix
-    @inbounds @simd for i in 1:pcs
-      pcvariance[i] = pcvariance[i]^2 / (n - 1)
-    end
-    return pcscore, pcloading, pcvariance
-  end
+  G = Mmap.mmap(t, (n, p))
+  copy!(G, A; model = :additive, impute = true, center = true, scale = true)
+  Gmap = LinearMap(G)
+  pcvariance, pcloading, = eigs(Gmap' * Gmap, nev = pcs)
+  # make first entry of each eigenvector nonnegative for identifiability
+  identify!(pcloading)
+  pcscore = G * pcloading
+  # scale by n-1 to obtain eigenvalues of the covariance matrix G'G / (n - 1)
+  pcvariance ./= n - 1
+  return pcscore, pcloading, pcvariance
 end # function pca
 
 function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
