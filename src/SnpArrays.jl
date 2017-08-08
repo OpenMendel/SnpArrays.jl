@@ -614,7 +614,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
   tmpv   = zeros(T, p) # pre-allocate space for intermediate vector
   Gcsv!  = (output, v) ->  Acs_mul_B!(output, G, v, center, weight, tmpv)
   Gcstw! = (output, w) -> Acsc_mul_B!(output, G, w, center, weight)
-  Gs     = LinearMap(Gcsv!, Gcstw!, n, p, T; ismutating=true)
+  Gs     = LinearMap{T}(Gcsv!, Gcstw!, n, p; ismutating=true)
   # PCs
   pcvariance, pcloading, = eigs(Gs' * Gs, nev = pcs)
   # make first entry of each eigenvector nonneagtive for identifiability
