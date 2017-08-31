@@ -51,24 +51,36 @@ function SnpArray(
   bedheader = read(fid, UInt8, 3)
   # PLINK coding (genotype->bits): A1/A1->00, A1/A2->01, A2/A2->11, missing->10
   # http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml
-  if bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011"
-    # v1.0 BED file
-    if bits(bedheader[3]) == "00000001"
-      # SNP-major
-      plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25people), snps))
-      A1 = plinkbits[1, 1:people, :]
-      A2 = plinkbits[2, 1:people, :]
-    else
-      # individual-major
-      plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25snps), people))
-      A1 = plinkbits[1, 1:snps, :]'
-      A2 = plinkbits[2, 1:snps, :]'
-    end
+  # v1.0 BED file: first two magic byte, 3rd byte indicate SNP- or individual-major
+  if bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011" &&
+    bits(bedheader[3]) == "00000001"
+    snp_major = true
+    seek(fid, 3)
+  elseif bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011" &&
+    bits(bedheader[3]) == "00000000"
+    snp_major = false
+    seek(fid, 3)
+  # v0.99 BED file: no 2-byte magic number, 1st byte indicate SNP- or individual-major
+  elseif bits(bedheader[1]) == "00000001"
+    snp_major = true
+    seek(fid, 1)
+  elseif bits(bedheader[1]) == "00000000"
+    snp_major = false
+    seek(fid, 1)
+  # Prior to v0.99: no 2-byte magic number, no SNP-major/individual-major
+  # identifier, always individual-major
   else
-    # TODO: v0.99 BED file: individual-major
-    error("openmendel:plinkformat\n",
-          "v0.99 BED file found!",
-          "Transform to v1.0 BED file using PLINK")
+    snp_major = false
+    seek(fid, 0)
+  end
+  if snp_major
+    plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25people), snps))
+    A1 = plinkbits[1, 1:people, :]
+    A2 = plinkbits[2, 1:people, :]
+  else # individual-major
+    plinkbits = Mmap.mmap(fid, BitArray, (2, 4ceil(Int, 0.25snps), people))
+    A1 = plinkbits[1, 1:snps, :]'
+    A2 = plinkbits[2, 1:snps, :]'
   end
   close(fid)
   SnpArray(A1, A2)
