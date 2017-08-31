@@ -25,10 +25,10 @@ There are various ways to initialize a `SnpArray`.
 ;ls -al "hapmap3.*"
 ```
 
-    -rw-r--r--  1 huazhou  staff  1128171 Jun 30 07:48 hapmap3.bed
-    -rw-r--r--  1 huazhou  staff   388672 Jun 30 07:48 hapmap3.bim
-    -rw-r--r--  1 huazhou  staff     7136 Jun 30 07:48 hapmap3.fam
-    -rw-r--r--  1 huazhou  staff   332960 Jun 30 07:48 hapmap3.map
+    -rw-r--r--  1 huazhou  staff  1128171 Jun 19 14:43 hapmap3.bed
+    -rw-r--r--  1 huazhou  staff   388672 Jun 19 14:43 hapmap3.bim
+    -rw-r--r--  1 huazhou  staff     7136 Jun 19 14:43 hapmap3.fam
+    -rw-r--r--  1 huazhou  staff   332960 Jun 19 14:43 hapmap3.map
 
 
 
@@ -151,11 +151,11 @@ SnpArray(rand(0:2, 5, 3))
 
 
     5×3 SnpArrays.SnpArray{2}:
-     (false, false)  (false, false)  (false, true) 
-     (true, true)    (true, true)    (false, true) 
-     (false, true)   (false, false)  (false, false)
-     (false, false)  (false, true)   (false, true) 
-     (true, true)    (false, false)  (false, true) 
+     (false, true)  (false, false)  (true, true)  
+     (false, true)  (false, true)   (true, true)  
+     (true, true)   (false, false)  (false, false)
+     (true, true)   (true, true)    (false, true) 
+     (true, true)   (false, true)   (false, true) 
 
 
 
@@ -278,7 +278,7 @@ randgeno(0.5)
 
 
 
-    (false, true)
+    (true, true)
 
 
 
@@ -307,16 +307,16 @@ randgeno(10, 0.25, true)
 
 
     10-element SnpArrays.SnpArray{1}:
-     (false, true)
-     (true, true) 
-     (true, true) 
-     (false, true)
-     (false, true)
-     (false, true)
-     (false, true)
-     (true, true) 
-     (false, true)
-     (true, true) 
+     (false, true) 
+     (true, true)  
+     (true, true)  
+     (false, false)
+     (true, true)  
+     (true, true)  
+     (true, true)  
+     (false, true) 
+     (false, false)
+     (false, true) 
 
 
 
@@ -332,31 +332,31 @@ randgeno(size(hapmap), maf, minor_allele)
 
 
     324×13928 SnpArrays.SnpArray{2}:
-     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
-     (true, true)  (false, true)  (true, true)       (false, true)  (true, true)
+     (true, true)  (false, true)  (true, true)    …  (true, true)   (true, true)
      (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
      (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
-     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
-     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
-     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
-     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
-     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
-     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
-     (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
-     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
-     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
-     ⋮                                            ⋱                             
-     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
-     (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
-     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
-     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
      (true, true)  (true, true)   (false, true)      (false, true)  (true, true)
+     (true, true)  (false, true)  (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (false, true)  (true, true)
+     (true, true)  (false, true)  (false, true)      (true, true)   (true, true)
+     (true, true)  (false, true)  (true, true)       (true, true)   (true, true)
+     (true, true)  (false, true)  (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     ⋮                                            ⋱                             
+     (true, true)  (false, true)  (false, true)      (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (false, true)  (true, true)
+     (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
      (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
      (true, true)  (true, true)   (false, false)     (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
+     (true, true)  (true, true)   (false, true)   …  (true, true)   (true, true)
+     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
      (true, true)  (true, true)   (false, true)      (true, true)   (true, true)
-     (true, true)  (true, true)   (true, true)    …  (true, true)   (true, true)
-     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
-     (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
      (true, true)  (true, true)   (true, true)       (true, true)   (true, true)
 
 
@@ -908,9 +908,17 @@ end
     
 
 
+!!! note
+
+    It is often necessary to filter SNPs according to minor allele frequency and LD before calculating empirical kinship matrix.  
+
+
+By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `maf_threshold`.
+
 
 ```julia
-# GRM using all SNPs
+# GRM using all SNPs with MAF ≥ 0.01. Same as
+# grm(hapmap; maf_threshold = 0.01)
 grm(hapmap)
 ```
 
@@ -918,38 +926,77 @@ grm(hapmap)
 
 
     324×324 Array{Float64,2}:
-     0.566466   0.0444359  0.0190432  …  0.0626215  0.0687383  0.0622614
-     0.0444359  0.530419   0.0309971     0.0495598  0.0432578  0.0603729
-     0.0190432  0.0309971  0.511297      0.0446246  0.0294237  0.035185 
-     0.0462825  0.0352154  0.0275386     0.0575497  0.0632928  0.0572074
-     0.0508401  0.041172   0.0238817     0.0693205  0.0560045  0.06329  
-     0.042911   0.0304459  0.037073   …  0.0680288  0.0542302  0.0625457
-     0.0379732  0.0212719  0.012149      0.0427044  0.0365571  0.0355025
-     0.0396982  0.0372525  0.0210437     0.0557044  0.05327    0.0632351
-     0.0288591  0.0298873  0.0163501     0.032368   0.044781   0.0364853
-     0.0373909  0.0410606  0.0251445     0.0641125  0.0553558  0.0466605
-     0.0458546  0.0439146  0.0224671  …  0.0562275  0.0643399  0.0586755
-     0.0580315  0.0368683  0.0352559     0.0636779  0.0561118  0.0689767
-     0.0347037  0.0423452  0.0259498     0.0550224  0.0675027  0.0608943
+     0.571346   0.0465045  0.0204832  …  0.0650646  0.0716494  0.0650761
+     0.0465045  0.544773   0.028394      0.0513636  0.0449712  0.0631397
+     0.0204832  0.028394   0.519855      0.0457716  0.0301285  0.0364614
+     0.0481785  0.0370097  0.0285135     0.0599191  0.0657765  0.0599049
+     0.0527814  0.0431142  0.0255107     0.0722031  0.0583019  0.0659732
+     0.0446293  0.031857   0.039093   …  0.0703164  0.0569839  0.065417 
+     0.0398707  0.0225306  0.0122048     0.044638   0.0383134  0.0375679
+     0.0415416  0.0383736  0.021525      0.0576784  0.0553812  0.0662787
+     0.030548   0.0313828  0.0164342     0.0336193  0.0465423  0.0380742
+     0.0392845  0.0417486  0.0257594     0.0666458  0.0577377  0.0490077
+     0.0479005  0.0456751  0.0231647  …  0.0584296  0.06287    0.0610135
+     0.061249   0.0390106  0.0371638     0.0660586  0.0582874  0.0701743
+     0.0360434  0.0440139  0.0266148     0.0574341  0.070172   0.063768 
      ⋮                                ⋱                                 
-     0.0633259  0.0531724  0.0371187     0.0829597  0.0831308  0.0931435
-     0.0645506  0.0498678  0.0329406     0.0883068  0.0772216  0.0853762
-     0.0653716  0.0534623  0.0372739     0.0863184  0.0812877  0.0821439
-     0.0627039  0.0548826  0.0383003  …  0.0846339  0.0734946  0.0857409
-     0.0602445  0.0536981  0.0355785     0.0755747  0.0704755  0.0783867
-     0.062317   0.0589174  0.0383417     0.0850735  0.0887094  0.0795435
-     0.0602235  0.0586656  0.0367576     0.0793016  0.0808723  0.0779107
-     0.0594668  0.0606838  0.0316561     0.0895881  0.0864562  0.0831714
-     0.0635207  0.0607507  0.031338   …  0.0937335  0.076364   0.0831758
-     0.0626215  0.0495598  0.0446246     0.606903   0.0789186  0.0868736
-     0.0687383  0.0432578  0.0294237     0.0789186  0.583857   0.0792285
-     0.0622614  0.0603729  0.035185      0.0868736  0.0792285  0.5758   
+     0.0582425  0.0552193  0.0394548     0.0863796  0.0865721  0.0968307
+     0.067412   0.0522998  0.033598      0.0918259  0.0802092  0.0854516
+     0.0680476  0.0560847  0.0388254     0.0899582  0.08414    0.0854648
+     0.0656848  0.0569648  0.039208   …  0.0877947  0.0764744  0.0892505
+     0.0626458  0.0555299  0.0368724     0.0785841  0.0735793  0.0814078
+     0.0649787  0.0605798  0.0406489     0.0889447  0.0902569  0.0812508
+     0.0624551  0.0603942  0.0388867     0.0825189  0.0849712  0.0817198
+     0.0621368  0.0631124  0.0326863     0.092926   0.0901677  0.0864766
+     0.0660474  0.0631126  0.032413   …  0.0975443  0.0798605  0.0866241
+     0.0650646  0.0513636  0.0457716     0.603213   0.0820706  0.0905677
+     0.0716494  0.0449712  0.0301285     0.0820706  0.595356   0.0824803
+     0.0650761  0.0631397  0.0364614     0.0905677  0.0824803  0.583244 
 
 
 
 
 ```julia
-# GRM using every other SNP
+# GRM using all SNPs with MAF ≥ 0.05
+grm(hapmap; maf_threshold = 0.05)
+```
+
+
+
+
+    324×324 Array{Float64,2}:
+     0.571452   0.0462904  0.0199165  …  0.0651794  0.0717623  0.0651457
+     0.0462904  0.544914   0.0283713     0.0511696  0.0456596  0.0630129
+     0.0199165  0.0283713  0.520022      0.0460785  0.030228   0.0359554
+     0.0485764  0.0370786  0.0292213     0.05997    0.0658113  0.060026 
+     0.0529626  0.0429542  0.0254827     0.072063   0.0589913  0.0658106
+     0.04432    0.0314165  0.0385681  …  0.0707138  0.0562916  0.0652219
+     0.0397146  0.0225996  0.0116645     0.0443248  0.0382372  0.0371071
+     0.0410736  0.0386706  0.0215219     0.0577337  0.0546118  0.0661473
+     0.0301126  0.0308084  0.0167159     0.0335706  0.0458171  0.0378848
+     0.0395036  0.0420549  0.0263567     0.0665525  0.0577466  0.0489306
+     0.048092   0.0458081  0.022875   …  0.0585571  0.0639564  0.0613725
+     0.0607261  0.0389591  0.0369648     0.066402   0.0582424  0.0700461
+     0.036022   0.0441741  0.0264965     0.0574379  0.0701088  0.0632619
+     ⋮                                ⋱                                 
+     0.0577144  0.0552319  0.0385214     0.0862471  0.086786   0.0971796
+     0.0672011  0.0521327  0.0330645     0.0917182  0.0804224  0.0859455
+     0.0682613  0.0557235  0.0386046     0.0897848  0.0842798  0.0852609
+     0.0652514  0.057126   0.0391473  …  0.0874249  0.0764886  0.089188 
+     0.0626828  0.0563047  0.0361525     0.0787534  0.0731322  0.0818519
+     0.0652242  0.0609512  0.0402041     0.0891027  0.0902155  0.0810412
+     0.0624822  0.0607759  0.0382927     0.0831698  0.0854469  0.0817415
+     0.0622411  0.0631895  0.0334202     0.0930534  0.0904701  0.0866312
+     0.0657874  0.063138   0.0328947  …  0.0972887  0.0794073  0.086289 
+     0.0651794  0.0511696  0.0460785     0.603223   0.0820763  0.0904615
+     0.0717623  0.0456596  0.030228      0.0820763  0.595456   0.0823627
+     0.0651457  0.0630129  0.0359554     0.0904615  0.0823627  0.583026 
+
+
+
+
+```julia
+# GRM using every other SNP, with maf ≥ 0.01
 grm(view(hapmap, :, 1:2:snps))
 ```
 
@@ -957,38 +1004,38 @@ grm(view(hapmap, :, 1:2:snps))
 
 
     324×324 Array{Float64,2}:
-     0.555683   0.0415085  0.0264839  …  0.0651673  0.0714261  0.0656155
-     0.0415085  0.545431   0.0354667     0.0562859  0.0438491  0.0536016
-     0.0264839  0.0354667  0.500566      0.0375265  0.0371542  0.0453827
-     0.0434207  0.0446201  0.0253641     0.0492325  0.059049   0.0542097
-     0.0499442  0.046307   0.0248879     0.0655328  0.0548686  0.062911 
-     0.0502347  0.0392831  0.038141   …  0.0739908  0.0596454  0.0509341
-     0.03778    0.02625    0.0156034     0.0449416  0.0331082  0.0330955
-     0.045428   0.0375521  0.0252809     0.0569317  0.054053   0.0663885
-     0.0253056  0.023008   0.0177888     0.0326947  0.0417944  0.0346796
-     0.0308492  0.0385291  0.0232155     0.057392   0.0396136  0.0486733
-     0.0473886  0.0489292  0.0200301  …  0.061013   0.0623889  0.0514638
-     0.0606601  0.047154   0.0381714     0.0635991  0.0628481  0.062388 
-     0.0239943  0.041524   0.0214056     0.0527117  0.0659221  0.0610669
+     0.559196   0.0430886  0.0275476  …  0.0675327  0.0740519  0.068678 
+     0.0430886  0.558878   0.0286428     0.05786    0.045359   0.0561938
+     0.0275476  0.0286428  0.513396      0.038853   0.0392725  0.0475248
+     0.0457033  0.0459737  0.0272105     0.0514827  0.0619385  0.0564087
+     0.0521454  0.0481397  0.0257591     0.0672912  0.0569231  0.0659968
+     0.0522916  0.041013   0.0398454  …  0.0773389  0.0620592  0.0539301
+     0.0397736  0.0267719  0.016085      0.0471858  0.0346203  0.03449  
+     0.047408   0.0376607  0.0259769     0.0589596  0.0556453  0.0687727
+     0.0269957  0.0228234  0.0201158     0.0332562  0.0440439  0.0361991
+     0.0321618  0.0401614  0.0232686     0.0601785  0.0409768  0.0504197
+     0.0494131  0.050353   0.0212866  …  0.0629188  0.0651026  0.053264 
+     0.062188   0.0503319  0.0407011     0.0663986  0.0647543  0.0607589
+     0.0253532  0.0426208  0.0228778     0.0549272  0.0689409  0.0634824
      ⋮                                ⋱                                 
-     0.0585219  0.0484891  0.0385751     0.0841442  0.0819137  0.0982057
-     0.0640031  0.0582749  0.0286075     0.0857168  0.073329   0.0839684
-     0.066651   0.0521818  0.0373679     0.0813776  0.0801579  0.0922047
-     0.0626328  0.0566101  0.0382988  …  0.0902857  0.073534   0.0799175
-     0.0613747  0.0595828  0.0398474     0.0700391  0.0686345  0.0845796
-     0.063787   0.0615761  0.0397324     0.0731029  0.0793144  0.085481 
-     0.0617635  0.0614787  0.0298845     0.0825804  0.0893492  0.0811897
-     0.0581062  0.0591602  0.0323554     0.0917713  0.0875897  0.0803352
-     0.0737464  0.0643129  0.0385646  …  0.098534   0.0733618  0.0866629
-     0.0651673  0.0562859  0.0375265     0.600007   0.0672816  0.0920241
-     0.0714261  0.0438491  0.0371542     0.0672816  0.562885   0.0721028
-     0.0656155  0.0536016  0.0453827     0.0920241  0.0721028  0.576308 
+     0.061482   0.0516746  0.0410709     0.0870478  0.0848473  0.102271 
+     0.0664257  0.0600823  0.03027       0.0891805  0.0758972  0.0808276
+     0.0692706  0.0538586  0.0393204     0.0847024  0.081855   0.096149 
+     0.0651635  0.0578905  0.0415709  …  0.0936544  0.0772461  0.0823608
+     0.063133   0.0625333  0.042042      0.0730644  0.0690764  0.0872862
+     0.0663681  0.0638972  0.0420809     0.077098   0.0829472  0.0854734
+     0.0650961  0.0637289  0.0307002     0.0862602  0.092594   0.0847355
+     0.059969   0.0619758  0.0343407     0.0949796  0.0913884  0.0837603
+     0.076881   0.0664363  0.0395719  …  0.101928   0.0746607  0.0900927
+     0.0675327  0.05786    0.038853      0.573711   0.0699417  0.095876 
+     0.0740519  0.045359   0.0392725     0.0699417  0.57733    0.074765 
+     0.068678   0.0561938  0.0475248     0.095876   0.074765   0.588363 
 
 
 
 
 ```julia
-# MoM using all SNPs
+# MoM using all SNPs with MAF ≥ 0.01
 grm(hapmap; method = :MoM)
 ```
 
@@ -996,32 +1043,32 @@ grm(hapmap; method = :MoM)
 
 
     324×324 Array{Float64,2}:
-     0.53945     0.0347339  0.00344015  …  0.0535102  0.0631936  0.0506761
-     0.0347339   0.517957   0.0150129      0.0420555  0.0395756  0.0497313
-     0.00344015  0.0150129  0.49989        0.033435   0.0223345  0.0206813
-     0.0428821   0.0289475  0.0239878      0.0519751  0.0690981  0.0490228
-     0.0448897   0.0333169  0.0158396      0.0649649  0.0564625  0.0555177
-     0.0320179   0.0215079  0.0267038   …  0.0598871  0.0502037  0.0494952
-     0.0248144   0.0112341  0.00379442     0.0313093  0.0306008  0.0245782
-     0.0262315   0.0290656  0.0105255      0.0389852  0.0464248  0.0467791
-     0.0209174   0.0261134  0.0140682      0.0294199  0.0486685  0.0304827
-     0.0212717   0.0259953  0.0117064      0.053156   0.0512665  0.0322541
-     0.0356787   0.0336711  0.00651048  …  0.0494952  0.0559901  0.0500856
-     0.04796     0.0326083  0.0277666      0.0552816  0.0552816  0.0523293
-     0.0309551   0.0421736  0.0255229      0.0582338  0.070279   0.0575253
-     ⋮                                  ⋱                                 
-     0.0419374   0.0419374  0.0261134      0.0712237  0.0792538  0.0814975
-     0.0621308   0.0481962  0.0281209      0.091417   0.0790176  0.0832689
-     0.054573    0.0455982  0.0267038      0.0804347  0.0810251  0.0727589
-     0.0457163   0.0427641  0.0248144   …  0.0726408  0.0627212  0.0699247
-     0.0559901   0.0533921  0.0301284      0.0777186  0.070279   0.0744121
-     0.0516208   0.0544549  0.0313093      0.0790176  0.0857487  0.0713418
-     0.0513846   0.0506761  0.0300104      0.0773644  0.0830327  0.0738217
-     0.0490228   0.0526836  0.0219802      0.0816156  0.0839774  0.0718141
-     0.0504399   0.0481962  0.0226888   …  0.0883467  0.0738217  0.0692162
-     0.0535102   0.0420555  0.033435       0.561533   0.080789   0.0764196
-     0.0631936   0.0395756  0.0223345      0.080789   0.56661    0.06898  
-     0.0506761   0.0497313  0.0206813      0.0764196  0.06898    0.533545 
+     0.539203   0.0350323  0.0024137   …  0.0539417  0.0638691  0.0509871
+     0.0350323  0.517812   0.0136411      0.0422415  0.0397597  0.0507507
+     0.0024137  0.0136411  0.499966       0.0327868  0.0220322  0.0196685
+     0.0436597  0.0291232  0.0239231      0.0526417  0.0695419  0.0495689
+     0.0449597  0.0331414  0.0152957      0.0654055  0.0568963  0.0567781
+     0.0323141  0.0202594  0.0260504   …  0.0600872  0.0498053  0.0493325
+     0.0251049  0.0113956  0.00371372     0.0311323  0.0308959  0.0247504
+     0.0255777  0.0280595  0.00891379     0.0385778  0.0462598  0.0463779
+     0.0216776  0.0256958  0.0136411      0.0301868  0.048978   0.0304232
+     0.0210867  0.0247504  0.0104502      0.0524053  0.0509871  0.0319596
+     0.0359778  0.0331414  0.00595921  …  0.0499234  0.0563053  0.0505144
+     0.0485052  0.0324323  0.0269959      0.0559508  0.0555962  0.0521689
+     0.0314868  0.0421233  0.0247504      0.0589054  0.0708419  0.0579599
+     ⋮                                 ⋱                                 
+     0.0421233  0.0417688  0.025814       0.0713146  0.0793511  0.0821875
+     0.0624509  0.0481507  0.0269959      0.0916422  0.0793511  0.083133 
+     0.0550053  0.0455507  0.0255777      0.0806511  0.0817148  0.0726147
+     0.0453143  0.0428324  0.0240413   …  0.072851   0.0625691  0.0704874
+     0.056069   0.0525235  0.0292413      0.0771056  0.0704874  0.074151 
+     0.0529962  0.0550053  0.0314868      0.0788784  0.0869149  0.0726147
+     0.0526417  0.0508689  0.0297141      0.0780511  0.0834875  0.0732056
+     0.0487416  0.0524053  0.0212049      0.0821875  0.0843148  0.0726147
+     0.0503962  0.0477961  0.0213231   …  0.0880967  0.0737965  0.0691873
+     0.0539417  0.0422415  0.0327868      0.561421   0.081242   0.076042 
+     0.0638691  0.0397597  0.0220322      0.081242   0.567094   0.0693055
+     0.0509871  0.0507507  0.0196685      0.076042   0.0693055  0.533766 
 
 
 
@@ -1044,7 +1091,7 @@ pcscore, pcloading, pcvariance = pca(hapmap, 3)
 
 
 
-    ([-38.7231 1.2983 -7.00541; -32.6096 1.21052 -3.3232; … ; -48.9263 2.06102 2.17374; -48.8627 -0.274894 6.49518], [-1.64162e-18 7.41502e-19 -5.96439e-18; 0.00143962 0.0042375 -0.00311816; … ; 0.00313326 0.00427486 -0.0152038; -9.09523e-5 0.00287777 0.0037855], [1841.4, 225.324, 70.7084])
+    ([-38.7231 -1.2983 -7.00541; -32.6096 -1.21052 -3.3232; … ; -48.9263 -2.06102 2.17374; -48.8627 0.274894 6.49518], [2.56616e-19 8.19569e-19 5.52006e-19; 0.00143962 -0.0042375 -0.00311816; … ; 0.00313326 -0.00427486 -0.0152038; -9.09523e-5 -0.00287777 0.0037855], [1841.4, 225.324, 70.7084])
 
 
 
@@ -1082,8 +1129,8 @@ pca(hapmap, 3, Matrix{Float32})[3]
 
     3-element Array{Float32,1}:
      1841.39  
-      225.323 
-       70.7085
+      225.324 
+       70.7084
 
 
 
@@ -1115,32 +1162,12 @@ srand(123)
 pca_sp(hapmap, 3, SparseMatrixCSC{Float32, UInt32})[3]
 ```
 
-    [1m[33mWARNING: [39m[22m[33mArray{T}(::Type{T}, m::Int) is deprecated, use Array{T}(m) instead.[39m
-    Stacktrace:
-     [1] [1mdepwarn[22m[22m[1m([22m[22m::String, ::Symbol[1m)[22m[22m at [1m./deprecated.jl:70[22m[22m
-     [2] [1mArray[22m[22m[1m([22m[22m::Type{Float32}, ::Int64[1m)[22m[22m at [1m./deprecated.jl:57[22m[22m
-     [3] [1mA_mul_B![22m[22m[1m([22m[22m::SubArray{Float32,1,Array{Float32,1},Tuple{UnitRange{Int64}},true}, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::SubArray{Float32,1,Array{Float32,1},Tuple{UnitRange{Int64}},true}[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/LinearMaps/src/composition.jl:88[22m[22m
-     [4] [1maupd_wrapper[22m[22m[1m([22m[22m::Type{T} where T, ::Base.LinAlg.#matvecA!#114{LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}}, ::Base.LinAlg.##108#115, ::Base.LinAlg.##109#116, ::Int64, ::Bool, ::Bool, ::String, ::Int64, ::Int64, ::String, ::Float64, ::Int64, ::Int64, ::Array{Float32,1}[1m)[22m[22m at [1m./linalg/arpack.jl:59[22m[22m
-     [5] [1m#_eigs#107[22m[22m[1m([22m[22m::Int64, ::Int64, ::Symbol, ::Float64, ::Int64, ::Void, ::Array{Float32,1}, ::Bool, ::Base.LinAlg.#_eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./linalg/arnoldi.jl:285[22m[22m
-     [6] [1m(::Base.LinAlg.#kw##_eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#_eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./<missing>:0[22m[22m
-     [7] [1m#eigs#106[22m[22m[1m([22m[22m::Array{Any,1}, ::Function, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./linalg/arnoldi.jl:170[22m[22m
-     [8] [1m(::Base.LinAlg.#kw##eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}, ::UniformScaling{Int64}[1m)[22m[22m at [1m./<missing>:0[22m[22m
-     [9] [1m#eigs#99[22m[22m at [1m./linalg/arnoldi.jl:90[22m[22m [inlined]
-     [10] [1m(::Base.LinAlg.#kw##eigs)[22m[22m[1m([22m[22m::Array{Any,1}, ::Base.LinAlg.#eigs, ::LinearMaps.CompositeMap{Float32,Tuple{LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}},LinearMaps.TransposeMap{Float32,LinearMaps.FunctionMap{Float32,SnpArrays.##10#12{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}},SnpArrays.##11#13{SparseMatrixCSC{Float32,UInt32},Array{Float32,1},Array{Float32,1}}}}}}[1m)[22m[22m at [1m./<missing>:0[22m[22m
-     [11] [1mpca_sp[22m[22m[1m([22m[22m::SnpArrays.SnpArray{2}, ::Int64, ::Type{SparseMatrixCSC{Float32,UInt32}}[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/SnpArrays/src/SnpArrays.jl:652[22m[22m
-     [12] [1minclude_string[22m[22m[1m([22m[22m::String, ::String[1m)[22m[22m at [1m./loading.jl:515[22m[22m
-     [13] [1mexecute_request[22m[22m[1m([22m[22m::ZMQ.Socket, ::IJulia.Msg[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/IJulia/src/execute_request.jl:160[22m[22m
-     [14] [1meventloop[22m[22m[1m([22m[22m::ZMQ.Socket[1m)[22m[22m at [1m/Users/huazhou/.julia/v0.6/IJulia/src/eventloop.jl:8[22m[22m
-     [15] [1m(::IJulia.##11#14)[22m[22m[1m([22m[22m[1m)[22m[22m at [1m./task.jl:335[22m[22m
-    while loading In[94], in expression starting on line 3
-
-
 
 
 
     3-element Array{Float32,1}:
      1841.39  
       225.324 
-       70.7083
+       70.7084
 
 
