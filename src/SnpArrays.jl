@@ -470,7 +470,7 @@ end
 #---------------------------------------------------------------------------#
 
 """
-    grm(A; method=:GRM, memory_limit=2e30)
+    grm(A; method=:GRM, memory_limit=2^30, maf_threshold=0.01)
 
 Compute empirical kinship matrix from a SnpMatrix. Missing genotypes are imputed
 on the fly according to minor allele frequencies.
