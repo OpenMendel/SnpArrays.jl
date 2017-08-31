@@ -470,14 +470,31 @@ end
 #---------------------------------------------------------------------------#
 
 """
+    grm(A; method=:GRM, memory_limit=2e30)
+
 Compute empirical kinship matrix from a SnpMatrix. Missing genotypes are imputed
 on the fly according to minor allele frequencies.
+
+# Input
+- `A`: a SnpArray
+
+# Optional Arguments
+- `method`: `:GRM` (default) or `:MoM`
+- `memory_limit`: cap for memory usage in bytes, default `2^30` (2GB)
+- `maf_threshold`: SNPs with MAF `<maf_threshold` are excluded, default 0.01
 """
-function grm(A::SnpLike{2}; method::Symbol = :GRM, memory_limit::Real = 2.0^30)
+function grm(
+  A::SnpLike{2};
+  method::Symbol = :GRM,
+  memory_limit::Real = 2.0^30,
+  maf_threshold::Real = 0.01
+  )
+  maf, = summarize(A)
+  A_filtered = view(A, :, maf .≥ 0.01)
   if method == :GRM
-    return _grm(A::SnpLike{2}, memory_limit)
+    return _grm(A_filtered, memory_limit)
   elseif method == :MoM
-    return _mom(A::SnpLike{2}, memory_limit)
+    return _mom(A_filtered, memory_limit)
   end
 end # function grm
 
