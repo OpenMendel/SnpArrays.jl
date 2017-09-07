@@ -502,7 +502,7 @@ function grm(
   maf_threshold::Real = 0.01
   )
   maf, = summarize(A)
-  A_filtered = view(A, :, maf .≥ 0.01)
+  A_filtered = view(A, :, maf .≥ maf_threshold)
   if method == :GRM
     return _grm(A_filtered, memory_limit)
   elseif method == :MoM
