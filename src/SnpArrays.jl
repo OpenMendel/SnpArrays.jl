@@ -54,14 +54,17 @@ function SnpArray(
   # v1.0 BED file: first two magic byte, 3rd byte indicate SNP- or individual-major
   if bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011" &&
     bits(bedheader[3]) == "00000001"
+    info("v1.0 BED file detected")
     snp_major = true
     seek(fid, 3)
   elseif bits(bedheader[1]) == "01101100" && bits(bedheader[2]) == "00011011" &&
     bits(bedheader[3]) == "00000000"
+    info("v1.0 BED file detected")
     snp_major = false
     seek(fid, 3)
   # v0.99 BED file: no 2-byte magic number, 1st byte indicate SNP- or individual-major
   elseif bits(bedheader[1]) == "00000001"
+    info("v0.99 BED file detected")
     snp_major = true
     seek(fid, 1)
   elseif bits(bedheader[1]) == "00000000"
@@ -70,6 +73,7 @@ function SnpArray(
   # Prior to v0.99: no 2-byte magic number, no SNP-major/individual-major
   # identifier, always individual-major
   else
+    info("prior to v0.99 BED file detected")
     snp_major = false
     seek(fid, 0)
   end
