@@ -349,7 +349,7 @@ vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
 function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
   minor_allele::BitVector)
   length(maf) == n || throw(ArgumentError("length of maf should be n"))
-  length(minor_allele) == n && throw(ArgumentError("length of minor_allele should be n"))
+  length(minor_allele) == n || throw(ArgumentError("length of minor_allele should be n"))
   s = SnpArray(m, n)
   @inbounds @simd for j in 1:n
     for i in 1:m
