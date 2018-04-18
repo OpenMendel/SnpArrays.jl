@@ -43,7 +43,7 @@ function SnpArray(
   )
 
   # dimensions
-  (people > 0 && snps > 0) && throw(ArgumentError("people and snps have to be positive integer"))
+  (people > 0 && snps > 0) || throw(ArgumentError("people and snps have to be positive integer"))
   # read binary genotype data from bed file
   plinkBedfile = contains(plinkFile, ".bed")? plinkFile : string(plinkFile, ".bed")
   fid = open(plinkBedfile, "r")
@@ -235,7 +235,7 @@ end # function Base.convert
 function Base.copy!{T <: Real, N}(B::AbstractArray{T, N}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false)
-  size(B) == size(A) && throw(ArgumentError("Dimensions do not match"))
+  size(B) == size(A) || throw(ArgumentError("Dimensions do not match"))
   if ndims(A) == 1
     m, n = length(A), 1
   elseif ndims(A) == 2
