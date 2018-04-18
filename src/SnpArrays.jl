@@ -43,7 +43,7 @@ function SnpArray(
   )
 
   # dimensions
-  @assert (people > 0 && snps > 0) "people and snps have to be positive integer"
+  (people > 0 && snps > 0) && throw(ArgumentError("people and snps have to be positive integer"))
   # read binary genotype data from bed file
   plinkBedfile = contains(plinkFile, ".bed")? plinkFile : string(plinkFile, ".bed")
   fid = open(plinkBedfile, "r")
@@ -235,7 +235,7 @@ end # function Base.convert
 function Base.copy!{T <: Real, N}(B::AbstractArray{T, N}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false)
-  @assert size(B) == size(A) "Dimensions do not match"
+  size(B) == size(A) && throw(ArgumentError("Dimensions do not match"))
   if ndims(A) == 1
     m, n = length(A), 1
   elseif ndims(A) == 2
@@ -348,8 +348,8 @@ vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
 """
 function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
   minor_allele::BitVector)
-  @assert length(maf) == n "length of maf should be n"
-  @assert length(minor_allele) == n "length of minor_allele should be n"
+  length(maf) == n && throw(ArgumentError("length of maf should be n"))
+  length(minor_allele) == n && throw(ArgumentError("length of minor_allele should be n"))
   s = SnpArray(m, n)
   @inbounds @simd for j in 1:n
     for i in 1:m
