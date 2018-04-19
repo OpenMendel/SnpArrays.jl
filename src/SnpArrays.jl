@@ -232,19 +232,19 @@ function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
   copy!(B, A; model = model, impute = impute, center = center, scale = scale)
 end # function Base.convert
 
-function Base.copy!{T <: Real}(B::AbstractMatrix{T}, A::SnpLike{2},
+function Base.copy!{T <: Real}(B::AbstractMatrix{T}, A::SnpLike{2};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false)
   size(B) == size(A) || throw(ArgumentError("Dimensions do not match"))
   n = size(A, 2)
   # convert column by column
   @inbounds for j in 1:n
-    @views copy!(B[:, j], A[:, j], model, impute, center)
+    @views copy!(B[:, j], A[:, j]; model=model, impute=impute, center=center, scale=scale)
   end
   return B
 end # function Base.copy!
 
-function Base.copy!{T <: Real}(B::AbstractVector{T}, A::SnpLike{1},
+function Base.copy!{T <: Real}(B::AbstractVector{T}, A::SnpLike{1};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false)
   length(B) == length(A) || throw(ArgumentError("Lengths do not match"))
@@ -656,9 +656,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
   pcscore = zeros(eltype(center), n, pcs)
   Acs_mul_B!(pcscore, G, pcloading, center, weight)
   # scale by n-1 to obtain eigenvalues of the covariance matrix G'G / (n - 1)
-  @inbounds @simd for i in 1:pcs
-    pcvariance[i] = pcvariance[i] / (n - 1)
-  end
+  pcvariance ./= n - 1
   return pcscore, pcloading, pcvariance
 end # function pca_sp
 

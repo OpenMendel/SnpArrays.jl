@@ -8,7 +8,8 @@ outv = zeros(n)
 # @benchmark copy!(outv, view(hapmap, :, 1), :additive, false, false, false)
 # @benchmark copy!(outv, hapmap[:, 1], :additive, false, false, false)
 @time for s in 1:snps
-    copy!(outv, view(hapmap, :, s), :additive, false, false, false)
+    copy!(outv, hapmap[:, s], :additive, false, false, false)
+    # @views copy!(outv, hapmap[:, s], :additive, false, false, false)
 end
 
 # outm = zeros(n, snps)
