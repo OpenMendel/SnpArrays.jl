@@ -21,7 +21,7 @@ end
 Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
 """
 function SnpArray{T <: Real}(a1count::AbstractArray{T})
-    SnpArray(a1count .> one(T), a1count .> zero(T))
+  SnpArray(a1count .> one(T), a1count .> zero(T))
 end
 
 """
@@ -232,36 +232,36 @@ function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
   copy!(B, A; model = model, impute = impute, center = center, scale = scale)
 end # function Base.convert
 
-function Base.copy!{T <: Real, N}(B::AbstractArray{T, N}, A::SnpLike{N};
+function Base.copy!{T <: Real}(B::AbstractMatrix{T}, A::SnpLike{2},
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false)
   size(B) == size(A) || throw(ArgumentError("Dimensions do not match"))
-  if ndims(A) == 1
-    m, n = length(A), 1
-  elseif ndims(A) == 2
-    m, n = size(A)
-  end
+  n = size(A, 2)
   # convert column by column
   @inbounds for j in 1:n
-    # first pass: find minor allele and its frequency
-    if ndims(A) == 1
-      maf, minor_allele, = summarize(A)
-    else ndims(A) == 2
-      maf, minor_allele, = summarize(view(A, :, j))
+    @views copy!(B[:, j], A[:, j], model, impute, center)
+  end
+  return B
+end # function Base.copy!
+
+function Base.copy!{T <: Real}(B::AbstractVector{T}, A::SnpLike{1},
+  model::Symbol = :additive, impute::Bool = false, center::Bool = false,
+  scale::Bool = false)
+  length(B) == length(A) || throw(ArgumentError("Lengths do not match"))
+  # first pass: calculate maf and minor_allele
+  maf, minor_allele, = summarize(A)
+  # second pass: impute, convert, center, scale
+  ct = convert(T, 2maf)
+  wt = convert(T, maf == 0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
+  for i in 1:length(B)
+    (a1, a2) = A[i]
+    # impute if asked
+    if isnan(a1, a2) && impute
+      a1, a2 = randgeno(maf, minor_allele)
     end
-    # second pass: impute, convert, center, scale
-    ct = convert(T, 2.0maf)
-    wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
-    @simd for i in 1:m
-      (a1, a2) = A[i, j]
-      # impute if asked
-      if isnan(a1, a2) && impute
-        a1, a2 = randgeno(maf, minor_allele)
-      end
-      B[i, j] = convert(T, (a1, a2), minor_allele, model)
-      if center; B[i, j] -= ct; end
-      if scale; B[i, j] *= wt; end
-    end
+    B[i] = convert(T, (a1, a2), minor_allele, model)
+    if center; B[i] -= ct; end
+    if scale; B[i] *= wt; end
   end
   return B
 end # function Base.copy!
