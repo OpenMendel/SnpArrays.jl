@@ -247,6 +247,18 @@ end
   @test vecnorm(pcvariance_f32sp - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1e-4
 end
 
+@testset "snparray lin. alg." begin
+  x = rand(0:2, n, p)
+  snp = SnpArray(x)
+  a, b = randn(n), randn(p)
+  A, B = randn(7, n), randn(7, p)
+  @test vecnorm(snp * b - (snp.A1 * b + snp.A2 * b)) ≤ 1e-8 # A_mul_B!
+  @test vecnorm(snp.' * a - (snp.A1.' * a + snp.A2.' * a)) ≤ 1e-8 # At_mul_B!
+  @test vecnorm(snp' * a - (snp.A1' * a + snp.A2' * a)) ≤ 1e-8 # Ac_mul_B!
+  @test vecnorm(A_mul_Bt(snp, B) - (snp.A1 * B.' + snp.A2 * B.')) ≤ 1e-8 # A_mul_Bt!
+  @test vecnorm(A_mul_Bc(snp, B) - (snp.A1 * B' + snp.A2 * B')) ≤ 1e-8 # A_mul_Bc!
+end
+
 @testset "SnpData" begin
   hapmapdata = SnpData(Pkg.dir("SnpArrays") * "/docs/hapmap3")
   @test size(hapmapdata.snpmatrix) == (324, 13928)
