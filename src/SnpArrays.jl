@@ -2,9 +2,10 @@ module SnpArrays
 
 using Compat, LinearMaps
 
-import Base: filter
+import Base: A_mul_B!, At_mul_Bt!, A_mul_Bt!, At_mul_B!, filter
 
-export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
+export A_mul_B!, At_mul_B!, A_mul_Bt!, At_mul_Bt!,
+  estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
   SnpArray, SnpData, SnpLike, summarize, writeplink
 
 struct SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
@@ -707,6 +708,25 @@ function identify!(A::Matrix{T}) where {T <: AbstractFloat}
     end
   end
 end # function identify!
+
+#---------------------------------------------------------------------------#
+# Linear algebra with SnpArrays
+#---------------------------------------------------------------------------#
+
+for f in (:A_mul_B!, :At_mul_B!, :A_mul_Bt!, :At_mul_Bt!)
+  @eval begin
+    function ($f)(Y::AbstractVecOrMat, A::SnpLike{2}, B::AbstractVecOrMat, storage = similar(Y))
+      ($f)(storage, A.A1, B)
+      ($f)(Y, A.A2, B)
+      Y .+= storage
+    end
+    function ($f)(Y::AbstractVecOrMat, A::AbstractVecOrMat, B::SnpLike{2}, storage = similar(Y))
+      ($f)(storage, A, B.A1)
+      ($f)(Y, A, B.A2)
+      Y .+= storage
+    end
+  end
+end
 
 #---------------------------------------------------------------------------#
 # SnpData type implementation
