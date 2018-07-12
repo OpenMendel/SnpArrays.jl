@@ -2,18 +2,18 @@ module SnpArrays
 
 using Compat, LinearMaps
 
-import Base: filter, issymmetric
+import Base: filter
 
 export estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
-  SnpArray, SnpData, SnpLike, summarize, writeplink, issym, issymmetric
+  SnpArray, SnpData, SnpLike, summarize, writeplink
 
-type SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
+struct SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
   A1::BitArray{N}
   A2::BitArray{N}
 end
 
 # SnpArray or a view of a SnpArray
-@compat SnpLike{N, S<:SnpArray} = Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N, S}}
+@compat SnpLike = Union{SnpArray{N}, SubArray{NTuple{2, Bool}, N, S}} where {N, S<:SnpArray}
 @compat SnpMatrix = SnpArray{2}
 @compat SnpVector = SnpArray{1}
 
@@ -92,7 +92,7 @@ end # function SnpArray
 
 #---------------------------------------------------------------------------# methods
 # Julia docs on methods required for AbstractArray:
-# http://docs.julialang.org/en/release-0.4/manual/interfaces/#man-interfaces-abstractarray
+# https://docs.julialang.org/en/stable/manual/interfaces/#man-interface-array-1
 
 Base.size(A::SnpArray)                 = size(A.A1)
 Base.size(A::SnpArray, d::Int)         = size(A.A1, d)
@@ -149,7 +149,7 @@ end # function Base.similar
 # missing code is 10 = (true, false)
 @inline Base.isnan(a1::Bool, a2::Bool) = a1 & !a2
 @inline Base.isnan(a::Tuple{Bool, Bool}) = Base.isnan(a[1], a[2])
-function Base.isnan{N}(A::SnpLike{N})
+function Base.isnan(A::SnpLike{N}) where {N}
   b = BitArray(size(A))
   @inbounds @simd for i in eachindex(A)
     b[i] = Base.isnan(A[i])
@@ -168,8 +168,7 @@ Estimate the memory usage (in bytes) for storing SNP data with `n` individuals,
 `p` SNPs, and average minor allele frequency `maf`. `maf` is used only when
 `t <: AbstractSparseMatrix`.
 """
-function estimatesize{T <: AbstractFloat}(n::Int, p::Int,
-  t::Type, maf::T = 0.25)
+function estimatesize(n::Int, p::Int, t::Type, maf::T = 0.25) where {T <: AbstractFloat}
   if t <: DenseMatrix
     storage = convert(Float64, sizeof(eltype(t)) * n * p)
   elseif t <: AbstractSparseMatrix
@@ -194,8 +193,8 @@ specified SNP model. Missing genotype is converted to `NaN`. `minor_allele=true`
 indicates `A1` is the minor allele; `minor_allele=false` indicates `A2` is the
 minor allele.
 """
-function Base.convert{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
-  minor_allele::Bool, model::Symbol = :additive)
+function Base.convert(t::Type{T}, a::NTuple{2, Bool},
+  minor_allele::Bool, model::Symbol = :additive) where {T <: Real}
   if isnan(a)
     b = convert(T, NaN)
   else
@@ -225,9 +224,9 @@ Convert a SNP matrix to a numeric matrix of minor allele counts according to
 specified SNP model. If `impute == true`, missing entries are imputed according
 to (column) minor allele frequencies.
 """
-function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::SnpLike{N};
+function Base.convert(t::Type{Array{T, N}}, A::SnpLike{N};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
-  scale::Bool = false)
+  scale::Bool = false) where {T <: Real, N}
   B = similar(A, T)
   copy!(B, A; model = model, impute = impute, center = center, scale = scale)
 end # function Base.convert
@@ -259,15 +258,12 @@ end # function Base.copy!
 function Base.copy!(B::AbstractMatrix{T}, A::SnpLike{2};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false) where {T <: Real}
-
   size(B) == size(A) || throw(ArgumentError("Dimensions do not match"))
   n = size(B, 2)
-
   # convert column by column
   @inbounds for j in 1:n
     @views copy!(B[:, j], A[:, j], model = model, impute = impute, center = center, scale = scale)
   end
-
   return B
 end # function Base.copy!
 
@@ -276,8 +272,8 @@ Convert a SNP matrix to a numeric matrix of minor allele counts according to
 specified SNP model. If `impute == true`, missing entries are imputed according
 to (column) minor allele frequencies.
 """
-function Base.convert{T <: Real, TI <: Integer}(t::Type{SparseMatrixCSC{T, TI}},
-  A::SnpLike{2}; model::Symbol = :additive, impute::Bool = false)
+function Base.convert(t::Type{SparseMatrixCSC{T, TI}}, A::SnpLike{2}; 
+  model::Symbol = :additive, impute::Bool = false) where {T <: Real, TI <: Integer}
   m, n = size(A)
   # prepare sparese matrix data structure
   rowval = TI[]
@@ -317,7 +313,7 @@ end # function Base.convert
 """
 Generate a genotype according to a1 allele frequency.
 """
-function randgeno{T <: AbstractFloat}(a1freq::T)
+function randgeno(a1freq::T) where {T <: AbstractFloat}
   b1 = rand() > a1freq
   b2 = rand() > a1freq
   # make sure not conflict with missing code 10
@@ -331,15 +327,15 @@ end # function readgeno
 Generate a genotype according to minor allele frequency. `minor_allele` indicates
 the minor allele is A1 (`true`) or A2 (`false`).
 """
-@inline function randgeno{T <: AbstractFloat}(maf::T, minor_allele::Bool)
-  minor_allele ? randgeno(maf) : randgeno(1.0 - maf)
+@inline function randgeno(maf::T, minor_allele::Bool) where {T <: AbstractFloat}
+  minor_allele ? randgeno(maf) : randgeno(1 - maf)
 end # function readgeno
 
 """
 Generate a SnpVector according to minor allele frequency. `minor_allele`
 indicates the minor allele is A1 (`true`) or A2 (`false`).
 """
-function randgeno{T <: AbstractFloat}(n::Int, maf::T, minor_allele::Bool)
+function randgeno(n::Int, maf::T, minor_allele::Bool) where {T <: AbstractFloat}
   s = SnpArray(n)
   @inbounds @simd for i in 1:n
     s[i] = randgeno(maf, minor_allele)
@@ -351,8 +347,7 @@ end # function readgeno
 Generate a SnpMatrix according to minor allele frequencies `maf`. `minor_allele`
 vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
 """
-function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
-  minor_allele::BitVector)
+function randgeno(m::Int, n::Int, maf::Vector{T}, minor_allele::BitVector) where {T <: AbstractFloat}
   length(maf) == n || throw(ArgumentError("length of maf should be n"))
   length(minor_allele) == n || throw(ArgumentError("length of minor_allele should be n"))
   s = SnpArray(m, n)
@@ -364,8 +359,8 @@ function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
   return s
 end # function readgeno
 
-function randgeno{T <: AbstractFloat}(n::Tuple{Int,Int}, maf::Vector{T},
-  minor_allele::BitArray{1})
+function randgeno(n::Tuple{Int,Int}, maf::Vector{T},
+  minor_allele::BitArray{1}) where {T <: AbstractFloat}
   randgeno(n..., maf, minor_allele)
 end # function readgeno
 
@@ -619,8 +614,8 @@ Principal component analysis of SNP data.
 
 # TODO: maket it work for Integer type matrix
 """
-function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
-  t::Type{Matrix{T}} = Matrix{Float64})
+function pca(A::SnpLike{2}, pcs::Integer = 6,
+  t::Type{Matrix{T}} = Matrix{Float64}) where {T <: AbstractFloat}
   n, p = size(A)
   # memory-mapped genotype matrix G, centered and scaled
   G = Mmap.mmap(t, (n, p))
@@ -635,8 +630,8 @@ function pca{T <: AbstractFloat}(A::SnpLike{2}, pcs::Integer = 6,
   return pcscore, pcloading, pcvariance
 end # function pca
 
-function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
-  t::Type{SparseMatrixCSC{T, TI}} = SparseMatrixCSC{Float64, Int})
+function pca_sp(A::SnpLike{2}, pcs::Integer = 6,
+  t::Type{SparseMatrixCSC{T, TI}} = SparseMatrixCSC{Float64, Int}) where {T <: Real, TI}
   n, p = size(A)
   # genotype matrix *not* centered or scaled
   G = convert(t, A; model = :additive, impute = true)
@@ -668,9 +663,9 @@ end # function pca_sp
 """
 Standardized A (centered by `center` and scaled by `weight`) multiply B.
 """
-function Acs_mul_B!{T, N}(output::AbstractArray{T, N}, A::AbstractMatrix,
+function Acs_mul_B!(output::AbstractArray{T, N}, A::AbstractMatrix,
   B::AbstractArray{T, N}, center::Vector{T}, weight::Vector{T},
-  storage::AbstractArray{T, N} = similar(B))
+  storage::AbstractArray{T, N} = similar(B)) where {T, N}
   A_mul_B!(storage, Diagonal(weight), B)
   A_mul_B!(output, A, storage)
   @inbounds for j in 1:size(output, 2)
@@ -701,7 +696,7 @@ end # function Acsc_mul_B!
 Make first entry of each column nonnegative. This is for better identifibility
 of an orthogonal matrix such as from eigen- or singular value decomposition.
 """
-function identify!{T <: AbstractFloat}(A::Matrix{T})
+function identify!(A::Matrix{T}) where {T <: AbstractFloat}
   m, n = size(A)
   zeroT = zero(eltype(A))
   @inbounds for j in 1:n

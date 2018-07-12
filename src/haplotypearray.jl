@@ -2,7 +2,7 @@
 
 export HaplotypeArray, convert_haplotype
 
-type HaplotypeArray{N} <: AbstractArray{NTuple{2, Bool}, N}
+struct HaplotypeArray{N} <: AbstractArray{NTuple{2, Bool}, N}
   A1::BitArray{N}
   A2::BitArray{N}
 end
@@ -29,7 +29,7 @@ function HaplotypeArray(dims...)
 end #
 
 # HaplotypeArray or a view of a HaplotypeArray
-@compat HaplotypeLike{N, H<:HaplotypeArray} = Union{HaplotypeArray{N}, SubArray{NTuple{2, Bool}, N, H}}
+@compat HaplotypeLike = Union{HaplotypeArray{N}, SubArray{NTuple{2, Bool}, N, H}} where {N, H<:HaplotypeArray}
 @compat HaplotypeMatrix = HaplotypeArray{2}
 @compat HaplotypeVector = HaplotypeArray{1}
 
@@ -72,7 +72,7 @@ end # function Base.similar
 # Code for missing genotypes
 #---------------------------------------------------------------------------#
 
-Base.isnan{N}(A::HaplotypeLike{N}) = falses(size(A))
+Base.isnan(A::HaplotypeLike{N}) where {N} = falses(size(A)) 
 
 #---------------------------------------------------------------------------#
 # Convert and copy
@@ -91,8 +91,8 @@ specified SNP model, ignoring the missing genotype code. `minor_allele=true`
 indicates `A1` is the minor allele; `minor_allele=false` indicates `A2` is the
 minor allele.
 """
-@inline function convert_haplotype{T <: Real}(t::Type{T}, a::NTuple{2, Bool},
-  minor_allele::Bool, model::Symbol = :additive)
+@inline function convert_haplotype(t::Type{T}, a::NTuple{2, Bool},
+  minor_allele::Bool, model::Symbol = :additive) where {T <: Real}
   if minor_allele # A1 is the minor allele
     if model == :additive
       b = convert(T, !a[1] + !a[2])
@@ -117,20 +117,20 @@ end # function convert_haplotype
 Convert a haplotype matrix to a numeric matrix of minor allele counts according to
 specified SNP model.
 """
-function Base.convert{T <: Real, N}(t::Type{Array{T, N}}, A::HaplotypeLike{N};
-  model::Symbol = :additive, center::Bool = false, scale::Bool = false)
+function Base.convert(t::Type{Array{T, N}}, A::HaplotypeLike{N};
+  model::Symbol = :additive, center::Bool = false, scale::Bool = false) where {T <: Real, N}
   B = similar(A, T)
   copy!(B, A; model = model, center = center, scale = scale)
 end # function Base.convert
 
-function Base.copy!{T <: Real, N}(
+function Base.copy!(
   B::Array{T, N},
   A::Union{HaplotypeLike{1}, HaplotypeLike{2}};
   model::Symbol = :additive,
   impute::Bool = false,
   center::Bool = false,
   scale::Bool = false
-  )
+  ) where {T <: Real, N}
 
   @assert size(B) == size(A) "Dimensions do not match"
   m, n = size(A, 1), size(A, 2)
@@ -159,11 +159,11 @@ end # function Base.copy!
 Convert a SNP matrix to a numeric matrix of minor allele counts according to
 specified SNP model.
 """
-function Base.convert{T <: Real, TI <: Integer}(
+function Base.convert(
   t::Type{SparseMatrixCSC{T, TI}},
   A::HaplotypeLike{2};
   model::Symbol = :additive
-  )
+  ) where {T <: Real, TI <: Integer}
 
   m, n = size(A)
   # prepare sparese matrix data structure

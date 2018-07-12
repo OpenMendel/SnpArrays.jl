@@ -5,7 +5,7 @@
 """
 Type for SNP and person information.
 """
-type SnpData
+struct SnpData
   people::Int                       # number of rows (individuals)
   snps::Int                         # number of columns (snps)
   personid::Vector{AbstractString}  # names of individuals
