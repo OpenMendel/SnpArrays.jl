@@ -21,7 +21,7 @@ end
 Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
 """
 function SnpArray{T <: Real}(a1count::AbstractArray{T})
-    SnpArray(a1count .> one(T), a1count .> zero(T))
+  SnpArray(a1count .> one(T), a1count .> zero(T))
 end
 
 """
@@ -43,7 +43,7 @@ function SnpArray(
   )
 
   # dimensions
-  @assert (people > 0 && snps > 0) "people and snps have to be positive integer"
+  (people > 0 && snps > 0) || throw(ArgumentError("people and snps have to be positive integer"))
   # read binary genotype data from bed file
   plinkBedfile = contains(plinkFile, ".bed")? plinkFile : string(plinkFile, ".bed")
   fid = open(plinkBedfile, "r")
@@ -236,29 +236,21 @@ function Base.copy!(b::AbstractVector{T}, a::SnpLike{1};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false) where {T <: Real}
 
-  @assert length(b) == length(a) "Dimensions do not match"
-  m = length(a)
-
+  length(b) == length(a) || throw(ArgumentError("Dimensions do not match"))
   # first pass: find minor allele and its frequency
   maf, minor_allele = summarize(a)
-
   # second pass: impute, convert, center, scale
   ct = convert(T, 2.0maf)
   wt = convert(T, maf == 0.0 ? 1.0 : 1.0 / √(2.0maf * (1.0 - maf)))
-  @inbounds @simd for i in 1:m
+  for i in 1:length(b)
     (a1, a2) = a[i]
-
     # impute if asked
     if isnan(a1, a2) && impute
       a1, a2 = randgeno(maf, minor_allele)
     end
     bi = convert(T, (a1, a2), minor_allele, model)
-    if center
-      bi -= ct
-    end
-    if scale
-      bi *= wt
-    end
+    if center; bi -= ct; end
+    if scale; bi *= wt; end
     b[i] = bi
   end
   return b
@@ -268,12 +260,12 @@ function Base.copy!(B::AbstractMatrix{T}, A::SnpLike{2};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false) where {T <: Real}
 
-  @assert size(B) == size(A) "Dimensions do not match"
+  size(B) == size(A) || throw(ArgumentError("Dimensions do not match"))
   n = size(B, 2)
 
   # convert column by column
   @inbounds for j in 1:n
-    copy!(view(B, :, j), view(A, :, j), model = model, impute = impute, center = center, scale = scale)
+    @views copy!(B[:, j], A[:, j], model = model, impute = impute, center = center, scale = scale)
   end
 
   return B
@@ -361,8 +353,8 @@ vector indicates the minor alleles are A1 (`true`) or A2 (`false`).
 """
 function randgeno{T <: AbstractFloat}(m::Int, n::Int, maf::Vector{T},
   minor_allele::BitVector)
-  @assert length(maf) == n "length of maf should be n"
-  @assert length(minor_allele) == n "length of minor_allele should be n"
+  length(maf) == n || throw(ArgumentError("length of maf should be n"))
+  length(minor_allele) == n || throw(ArgumentError("length of minor_allele should be n"))
   s = SnpArray(m, n)
   @inbounds @simd for j in 1:n
     for i in 1:m
@@ -669,9 +661,7 @@ function pca_sp{T <: Real, TI}(A::SnpLike{2}, pcs::Integer = 6,
   pcscore = zeros(eltype(center), n, pcs)
   Acs_mul_B!(pcscore, G, pcloading, center, weight)
   # scale by n-1 to obtain eigenvalues of the covariance matrix G'G / (n - 1)
-  @inbounds @simd for i in 1:pcs
-    pcvariance[i] = pcvariance[i] / (n - 1)
-  end
+  pcvariance ./= n - 1
   return pcscore, pcloading, pcvariance
 end # function pca_sp
 
