@@ -2,10 +2,11 @@ module SnpArrays
 
 using Compat, LinearMaps
 
-import Base: *, A_mul_B!, At_mul_Bt!, A_mul_Bt!, At_mul_B!, Ac_mul_B!, 
+import Base: +, -, *, /, A_mul_B!, At_mul_Bt!, A_mul_Bt!, At_mul_B!, Ac_mul_B!, 
 A_mul_Bc!, Ac_mul_Bc!,filter
 
-export *, A_mul_B!, At_mul_B!, A_mul_Bt!, At_mul_Bt!, Ac_mul_B!, A_mul_Bc!, Ac_mul_Bc!,
+export +, -, *, /, A_mul_B!, At_mul_B!, A_mul_Bt!, At_mul_Bt!, Ac_mul_B!, 
+A_mul_Bc!, Ac_mul_Bc!,
 estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
 SnpArray, SnpData, SnpLike, summarize, writeplink
 
@@ -20,7 +21,7 @@ end
 @compat SnpVector = SnpArray{1}
 
 """
-Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
+Construct a SnpArray from an array of A2 allele counts {0, 1, 2}.
 """
 function SnpArray(a1count::AbstractArray{T}) where {T <: Real}
   SnpArray(a1count .> one(T), a1count .> zero(T))
@@ -714,7 +715,10 @@ end # function identify!
 # Linear algebra with SnpArrays
 #---------------------------------------------------------------------------#
 
-*(x::NTuple{2, Bool}, y) = x[1] * y + x[2] * y
++(x::NTuple{2, Bool}, y) = x[1] + x[2] + y
+-(x::NTuple{2, Bool}, y) = x[1] + x[2] - y
+*(x::NTuple{2, Bool}, y) = (x[1] + x[2]) * y
+/(x::NTuple{2, Bool}, y) = (x[1] + x[2]) / y
 
 # (SnpArray)-(vector/matrix) multiplications
 for f in (:A_mul_B!, :At_mul_B!, :A_mul_Bt!, :At_mul_Bt!, :Ac_mul_B!, :A_mul_Bc!, :Ac_mul_Bc!) 
