@@ -9,7 +9,7 @@ export *, A_mul_B!, At_mul_B!, A_mul_Bt!, At_mul_Bt!, Ac_mul_B!, A_mul_Bc!, Ac_m
 estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
 SnpArray, SnpData, SnpLike, summarize, writeplink
 
-struct SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
+mutable struct SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
   A1::BitArray{N}
   A2::BitArray{N}
 end
@@ -22,7 +22,7 @@ end
 """
 Construct a SnpArray from an array of A1 allele counts {0, 1, 2}.
 """
-function SnpArray{T <: Real}(a1count::AbstractArray{T})
+function SnpArray(a1count::AbstractArray{T}) where {T <: Real}
   SnpArray(a1count .> one(T), a1count .> zero(T))
 end
 
