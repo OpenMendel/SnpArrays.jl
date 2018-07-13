@@ -252,11 +252,18 @@ end
   snp = SnpArray(x)
   a, b = randn(n), randn(p)
   A, B = randn(7, n), randn(7, p)
-  @test vecnorm(snp * b - (snp.A1 * b + snp.A2 * b)) ≤ 1e-8 # A_mul_B!
-  @test vecnorm(snp.' * a - (snp.A1.' * a + snp.A2.' * a)) ≤ 1e-8 # At_mul_B!
-  @test vecnorm(snp' * a - (snp.A1' * a + snp.A2' * a)) ≤ 1e-8 # Ac_mul_B!
-  @test vecnorm(A_mul_Bt(snp, B) - (snp.A1 * B.' + snp.A2 * B.')) ≤ 1e-8 # A_mul_Bt!
-  @test vecnorm(A_mul_Bc(snp, B) - (snp.A1 * B' + snp.A2 * B')) ≤ 1e-8 # A_mul_Bc!
+  @test vecnorm(snp * b - (snp.A1 + snp.A2) * b) ≤ 1e-8 # A_mul_B!
+  @test vecnorm(snp.' * a - (snp.A1 + snp.A2).' * a) ≤ 1e-8 # At_mul_B!
+  @test vecnorm(snp' * a - (snp.A1 + snp.A2)' * a) ≤ 1e-8 # Ac_mul_B!
+  @test vecnorm(A_mul_Bt(snp, B) - (snp.A1 + snp.A2) * B.') ≤ 1e-8 # A_mul_Bt!
+  @test vecnorm(A_mul_Bc(snp, B) - (snp.A1 + snp.A2) * B') ≤ 1e-8 # A_mul_Bc!
+  @test vecnorm(At_mul_Bt(snp, A) - (snp.A1 + snp.A2).' * A.') ≤ 1e-8 # At_mul_Bt!
+  @test vecnorm(Ac_mul_Bc(snp, A) - (snp.A1 + snp.A2)' * A') ≤ 1e-8 # Ac_mul_Bc!
+  c, s = mean(x, 1)[:], 1 ./ std(x, 1)[:]
+  xcs = (x - ones(n) * c') * Diagonal(s)
+  out1, out2 = zeros(n), zeros(p)
+  @test vecnorm(A_mul_B!(out1, snp, b, c, s) - xcs * b) ≤ 1e-8
+  @test vecnorm(At_mul_B!(out2, snp, a, c, s) - xcs.' * a) ≤ 1e-8
 end
 
 @testset "SnpData" begin

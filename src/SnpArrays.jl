@@ -2,11 +2,12 @@ module SnpArrays
 
 using Compat, LinearMaps
 
-import Base: *, A_mul_B!, At_mul_Bt!, A_mul_Bt!, At_mul_B!, Ac_mul_B!, A_mul_Bc!, Ac_mul_Bc!,filter
+import Base: *, A_mul_B!, At_mul_Bt!, A_mul_Bt!, At_mul_B!, Ac_mul_B!, 
+A_mul_Bc!, Ac_mul_Bc!,filter
 
 export *, A_mul_B!, At_mul_B!, A_mul_Bt!, At_mul_Bt!, Ac_mul_B!, A_mul_Bc!, Ac_mul_Bc!,
-  estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
-  SnpArray, SnpData, SnpLike, summarize, writeplink
+estimatesize, filter, grm, _grm, _mom, pca, pca_sp, randgeno,
+SnpArray, SnpData, SnpLike, summarize, writeplink
 
 struct SnpArray{N} <: AbstractArray{NTuple{2,Bool}, N}
   A1::BitArray{N}
@@ -33,7 +34,7 @@ function SnpArray(dims...)
 end #
 
 """
-    SnpArray(plinkFile, [people], [snps])
+SnpArray(plinkFile, [people], [snps])
 
 Construct a SnpArray from Plink binary file `plinkFile.bed`.
 """
@@ -42,7 +43,7 @@ function SnpArray(
   people::Int = countlines(plinkFile * ".fam"),
   snps::Int = countlines(plinkFile * ".bim")
   )
-
+  
   # dimensions
   (people > 0 && snps > 0) || throw(ArgumentError("people and snps have to be positive integer"))
   # read binary genotype data from bed file
@@ -63,7 +64,7 @@ function SnpArray(
     info("v1.0 BED file detected")
     snp_major = false
     seek(fid, 3)
-  # v0.99 BED file: no 2-byte magic number, 1st byte indicate SNP- or individual-major
+    # v0.99 BED file: no 2-byte magic number, 1st byte indicate SNP- or individual-major
   elseif bits(bedheader[1]) == "00000001"
     info("v0.99 BED file detected")
     snp_major = true
@@ -71,8 +72,8 @@ function SnpArray(
   elseif bits(bedheader[1]) == "00000000"
     snp_major = false
     seek(fid, 1)
-  # Prior to v0.99: no 2-byte magic number, no SNP-major/individual-major
-  # identifier, always individual-major
+    # Prior to v0.99: no 2-byte magic number, no SNP-major/individual-major
+    # identifier, always individual-major
   else
     info("prior to v0.99 BED file detected")
     snp_major = false
@@ -163,7 +164,7 @@ end # function Base.isnan
 #---------------------------------------------------------------------------#
 
 """
-    estimatesize(n, p, t[, maf])
+estimatesize(n, p, t[, maf])
 
 Estimate the memory usage (in bytes) for storing SNP data with `n` individuals,
 `p` SNPs, and average minor allele frequency `maf`. `maf` is used only when
@@ -174,8 +175,8 @@ function estimatesize(n::Int, p::Int, t::Type, maf::T = 0.25) where {T <: Abstra
     storage = convert(Float64, sizeof(eltype(t)) * n * p)
   elseif t <: AbstractSparseMatrix
     storage = convert(Float64,
-      (sizeof(t.parameters[1]) + sizeof(t.parameters[2])) *
-      n * p * maf * (2.0 - maf) + sizeof(t.parameters[2]) * (p + 1))
+    (sizeof(t.parameters[1]) + sizeof(t.parameters[2])) *
+    n * p * maf * (2.0 - maf) + sizeof(t.parameters[2]) * (p + 1))
   end
   storage
 end # function estimatesize
@@ -235,7 +236,7 @@ end # function Base.convert
 function Base.copy!(b::AbstractVector{T}, a::SnpLike{1};
   model::Symbol = :additive, impute::Bool = false, center::Bool = false,
   scale::Bool = false) where {T <: Real}
-
+  
   length(b) == length(a) || throw(ArgumentError("Dimensions do not match"))
   # first pass: find minor allele and its frequency
   maf, minor_allele = summarize(a)
@@ -436,7 +437,7 @@ end # function summarize
 #---------------------------------------------------------------------------#
 
 """
-    filter(A[, min_success_rate_per_person, min_success_rate_per_person, maxiters])
+filter(A[, min_success_rate_per_person, min_success_rate_per_person, maxiters])
 
 Filter a SnpMatrix by genotyping success rate.
 
@@ -456,7 +457,7 @@ function filter(
   min_success_rate_per_person::Float64 = 0.98,
   maxiters::Int = 3
   )
-
+  
   n, p = size(A)
   snp_index = trues(p)
   person_index = trues(n)
@@ -472,11 +473,11 @@ function filter(
     else
       # some remaining SNPs and people still below success rate threshold
       snp_index[snp_index] .&= (storage[3] / countnz(person_index)
-        .< 1.0 - min_success_rate_per_snp)
+      .< 1.0 - min_success_rate_per_snp)
       person_index[person_index] .&= (storage[4] / countnz(snp_index)
-        .< 1.0 - min_success_rate_per_person)
+      .< 1.0 - min_success_rate_per_person)
       r == maxiters && "maxiters reached; some SNPs and/or people may still have
-        genotyping success rates below threshold."
+      genotyping success rates below threshold."
     end
   end
   return snp_index, person_index
@@ -487,7 +488,7 @@ end
 #---------------------------------------------------------------------------#
 
 """
-    grm(A; method=:GRM, memory_limit=2^30, maf_threshold=0.01)
+grm(A; method=:GRM, memory_limit=2^30, maf_threshold=0.01)
 
 Compute empirical kinship matrix from a SnpMatrix. Missing genotypes are imputed
 on the fly according to minor allele frequencies.
@@ -520,7 +521,7 @@ function _grm(A::SnpLike{2}, memory_limit::Real = 2.0^30)
   Φ = zeros(n, n)
   if 8.0n * p < memory_limit
     snpchunk = convert(Matrix{Float64}, A; model = :additive, impute = true,
-      center = true, scale = true)
+    center = true, scale = true)
     BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
   else
     # chunsize is chosen to have intermediate matrix taking upto memory_limit bytes
@@ -529,14 +530,14 @@ function _grm(A::SnpLike{2}, memory_limit::Real = 2.0^30)
     for chunk in 1:floor(Int, p / chunksize)
       J = ((chunk - 1) * chunksize + 1):(chunk * chunksize)
       copy!(snpchunk, view(A, :, J); model = :additive,
-        impute = true, center = true, scale = true)
+      impute = true, center = true, scale = true)
       BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
     # last chunk
     J = (p - rem(p, chunksize) + 1):p
     if length(J) > 0
       snpchunk = convert(Matrix{Float64}, view(A, :, J); model = :additive,
-        impute = true, center = true, scale = true)
+      impute = true, center = true, scale = true)
       BLAS.syrk!('U', 'N', 0.5 / p, snpchunk, 1.0, Φ)
     end
   end
@@ -570,7 +571,7 @@ function _mom(A::SnpLike{2}, memory_limit::Real = 2.0^30)
     J = (p - rem(p, chunksize) + 1):p
     if length(J) > 0
       snpchunk = convert(Matrix{Float64}, view(A, :, J);
-        model = :additive, impute = true)
+      model = :additive, impute = true)
       @inbounds @simd for i in eachindex(snpchunk)
         snpchunk[i] -= 1.0
       end
@@ -608,10 +609,10 @@ Principal component analysis of SNP data.
 
 # Output
 * `pcscore`: n-by-pcs matrix of principal component scores, or the top `pcs`
-  eigen-SNPs.
+eigen-SNPs.
 * `pcloading`: p-by-pcs matrix. Each column is the principal loadings.
 * `pcvariance`: princial variances, equivalent to the top `pcs` eigenvalues of
-  the sample covariance matrix.
+the sample covariance matrix.
 
 # TODO: maket it work for Integer type matrix
 """
@@ -641,8 +642,8 @@ function pca_sp(A::SnpLike{2}, pcs::Integer = 6,
   center = zeros(T, p)
   weight = zeros(T, p)
   @inbounds @simd for i in 1:p
-      center[i] = 2maf[i]
-      weight[i] = maf[i] == 0? 1 : 1 / sqrt(2maf[i] * (1 - maf[i]))
+    center[i] = 2maf[i]
+    weight[i] = maf[i] == 0? 1 : 1 / sqrt(2maf[i] * (1 - maf[i]))
   end
   # linear map defined by standardized genotype matrix
   tmpv   = zeros(T, p) # pre-allocate space for intermediate vector
@@ -715,6 +716,7 @@ end # function identify!
 
 *(x::NTuple{2, Bool}, y) = x[1]*y + x[2]*y
 
+# (SnpArray)-(vector/matrix) multiplications
 for f in (:A_mul_B!, :At_mul_B!, :A_mul_Bt!, :At_mul_Bt!, :Ac_mul_B!, :A_mul_Bc!, :Ac_mul_Bc!), 
   t in (AbstractVector, AbstractMatrix)
     @eval begin
@@ -729,6 +731,37 @@ for f in (:A_mul_B!, :At_mul_B!, :A_mul_Bt!, :At_mul_Bt!, :Ac_mul_B!, :A_mul_Bc!
         Y .+= storage
       end
     end
+end
+
+# (Centered/scaled SnpArray)-(vector) multiplications
+function A_mul_B!(Y::AbstractVector, A::SnpLike{2}, B::AbstractVector, 
+  center::AbstractVector, scale::AbstractVector, storage1 = similar(Y), storage2 = similar(B))
+  storage2 .= scale .* B
+  A_mul_B!(Y, A, storage2, storage1)
+  p = dot(center, storage2)
+  Y .-= p
+end
+
+function A_mul_B(A::SnpLike{2}, B::AbstractVector, 
+  center::AbstractVector, scale::AbstractVector)
+  out = Array{eltype(B)}(size(A, 1))
+  A_mul_B!(out, A, center, scale)
+end
+
+function At_mul_B!(Y::AbstractVector, A::SnpLike{2}, B::AbstractVector, 
+  center::AbstractVector, scale::AbstractVector, storage = similar(Y))
+  At_mul_B!(Y, A, B, storage)
+  p = sum(B)
+  for i in 1:length(Y)
+    Y[i] = scale[i] * (Y[i] - center[i] * p)
+  end
+  Y
+end
+
+function At_mul_B(A::SnpLike{2}, B::AbstractVector, 
+  center::AbstractVector, scale::AbstractVector)
+  out = Array{eltype(B)}(size(A, 2))
+  At_mul_B!(out, A, center, scale)
 end
 
 #---------------------------------------------------------------------------#
