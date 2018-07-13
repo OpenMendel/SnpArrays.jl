@@ -247,11 +247,12 @@ end
   @test vecnorm(pcvariance_f32sp - pcvariance_f64) / vecnorm(pcvariance_f64) ≤ 1e-4
 end
 
-@testset "snparray lin. alg." begin
+@testset "lin. alg." begin
   x = rand(0:2, n, p)
   snp = SnpArray(x)
   a, b = randn(n), randn(p)
   A, B = randn(7, n), randn(7, p)
+  # snparray 1st argument
   @test vecnorm(snp * b - (snp.A1 + snp.A2) * b) ≤ 1e-8 # A_mul_B!
   @test vecnorm(snp.' * a - (snp.A1 + snp.A2).' * a) ≤ 1e-8 # At_mul_B!
   @test vecnorm(snp' * a - (snp.A1 + snp.A2)' * a) ≤ 1e-8 # Ac_mul_B!
@@ -259,6 +260,15 @@ end
   @test vecnorm(A_mul_Bc(snp, B) - (snp.A1 + snp.A2) * B') ≤ 1e-8 # A_mul_Bc!
   @test vecnorm(At_mul_Bt(snp, A) - (snp.A1 + snp.A2).' * A.') ≤ 1e-8 # At_mul_Bt!
   @test vecnorm(Ac_mul_Bc(snp, A) - (snp.A1 + snp.A2)' * A') ≤ 1e-8 # Ac_mul_Bc!
+  # snparray 2nd argument
+  @test vecnorm(A * snp - A * (snp.A1 + snp.A2)) ≤ 1e-8 # A_mul_B!
+  @test vecnorm((A.').' * snp - A * (snp.A1 + snp.A2)) ≤ 1e-8 # At_mul_B!
+  @test vecnorm((A')' * snp - A * (snp.A1 + snp.A2)) ≤ 1e-8 # Ac_mul_B!
+  @test vecnorm(A_mul_Bt(B, snp) - B * (snp.A1 + snp.A2).') ≤ 1e-8 # A_mul_Bt!
+  @test vecnorm(A_mul_Bc(B, snp) - B * (snp.A1 + snp.A2)') ≤ 1e-8 # A_mul_Bc!
+  @test vecnorm(At_mul_Bt(B.', snp) - B * (snp.A1 + snp.A2).') ≤ 1e-8 # At_mul_Bt!
+  @test vecnorm(Ac_mul_Bc(B', snp) - B * (snp.A1 + snp.A2)') ≤ 1e-8 # Ac_mul_Bc!  
+  # (centered/scaled snparray)-vector multiplication
   c, s = mean(x, 1)[:], 1 ./ std(x, 1)[:]
   xcs = (x - ones(n) * c') * Diagonal(s)
   out1, out2 = zeros(n), zeros(p)

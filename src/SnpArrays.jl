@@ -714,11 +714,11 @@ end # function identify!
 # Linear algebra with SnpArrays
 #---------------------------------------------------------------------------#
 
-*(x::NTuple{2, Bool}, y) = x[1]*y + x[2]*y
+*(x::NTuple{2, Bool}, y) = x[1] * y + x[2] * y
 
 # (SnpArray)-(vector/matrix) multiplications
-for f in (:A_mul_B!, :At_mul_B!, :A_mul_Bt!, :At_mul_Bt!, :Ac_mul_B!, :A_mul_Bc!, :Ac_mul_Bc!), 
-  t in (AbstractVector, AbstractMatrix)
+for f in (:A_mul_B!, :At_mul_B!, :A_mul_Bt!, :At_mul_Bt!, :Ac_mul_B!, :A_mul_Bc!, :Ac_mul_Bc!) 
+  for t in (AbstractVector, AbstractMatrix)
     @eval begin
       function ($f)(Y::$t, A::SnpLike{2}, B::$t, storage = similar(Y))
         ($f)(storage, A.A1, B)
@@ -731,6 +731,7 @@ for f in (:A_mul_B!, :At_mul_B!, :A_mul_Bt!, :At_mul_Bt!, :Ac_mul_B!, :A_mul_Bc!
         Y .+= storage
       end
     end
+  end
 end
 
 # (Centered/scaled SnpArray)-(vector) multiplications
@@ -742,12 +743,6 @@ function A_mul_B!(Y::AbstractVector, A::SnpLike{2}, B::AbstractVector,
   Y .-= p
 end
 
-function A_mul_B(A::SnpLike{2}, B::AbstractVector, 
-  center::AbstractVector, scale::AbstractVector)
-  out = Array{eltype(B)}(size(A, 1))
-  A_mul_B!(out, A, center, scale)
-end
-
 function At_mul_B!(Y::AbstractVector, A::SnpLike{2}, B::AbstractVector, 
   center::AbstractVector, scale::AbstractVector, storage = similar(Y))
   At_mul_B!(Y, A, B, storage)
@@ -756,12 +751,6 @@ function At_mul_B!(Y::AbstractVector, A::SnpLike{2}, B::AbstractVector,
     Y[i] = scale[i] * (Y[i] - center[i] * p)
   end
   Y
-end
-
-function At_mul_B(A::SnpLike{2}, B::AbstractVector, 
-  center::AbstractVector, scale::AbstractVector)
-  out = Array{eltype(B)}(size(A, 2))
-  At_mul_B!(out, A, center, scale)
 end
 
 #---------------------------------------------------------------------------#
