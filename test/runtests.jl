@@ -1,7 +1,7 @@
-using BEDFiles, SparseArrays, Test
+using SnpArrays, SparseArrays, Test
 
-const EUR = BEDFile(BEDFiles.datadir("EUR_subset.bed"))
-const mouse = BEDFile(BEDFiles.datadir("mouse.bed"))
+const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"))
+const mouse = SnpArray(SnpArrays.datadir("mouse.bed"))
 
 @testset "size" begin
     @test size(EUR) == (379, 54051)

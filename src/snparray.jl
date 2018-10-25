@@ -1,16 +1,16 @@
 """
-    BEDFile
+    SnpArray
 
 Raw .bed file as a shared, memory-mapped Matrix{UInt8}.  The number of rows, `m`
 is stored separately because it is not uniquely determined by the size of the `data` field.
 """
-struct BEDFile <: AbstractMatrix{UInt8}
+struct SnpArray <: AbstractMatrix{UInt8}
     data::Matrix{UInt8}
     columncounts::Matrix{Int}
     rowcounts::Matrix{Int}
     m::Int
 end
-function BEDFile(bednm::AbstractString, m::Integer, args...; kwargs...)
+function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
     data = open(bednm, args...; kwargs...) do io
         read(io, UInt16) == 0x1b6c || throw(ArgumentError("wrong magic number in file $bednm"))
         read(io, UInt8) == 0x01 || throw(ArgumentError(".bed file, $bednm, is not in correct orientation"))
@@ -19,35 +19,35 @@ function BEDFile(bednm::AbstractString, m::Integer, args...; kwargs...)
     drows = (m + 3) >> 2   # the number of rows in the Matrix{UInt8}
     n, r = divrem(length(data), drows)
     iszero(r) || throw(ArgumentError("filesize of $bednm is not a multiple of $drows"))
-    BEDFile(reshape(data, (drows, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
+    SnpArray(reshape(data, (drows, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
-BEDFile(nm::AbstractString, args...; kwargs...) = BEDFile(nm, countlines(string(splitext(nm)[1], ".fam")), args...; kwargs...)
+SnpArray(nm::AbstractString, args...; kwargs...) = SnpArray(nm, countlines(string(splitext(nm)[1], ".fam")), args...; kwargs...)
 
-function BEDFile(::UndefInitializer, m::Integer, n::Integer)
-    BEDFile(Matrix{UInt8}(undef, ((m + 3) >> 2, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
+function SnpArray(::UndefInitializer, m::Integer, n::Integer)
+    SnpArray(Matrix{UInt8}(undef, ((m + 3) >> 2, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
 
-function BEDFile(file::AbstractString, f::BEDFile)
+function SnpArray(file::AbstractString, f::SnpArray)
     open(file, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
         write(io, f.data)
     end
-    BEDFile(file, f.m, "r+")
+    SnpArray(file, f.m, "r+")
 end
 
-function BEDFile(file::AbstractString, m::Integer, n::Integer)
+function SnpArray(file::AbstractString, m::Integer, n::Integer)
     open(file, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
         write(io, fill(0x00, ((m + 3) >> 2, n)))
     end
-    BEDFile(file, m, "r+")
+    SnpArray(file, m, "r+")
 end
 
-StatsBase.counts(f::BEDFile; dims=:) = _counts(f, dims)
+StatsBase.counts(f::SnpArray; dims=:) = _counts(f, dims)
 
-function _counts(f::BEDFile, dims::Integer)
+function _counts(f::SnpArray, dims::Integer)
     if isone(dims)
         cc = f.columncounts
         if all(iszero, cc)
@@ -71,29 +71,29 @@ function _counts(f::BEDFile, dims::Integer)
         end
         return rc
     else
-        throw(ArgumentError("counts(f::BEDFile, dims=k) only defined for k = 1 or 2"))
+        throw(ArgumentError("counts(f::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
 end
 
-_counts(f::BEDFile, ::Colon) = sum(_counts(f, 1), dims=2)
+_counts(f::SnpArray, ::Colon) = sum(_counts(f, 1), dims=2)
 
-function Base.getindex(f::BEDFile, i::Int)  # Linear indexing
+function Base.getindex(f::SnpArray, i::Int)  # Linear indexing
     d, r = divrem(i - 1, f.m)
     f[r + 1, d + 1]
 end
 
-@inline function Base.getindex(f::BEDFile, i::Integer, j::Integer)
+@inline function Base.getindex(f::SnpArray, i::Integer, j::Integer)
     @boundscheck checkbounds(f, i, j)
     ip3 = i + 3
     (f.data[ip3 >> 2, j] >> ((ip3 & 0x03) << 1)) & 0x03
 end
 
-function Base.setindex!(f::BEDFile, x::UInt8, i::Int)  # Linear indexing
+function Base.setindex!(f::SnpArray, x::UInt8, i::Int)  # Linear indexing
     d, r = divrem(i - 1, f.m)
     Base.setindex!(f, x, r + 1, d + 1)
 end
 
-@inline function Base.setindex!(f::BEDFile, x::UInt8, i::Integer, j::Integer)
+@inline function Base.setindex!(f::SnpArray, x::UInt8, i::Integer, j::Integer)
     @boundscheck checkbounds(f, i, j)
     ip3 = i + 3
     shft = (ip3 & 0x03) << 1
@@ -102,13 +102,13 @@ end
     x
 end
 
-Base.eltype(f::BEDFile) = UInt8
+Base.eltype(f::SnpArray) = UInt8
 
-Base.length(f::BEDFile) = f.m * size(f.data, 2)
+Base.length(f::SnpArray) = f.m * size(f.data, 2)
 
-Statistics.mean(f::BEDFile; dims=:) = _mean(f, dims)
+Statistics.mean(f::SnpArray; dims=:) = _mean(f, dims)
 
-function _mean(f::BEDFile,  dims::Integer)
+function _mean(f::SnpArray,  dims::Integer)
     m, n = size(f)
     if isone(dims)
         cc = _counts(f, 1)   # need to use extractor to force evaluation if needed
@@ -125,23 +125,23 @@ function _mean(f::BEDFile,  dims::Integer)
         end
         return means
     else
-        throw(ArgumentError("mean(f::BEDFile, dims=k) only defined for k = 1 or 2"))
+        throw(ArgumentError("mean(f::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
 end
 
-function _mean(f::BEDFile, ::Colon)
+function _mean(f::SnpArray, ::Colon)
     rc = _counts(f, 2)
     (sum(view(rc, 3, :)) + 2*sum(view(rc, 4, :))) / sum(view(rc, [1, 3, 4], :))
 end
 
-Base.size(f::BEDFile) = f.m, size(f.data, 2)
+Base.size(f::SnpArray) = f.m, size(f.data, 2)
 
-Base.size(f::BEDFile, k::Integer) = 
+Base.size(f::SnpArray, k::Integer) = 
 k == 1 ? f.m : k == 2 ? size(f.data, 2) : k > 2 ? 1 : error("Dimension out of range")
 
-Statistics.var(f::BEDFile; corrected::Bool=true, mean=nothing, dims=:) = _var(f, corrected, mean, dims)
+Statistics.var(f::SnpArray; corrected::Bool=true, mean=nothing, dims=:) = _var(f, corrected, mean, dims)
 
-function _var(f::BEDFile, corrected::Bool, mean, dims::Integer)
+function _var(f::SnpArray, corrected::Bool, mean, dims::Integer)
     m, n = size(f)
     means = something(mean, Statistics.mean(f, dims=dims))
     if isone(dims)
@@ -163,10 +163,10 @@ function _var(f::BEDFile, corrected::Bool, mean, dims::Integer)
         end
         return vars
     end
-    throw(ArgumentError("var(f::BEDFile, dims=k) only defined for k = 1 or 2"))
+    throw(ArgumentError("var(f::SnpArray, dims=k) only defined for k = 1 or 2"))
 end
 
-function maf!(out::AbstractVector{T}, f::BEDFile) where T <: AbstractFloat
+function maf!(out::AbstractVector{T}, f::SnpArray) where T <: AbstractFloat
     cc = _counts(f, 1)
     @inbounds for j in 1:size(f, 2)
         out[j] = (cc[3, j] + 2cc[4, j]) / 2(cc[1, j] + cc[3, j] + cc[4, j])
@@ -174,33 +174,33 @@ function maf!(out::AbstractVector{T}, f::BEDFile) where T <: AbstractFloat
     end
     out
 end
-maf(f::BEDFile) = maf!(Vector{Float64}(undef, size(f, 2)), f)
+maf(f::SnpArray) = maf!(Vector{Float64}(undef, size(f, 2)), f)
 
-function minorallele!(out::AbstractVector{Bool}, f::BEDFile)
+function minorallele!(out::AbstractVector{Bool}, f::SnpArray)
     cc = _counts(f, 1)
     @inbounds for j in 1:size(f, 2)
         out[j] = cc[1, j] > cc[4, j]
     end
     out
 end
-minorallele(f::BEDFile) = minorallele!(Vector{Bool}(undef, size(f, 2)), f)
+minorallele(f::SnpArray) = minorallele!(Vector{Bool}(undef, size(f, 2)), f)
 
 """    
-    outer(f::BEDFile, colinds)
-    outer(f::BEDFile)
+    outer(f::SnpArray, colinds)
+    outer(f::SnpArray)
 
 Return the "outer product", `f * f'` using the `Float32[0, NaN, 1, 2]` encoding of `f`    
 
 The `colinds` argument, when given, causes the operation to be performed on that subset
 of the columns.
 """
-function outer(f::BEDFile, colinds::AbstractVector{<:Integer})
+function outer(f::SnpArray, colinds::AbstractVector{<:Integer})
     m = size(f, 1)
     outer!(Symmetric(zeros(Float32, (m, m))), f, colinds)
 end    
-outer(f::BEDFile) = outer(f, 1:size(f, 2))
+outer(f::SnpArray) = outer(f, 1:size(f, 2))
 
-function _copyto_additive!(v::AbstractVector{T}, f::BEDFile, j::Integer) where T <: AbstractFloat
+function _copyto_additive!(v::AbstractVector{T}, f::SnpArray, j::Integer) where T <: AbstractFloat
     @inbounds for i in 1:f.m
         fij = f[i, j]
         v[i] = iszero(fij) ? zero(T) : isone(fij) ? T(NaN) : fij - 1
@@ -208,7 +208,7 @@ function _copyto_additive!(v::AbstractVector{T}, f::BEDFile, j::Integer) where T
     v
 end
 
-function _copyto_dominant!(v::AbstractVector{T}, f::BEDFile, j::Integer) where T <: AbstractFloat
+function _copyto_dominant!(v::AbstractVector{T}, f::SnpArray, j::Integer) where T <: AbstractFloat
     @inbounds for i in 1:f.m
         fij = f[i, j]
         v[i] = iszero(fij) ? zero(T) : isone(fij) ? T(NaN) : 1
@@ -216,7 +216,7 @@ function _copyto_dominant!(v::AbstractVector{T}, f::BEDFile, j::Integer) where T
     v
 end
 
-function _copyto_recessive!(v::AbstractVector{T}, f::BEDFile, j::Integer) where T <: AbstractFloat
+function _copyto_recessive!(v::AbstractVector{T}, f::SnpArray, j::Integer) where T <: AbstractFloat
     @inbounds for i in 1:f.m
         fij = f[i, j]
         v[i] = (iszero(fij) || fij == 2) ? zero(T) : isone(fij) ? T(NaN) : 1
@@ -226,7 +226,7 @@ end
 
 function Base.copyto!(
     v::AbstractVector{T}, 
-    f::BEDFile, 
+    f::SnpArray, 
     j::Integer; 
     model::Symbol = :additive,
     center::Bool = false,
@@ -260,7 +260,7 @@ end
 
 function Base.copyto!(
     v::AbstractMatrix{T}, 
-    f::BEDFile, 
+    f::SnpArray, 
     colinds::AbstractVector{<:Integer};
     kwargs...
     ) where T <: AbstractFloat
@@ -272,7 +272,7 @@ end
 
 function Base.copyto!(
     v::AbstractMatrix{T}, 
-    f::BEDFile, 
+    f::SnpArray, 
     colmask::AbstractVector{Bool};
     kwargs...
     ) where T <: AbstractFloat
@@ -287,23 +287,23 @@ function Base.copyto!(
     v
 end
 
-function Base.convert(t::Type{Vector{T}}, f::BEDFile, j::Integer; kwargs...) where T <: AbstractFloat
+function Base.convert(t::Type{Vector{T}}, f::SnpArray, j::Integer; kwargs...) where T <: AbstractFloat
     Base.copyto!(Vector{T}(undef, f.m), f, j; kwargs...)
 end
-function Base.convert(t::Type{Matrix{T}}, f::BEDFile, colinds::AbstractVector{<:Integer}; kwargs...) where T <: AbstractFloat
+function Base.convert(t::Type{Matrix{T}}, f::SnpArray, colinds::AbstractVector{<:Integer}; kwargs...) where T <: AbstractFloat
     Base.copyto!(Matrix{T}(undef, f.m, length(colinds)), f, colinds; kwargs...)
 end
-function Base.convert(t::Type{Matrix{T}}, f::BEDFile, colmask::AbstractVector{Bool}; kwargs...) where T <: AbstractFloat
+function Base.convert(t::Type{Matrix{T}}, f::SnpArray, colmask::AbstractVector{Bool}; kwargs...) where T <: AbstractFloat
     Base.copyto!(Matrix{T}(undef, f.m, count(colmask)), f, colmask; kwargs...)
 end
-Base.convert(t::Type{Matrix{T}}, f::BEDFile; kwargs...) where T <: AbstractFloat = Base.convert(t, f, 1:size(f, 2); kwargs...)
+Base.convert(t::Type{Matrix{T}}, f::SnpArray; kwargs...) where T <: AbstractFloat = Base.convert(t, f, 1:size(f, 2); kwargs...)
 
 """
-    outer!(sy::Symmetric, f::BEDFile, colinds)
+    outer!(sy::Symmetric, f::SnpArray, colinds)
 
 update `sy` with the sum of the outer products of the columns in `colind` from `f`    
 """
-function outer!(sy::Symmetric{T}, f::BEDFile, colinds::AbstractVector{<:Integer}) where T
+function outer!(sy::Symmetric{T}, f::SnpArray, colinds::AbstractVector{<:Integer}) where T
     tempv = Vector{T}(undef, f.m)
     for j in colinds
         LinearAlgebra.BLAS.syr!(sy.uplo, one(T), copyto!(tempv, f, j), sy.data)
@@ -312,11 +312,11 @@ function outer!(sy::Symmetric{T}, f::BEDFile, colinds::AbstractVector{<:Integer}
 end
 
 """
-    missingpos(f::BEDFile)
+    missingpos(f::SnpArray)
 
 Return a `SparseMatrixCSC{Bool,Int32}` of the same size as `f` indicating the positions with missing data
 """
-function missingpos(f::BEDFile)
+function missingpos(f::SnpArray)
     m, n = size(f)
     colptr = sizehint!(Int32[1], n + 1)
     rowval = Int32[]
@@ -331,7 +331,7 @@ function missingpos(f::BEDFile)
     SparseMatrixCSC(m, n, colptr, rowval, fill(true, length(rowval)))
 end
 
-function _missingrate!(out::AbstractVector{<:AbstractFloat}, f::BEDFile,  dims::Integer)
+function _missingrate!(out::AbstractVector{<:AbstractFloat}, f::SnpArray,  dims::Integer)
     m, n = size(f)
     if isone(dims)
         cc = _counts(f, 1)   # need to use extractor to force evaluation if needed
@@ -344,17 +344,17 @@ function _missingrate!(out::AbstractVector{<:AbstractFloat}, f::BEDFile,  dims::
             out[i] = rc[2, i] / n
         end
     else
-        throw(ArgumentError("_missingrate(out, f::BEDFile, dims=k) only defined for k = 1 or 2"))
+        throw(ArgumentError("_missingrate(out, f::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
     out
 end
-function missingrate(f::BEDFile,  dims::Integer)
+function missingrate(f::SnpArray,  dims::Integer)
     if isone(dims)
         return _missingrate!(Vector{Float64}(undef, size(f, 2)), f, 1)
     elseif dims == 2 
         return _missingrate!(Vector{Float64}(undef, f.m), f, 2)
     else
-        throw(ArgumentError("missingrate(f::BEDFile, dims=k) only defined for k = 1 or 2"))
+        throw(ArgumentError("missingrate(f::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
 end
 
@@ -362,11 +362,11 @@ end
 """
     grm(A; method=:GRM, maf_threshold=0.01)
 
-Compute empirical kinship matrix from a BEDFile. Missing genotypes are imputed
+Compute empirical kinship matrix from a SnpArray. Missing genotypes are imputed
 on the fly by mean.
 
 # Input  
-- `f`: a BEDFile
+- `f`: a SnpArray
 
 # Optional Arguments
 - `method`: `:GRM` (default), `:MoM`, or `Robust`
@@ -375,7 +375,7 @@ on the fly by mean.
 - `t`: Float type for calculating GRM
 """
 function grm(
-    f::BEDFile;
+    f::SnpArray;
     method::Symbol = :GRM,
     maf_threshold::Real = 0.01,
     cinds::Union{Nothing, AbstractVector{<:Integer}} = nothing,
@@ -410,12 +410,12 @@ function grm(
 end # function grm
 
 """
-    BEDFiles.filter(A[, min_success_rate_per_row, min_success_rate_per_col, maxiters])
+    SnpArrays.filter(A[, min_success_rate_per_row, min_success_rate_per_col, maxiters])
 
-Filter a BEDFile by genotyping success rate.
+Filter a SnpArray by genotyping success rate.
 
 # Input
-- `A`: a BEDFile.
+- `A`: a SnpArray.
 - `min_success_rate_per_row`: threshold for SNP genotyping success rate.
 - `min_success_rate_per_col`: threshold for person genotyping success rate.
 - `maxiters`: maximum number of filtering iterations.
@@ -425,7 +425,7 @@ Filter a BEDFile by genotyping success rate.
 - `cmask`: BitVector indicating remaining cols.
 """
 function filter(
-    f::BEDFile, 
+    f::SnpArray, 
     min_success_rate_per_row::Real = 0.98,
     min_success_rate_per_col::Real = 0.98,
     maxiters::Integer = 5)
@@ -456,7 +456,7 @@ function filter(
 end
 
 """
-    BEDFiles.filter(src, rowinds, colinds; des = src * ".filtered")
+    SnpArrays.filter(src, rowinds, colinds; des = src * ".filtered")
 
 Filter `src` Plink files according to row indices `rowinds` and column indices 
 `colinds` and write to a new set of Plink files `des`.
@@ -492,14 +492,14 @@ function filter(
         cmask[colinds] .= true
     end
     m, n = count(rmask), count(cmask)
-    bfsrc = BEDFile(src * ".bed")
+    bfsrc = SnpArray(src * ".bed")
     # write filtered bed file
     open(des * ".bed", "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
         write(io, Matrix{UInt8}(undef, (m + 3) >> 2, n))
     end
-    bfdes = BEDFile(des * ".bed", m, "r+")
+    bfdes = SnpArray(des * ".bed", m, "r+")
     bfdes .= @view bfsrc[rmask, cmask]
     # write filtered fam file
     open(des * ".fam", "w") do io
@@ -513,6 +513,6 @@ function filter(
             cmask[j] && println(io, line)
         end
     end
-    # output BEDFile
+    # output SnpArray
     bfdes
 end
