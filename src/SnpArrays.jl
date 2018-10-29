@@ -5,7 +5,8 @@ module SnpArrays
     import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
     import Statistics: mean, std, var
     import StatsBase: counts
-    export SnpArray, bedvals, counts, grm, maf, minorallele, mean, missingpos, missingrate, std, var
+    export SnpArray
+    export bedvals, counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
     
     include("snparray.jl")
 

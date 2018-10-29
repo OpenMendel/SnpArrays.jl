@@ -1,5 +1,8 @@
 """
     SnpArray
+    SnpArray(bednm, m)
+    SnpArray(plknm)
+    SnpArray(undef, m, n)
 
 Raw .bed file as a shared, memory-mapped Matrix{UInt8}.  The number of rows, `m`
 is stored separately because it is not uniquely determined by the size of the `data` field.
@@ -10,6 +13,7 @@ struct SnpArray <: AbstractMatrix{UInt8}
     rowcounts::Matrix{Int}
     m::Int
 end
+
 function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
     data = open(bednm, args...; kwargs...) do io
         read(io, UInt16) == 0x1b6c || throw(ArgumentError("wrong magic number in file $bednm"))
@@ -21,19 +25,21 @@ function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
     iszero(r) || throw(ArgumentError("filesize of $bednm is not a multiple of $drows"))
     SnpArray(reshape(data, (drows, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
-SnpArray(nm::AbstractString, args...; kwargs...) = SnpArray(nm, countlines(string(splitext(nm)[1], ".fam")), args...; kwargs...)
+
+SnpArray(nm::AbstractString, args...; kwargs...) = 
+    SnpArray(nm, countlines(string(splitext(nm)[1], ".fam")), args...; kwargs...)
 
 function SnpArray(::UndefInitializer, m::Integer, n::Integer)
     SnpArray(Matrix{UInt8}(undef, ((m + 3) >> 2, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
 
-function SnpArray(file::AbstractString, f::SnpArray)
+function SnpArray(file::AbstractString, s::SnpArray)
     open(file, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
-        write(io, f.data)
+        write(io, s.data)
     end
-    SnpArray(file, f.m, "r+")
+    SnpArray(file, s.m, "r+")
 end
 
 function SnpArray(file::AbstractString, m::Integer, n::Integer)
@@ -45,205 +51,212 @@ function SnpArray(file::AbstractString, m::Integer, n::Integer)
     SnpArray(file, m, "r+")
 end
 
-StatsBase.counts(f::SnpArray; dims=:) = _counts(f, dims)
+StatsBase.counts(s::SnpArray; dims=:) = _counts(s, dims)
 
-function _counts(f::SnpArray, dims::Integer)
+function _counts(s::SnpArray, dims::Integer)
     if isone(dims)
-        cc = f.columncounts
+        cc = s.columncounts
         if all(iszero, cc)
-            m, n = size(f)
+            m, n = size(s)
             @inbounds for j in 1:n
                 for i in 1:m
-                    cc[f[i, j] + 1, j] += 1            
+                    cc[s[i, j] + 1, j] += 1            
                 end
             end
         end
         return cc
     elseif dims == 2
-        rc = f.rowcounts
+        rc = s.rowcounts
         if all(iszero, rc)
-            m, n = size(f)
+            m, n = size(s)
             @inbounds for j in 1:n
                 for i in 1:m
-                    rc[f[i, j] + 1, i] += 1            
+                    rc[s[i, j] + 1, i] += 1
                 end
             end
         end
         return rc
     else
-        throw(ArgumentError("counts(f::SnpArray, dims=k) only defined for k = 1 or 2"))
+        throw(ArgumentError("counts(s::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
 end
 
-_counts(f::SnpArray, ::Colon) = sum(_counts(f, 1), dims=2)
+_counts(s::SnpArray, ::Colon) = sum(_counts(s, 1), dims=2)
 
-function Base.getindex(f::SnpArray, i::Int)  # Linear indexing
-    d, r = divrem(i - 1, f.m)
-    f[r + 1, d + 1]
+function Base.getindex(s::SnpArray, i::Int)  # Linear indexing
+    d, r = divrem(i - 1, s.m)
+    s[r + 1, d + 1]
 end
 
-@inline function Base.getindex(f::SnpArray, i::Integer, j::Integer)
-    @boundscheck checkbounds(f, i, j)
+@inline function Base.getindex(s::SnpArray, i::Integer, j::Integer)
+    @boundscheck checkbounds(s, i, j)
     ip3 = i + 3
-    (f.data[ip3 >> 2, j] >> ((ip3 & 0x03) << 1)) & 0x03
+    (s.data[ip3 >> 2, j] >> ((ip3 & 0x03) << 1)) & 0x03
 end
 
-function Base.setindex!(f::SnpArray, x::UInt8, i::Int)  # Linear indexing
-    d, r = divrem(i - 1, f.m)
-    Base.setindex!(f, x, r + 1, d + 1)
+function Base.setindex!(s::SnpArray, x::UInt8, i::Int)  # Linear indexing
+    d, r = divrem(i - 1, s.m)
+    Base.setindex!(s, x, r + 1, d + 1)
 end
 
-@inline function Base.setindex!(f::SnpArray, x::UInt8, i::Integer, j::Integer)
-    @boundscheck checkbounds(f, i, j)
+@inline function Base.setindex!(s::SnpArray, x::UInt8, i::Integer, j::Integer)
+    @boundscheck checkbounds(s, i, j)
     ip3 = i + 3
     shft = (ip3 & 0x03) << 1
     mask = ~(0x03 << shft)
-    f.data[ip3 >> 2, j] = (f.data[ip3 >> 2, j] & mask) | (x << shft)
+    s.data[ip3 >> 2, j] = (s.data[ip3 >> 2, j] & mask) | (x << shft)
     x
 end
 
-Base.eltype(f::SnpArray) = UInt8
+Base.eltype(s::SnpArray) = UInt8
 
-Base.length(f::SnpArray) = f.m * size(f.data, 2)
+Base.length(s::SnpArray) = s.m * size(s.data, 2)
 
-Statistics.mean(f::SnpArray; dims=:) = _mean(f, dims)
+Statistics.mean(s::SnpArray; dims=:) = _mean(s, dims)
 
-function _mean(f::SnpArray,  dims::Integer)
-    m, n = size(f)
+function _mean(s::SnpArray,  dims::Integer)
+    m, n = size(s)
     if isone(dims)
-        cc = _counts(f, 1)   # need to use extractor to force evaluation if needed
+        cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
         means = Matrix{Float64}(undef, (1, n))
         @inbounds for j in 1:n
-            means[j] = (cc[3, j] + 2*cc[4, j]) / (cc[1, j] + cc[3, j] + cc[4, j])
+            means[j] = (cc[3, j] + 2cc[4, j]) / (cc[1, j] + cc[3, j] + cc[4, j])
         end
         return means
     elseif dims == 2
-        rc = _counts(f, 2)
+        rc = _counts(s, 2)
         means = Matrix{Float64}(undef, (m, 1))
         @inbounds for i in 1:m
-            means[i] = (rc[3, i] + 2*rc[4, i]) / (rc[1, i] + rc[3, i] + rc[4, i])
+            means[i] = (rc[3, i] + 2rc[4, i]) / (rc[1, i] + rc[3, i] + rc[4, i])
         end
         return means
     else
-        throw(ArgumentError("mean(f::SnpArray, dims=k) only defined for k = 1 or 2"))
+        throw(ArgumentError("mean(s::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
 end
 
-function _mean(f::SnpArray, ::Colon)
-    rc = _counts(f, 2)
-    (sum(view(rc, 3, :)) + 2*sum(view(rc, 4, :))) / sum(view(rc, [1, 3, 4], :))
+function _mean(s::SnpArray, ::Colon)
+    rc = _counts(s, 2)
+    (sum(view(rc, 3, :)) + 2sum(view(rc, 4, :))) / sum(view(rc, [1, 3, 4], :))
 end
 
-Base.size(f::SnpArray) = f.m, size(f.data, 2)
+Base.size(s::SnpArray) = s.m, size(s.data, 2)
 
-Base.size(f::SnpArray, k::Integer) = 
-k == 1 ? f.m : k == 2 ? size(f.data, 2) : k > 2 ? 1 : error("Dimension out of range")
+Base.size(s::SnpArray, k::Integer) = 
+k == 1 ? s.m : k == 2 ? size(s.data, 2) : k > 2 ? 1 : error("Dimension k out of range")
 
-Statistics.var(f::SnpArray; corrected::Bool=true, mean=nothing, dims=:) = _var(f, corrected, mean, dims)
+Statistics.var(s::SnpArray; corrected::Bool=true, mean=nothing, dims=:) = _var(s, corrected, mean, dims)
 
-function _var(f::SnpArray, corrected::Bool, mean, dims::Integer)
-    m, n = size(f)
-    means = something(mean, Statistics.mean(f, dims=dims))
+function _var(s::SnpArray, corrected::Bool, mean, dims::Integer)
+    m, n = size(s)
+    means = something(mean, Statistics.mean(s, dims=dims))
     if isone(dims)
-        cc = _counts(f, 1)
+        cc = _counts(s, 1)
         vars = Matrix{Float64}(undef, (1, n))
         for j in 1:n
             mnj = means[j]
-            vars[j] = (abs2(mnj)*cc[1,j] + abs2(1.0 - mnj)*cc[3,j] + abs2(2.0 - mnj)*cc[4,j]) /
-            (cc[1,j] + cc[3,j] + cc[4,j] - (corrected ? 1 : 0))
+            vars[j] = (abs2(mnj) * cc[1, j] + abs2(1.0 - mnj) * cc[3, j] + abs2(2.0 - mnj) * cc[4,j]) /
+            (cc[1, j] + cc[3, j] + cc[4, j] - (corrected ? 1 : 0))
         end
         return vars
     elseif dims == 2
-        rc = _counts(f, 2)
+        rc = _counts(s, 2)
         vars = Matrix{Float64}(undef, (m, 1))
         for i in 1:m
             mni = means[i]
-            vars[i] = (abs2(mni)*rc[1,i] + abs2(1.0 - mni)*rc[3,i] + abs2(2.0 - mni)*rc[4,i]) /
-            (rc[1,i] + rc[3,i] + rc[4,i] - (corrected ? 1 : 0))
+            vars[i] = (abs2(mni) * rc[1, i] + abs2(1.0 - mni) * rc[3, i] + abs2(2.0 - mni) * rc[4, i]) /
+            (rc[1, i] + rc[3, i] + rc[4, i] - (corrected ? 1 : 0))
         end
         return vars
     end
-    throw(ArgumentError("var(f::SnpArray, dims=k) only defined for k = 1 or 2"))
+    throw(ArgumentError("var(s::SnpArray, dims=k) only defined for k = 1 or 2"))
 end
 
-function maf!(out::AbstractVector{T}, f::SnpArray) where T <: AbstractFloat
-    cc = _counts(f, 1)
-    @inbounds for j in 1:size(f, 2)
+"""
+    maf!(out, s)
+
+Populate `out` with minor allele frequencies of SnpArray `s`.
+"""
+function maf!(out::AbstractVector{T}, s::SnpArray) where T <: AbstractFloat
+    cc = _counts(s, 1)
+    @inbounds for j in 1:size(s, 2)
         out[j] = (cc[3, j] + 2cc[4, j]) / 2(cc[1, j] + cc[3, j] + cc[4, j])
         (out[j] > 0.5) && (out[j] = 1 - out[j])
     end
     out
 end
-maf(f::SnpArray) = maf!(Vector{Float64}(undef, size(f, 2)), f)
+maf(s::SnpArray) = maf!(Vector{Float64}(undef, size(s, 2)), s)
 
-function minorallele!(out::AbstractVector{Bool}, f::SnpArray)
-    cc = _counts(f, 1)
-    @inbounds for j in 1:size(f, 2)
+"""
+    minorallele(out, s)
+
+Populate `out` with minor allele indicators. `out[j] == true` means A2 is the minor 
+allele of `j`th column; `out[j[ == false` means A1 is the minor allele.
+"""
+function minorallele!(out::AbstractVector{Bool}, s::SnpArray)
+    cc = _counts(s, 1)
+    @inbounds for j in 1:size(s, 2)
         out[j] = cc[1, j] > cc[4, j]
     end
     out
 end
-minorallele(f::SnpArray) = minorallele!(Vector{Bool}(undef, size(f, 2)), f)
+minorallele(s::SnpArray) = minorallele!(Vector{Bool}(undef, size(s, 2)), s)
 
-"""    
-    outer(f::SnpArray, colinds)
-    outer(f::SnpArray)
-
-Return the "outer product", `f * f'` using the `Float32[0, NaN, 1, 2]` encoding of `f`    
-
-The `colinds` argument, when given, causes the operation to be performed on that subset
-of the columns.
-"""
-function outer(f::SnpArray, colinds::AbstractVector{<:Integer})
-    m = size(f, 1)
-    outer!(Symmetric(zeros(Float32, (m, m))), f, colinds)
-end    
-outer(f::SnpArray) = outer(f, 1:size(f, 2))
-
-function _copyto_additive!(v::AbstractVector{T}, f::SnpArray, j::Integer) where T <: AbstractFloat
-    @inbounds for i in 1:f.m
-        fij = f[i, j]
+function _copyto_additive!(v::AbstractVector{T}, s::SnpArray, j::Integer) where T <: AbstractFloat
+    @inbounds for i in 1:s.m
+        fij = s[i, j]
         v[i] = iszero(fij) ? zero(T) : isone(fij) ? T(NaN) : fij - 1
-    end    
-    v
-end
-
-function _copyto_dominant!(v::AbstractVector{T}, f::SnpArray, j::Integer) where T <: AbstractFloat
-    @inbounds for i in 1:f.m
-        fij = f[i, j]
-        v[i] = iszero(fij) ? zero(T) : isone(fij) ? T(NaN) : 1
     end
     v
 end
 
-function _copyto_recessive!(v::AbstractVector{T}, f::SnpArray, j::Integer) where T <: AbstractFloat
-    @inbounds for i in 1:f.m
-        fij = f[i, j]
-        v[i] = (iszero(fij) || fij == 2) ? zero(T) : isone(fij) ? T(NaN) : 1
+function _copyto_dominant!(v::AbstractVector{T}, s::SnpArray, j::Integer) where T <: AbstractFloat
+    @inbounds for i in 1:s.m
+        fij = s[i, j]
+        v[i] = iszero(fij) ? zero(T) : isone(fij) ? T(NaN) : one(T)
+    end
+    v
+end
+
+function _copyto_recessive!(v::AbstractVector{T}, s::SnpArray, j::Integer) where T <: AbstractFloat
+    @inbounds for i in 1:s.m
+        fij = s[i, j]
+        v[i] = (iszero(fij) || fij == 2) ? zero(T) : isone(fij) ? T(NaN) : one(T)
     end    
     v
 end
 
+"""
+    Base.copyto!(v, s, j, model=:additive, center=false, scale=false, impute=false)
+
+Copy column `j` of SnpArray `s` to `v` according genetic model `model`.
+
+# Arguments
+- `model::Symbol=:additive`: `:additive` (default), `:dominant`, or `recessive`.  
+- `center::Bool=false`: center column by mean.
+- `scale::Bool=false`: scale column by variance.
+- `impute::Bool=falase`: impute missing values by column mean.
+"""
 function Base.copyto!(
     v::AbstractVector{T}, 
-    f::SnpArray, 
-    j::Integer; 
+    s::SnpArray, 
+    j::Integer;
     model::Symbol = :additive,
     center::Bool = false,
     scale::Bool = false,
     impute::Bool = false
     ) where T <: AbstractFloat
     if model == :additive
-        _copyto_additive!(v, f, j)
+        _copyto_additive!(v, s, j)
     elseif model == :dominant
-        _copyto_dominant!(v, f, j)
+        _copyto_dominant!(v, s, j)
     elseif model == :recessive
-        _copyto_recessive!(v, f, j)
+        _copyto_recessive!(v, s, j)
     else
-        throw(ArgumentError("model has to be :additive, :dominant, or :recessive; got $model"))
+        throw(ArgumentError("model has to be :additive, :dominant, or :recessive"))
     end
     if center || scale || impute
-        cc = _counts(f, 1)
+        cc = _counts(s, 1)
         μ = model == :additive ? (cc[3, j] + 2cc[4, j]) / (cc[1, j] + cc[3, j] + cc[4, j]) : 
             model == :dominant ? (cc[3, j] +  cc[4, j]) / (cc[1, j] + cc[3, j] + cc[4, j]) :
             cc[4, j] / (cc[1, j] + cc[3, j] + cc[4, j])
@@ -260,70 +273,87 @@ end
 
 function Base.copyto!(
     v::AbstractMatrix{T}, 
-    f::SnpArray, 
+    s::SnpArray, 
     colinds::AbstractVector{<:Integer};
     kwargs...
     ) where T <: AbstractFloat
     for (vj, j) in enumerate(colinds)
-        Base.copyto!(view(v, :, vj), f, j; kwargs...)
+        Base.copyto!(view(v, :, vj), s, j; kwargs...)
     end
     v
 end
 
 function Base.copyto!(
     v::AbstractMatrix{T}, 
-    f::SnpArray, 
+    s::SnpArray, 
     colmask::AbstractVector{Bool};
     kwargs...
     ) where T <: AbstractFloat
-    length(colmask) == size(f, 2) || throw(ArgumentError("`length(colmask)` does not match `size(f, 2)`"))
+    length(colmask) == size(s, 2) || throw(ArgumentError("`length(colmask)` does not match `size(s, 2)`"))
     vj = 1
     for j in 1:length(colmask)
-        if colmask[j] 
-            Base.copyto!(view(v, :, vj), f, j; kwargs...)
+        if colmask[j]
+            Base.copyto!(view(v, :, vj), s, j; kwargs...)
             vj += 1
         end
     end
     v
 end
 
-function Base.convert(t::Type{Vector{T}}, f::SnpArray, j::Integer; kwargs...) where T <: AbstractFloat
-    Base.copyto!(Vector{T}(undef, f.m), f, j; kwargs...)
+Base.copyto!(v::AbstractMatrix{<:AbstractFloat}, s::SnpArray; kwargs...) = Base.copyto!(v, s, 1:size(s, 2); kwargs...)
+
+function Base.convert(t::Type{Vector{T}}, s::SnpArray, j::Integer; kwargs...) where T <: AbstractFloat
+    Base.copyto!(Vector{T}(undef, s.m), s, j; kwargs...)
 end
-function Base.convert(t::Type{Matrix{T}}, f::SnpArray, colinds::AbstractVector{<:Integer}; kwargs...) where T <: AbstractFloat
-    Base.copyto!(Matrix{T}(undef, f.m, length(colinds)), f, colinds; kwargs...)
+function Base.convert(t::Type{Matrix{T}}, s::SnpArray, colinds::AbstractVector{<:Integer}; kwargs...) where T <: AbstractFloat
+    Base.copyto!(Matrix{T}(undef, s.m, length(colinds)), s, colinds; kwargs...)
 end
-function Base.convert(t::Type{Matrix{T}}, f::SnpArray, colmask::AbstractVector{Bool}; kwargs...) where T <: AbstractFloat
-    Base.copyto!(Matrix{T}(undef, f.m, count(colmask)), f, colmask; kwargs...)
+function Base.convert(t::Type{Matrix{T}}, s::SnpArray, colmask::AbstractVector{Bool}; kwargs...) where T <: AbstractFloat
+    Base.copyto!(Matrix{T}(undef, s.m, count(colmask)), s, colmask; kwargs...)
 end
-Base.convert(t::Type{Matrix{T}}, f::SnpArray; kwargs...) where T <: AbstractFloat = Base.convert(t, f, 1:size(f, 2); kwargs...)
+Base.convert(t::Type{Matrix{T}}, s::SnpArray; kwargs...) where T <: AbstractFloat = Base.convert(t, s, 1:size(s, 2); kwargs...)
+
+"""    
+    outer(s::SnpArray, colinds)
+    outer(s::SnpArray)
+
+Return the "outer product", `f * f'` using the `Float32[0, NaN, 1, 2]` encoding of `s`.
+
+The `colinds` argument, when given, causes the operation to be performed on that subset
+of the columns.
+"""
+function outer(s::SnpArray, colinds::AbstractVector{<:Integer})
+    m = size(s, 1)
+    outer!(Symmetric(zeros(Float32, (m, m))), s, colinds)
+end    
+outer(s::SnpArray) = outer(s, 1:size(s, 2))
 
 """
-    outer!(sy::Symmetric, f::SnpArray, colinds)
+    outer!(sy::Symmetric, s::SnpArray, colinds)
 
-update `sy` with the sum of the outer products of the columns in `colind` from `f`    
+Update `sy` with the sum of the outer products of the columns in `colind` from `f`    
 """
-function outer!(sy::Symmetric{T}, f::SnpArray, colinds::AbstractVector{<:Integer}) where T
-    tempv = Vector{T}(undef, f.m)
+function outer!(sy::Symmetric{T}, s::SnpArray, colinds::AbstractVector{<:Integer}) where T
+    tempv = Vector{T}(undef, s.m)
     for j in colinds
-        LinearAlgebra.BLAS.syr!(sy.uplo, one(T), copyto!(tempv, f, j), sy.data)
-    end    
+        LinearAlgebra.BLAS.syr!(sy.uplo, one(T), copyto!(tempv, s, j), sy.data)
+    end
     sy
 end
 
 """
-    missingpos(f::SnpArray)
+    missingpos(s::SnpArray)
 
-Return a `SparseMatrixCSC{Bool,Int32}` of the same size as `f` indicating the positions with missing data
+Return a `SparseMatrixCSC{Bool,Int32}` of the same size as `s` indicating the positions with missing data.
 """
-function missingpos(f::SnpArray)
-    m, n = size(f)
+function missingpos(s::SnpArray)
+    m, n = size(s)
     colptr = sizehint!(Int32[1], n + 1)
     rowval = Int32[]
     @inbounds for j in 1:n
         msngpos = Int32[]
         for i in 1:m
-            isone(f[i, j]) && push!(msngpos, i)
+            isone(s[i, j]) && push!(msngpos, i)
         end
         append!(rowval, msngpos)
         push!(colptr, colptr[end] + length(msngpos))
@@ -331,66 +361,64 @@ function missingpos(f::SnpArray)
     SparseMatrixCSC(m, n, colptr, rowval, fill(true, length(rowval)))
 end
 
-function _missingrate!(out::AbstractVector{<:AbstractFloat}, f::SnpArray,  dims::Integer)
-    m, n = size(f)
+function _missingrate!(out::AbstractVector{<:AbstractFloat}, s::SnpArray,  dims::Integer)
+    m, n = size(s)
     if isone(dims)
-        cc = _counts(f, 1)   # need to use extractor to force evaluation if needed
+        cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
         @inbounds for j in 1:n
             out[j] = cc[2, j] / m
         end
     elseif dims == 2
-        rc = _counts(f, 2)
+        rc = _counts(s, 2)
         @inbounds for i in 1:m
             out[i] = rc[2, i] / n
         end
     else
-        throw(ArgumentError("_missingrate(out, f::SnpArray, dims=k) only defined for k = 1 or 2"))
+        throw(ArgumentError("_missingrate(out, s::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
     out
 end
-function missingrate(f::SnpArray,  dims::Integer)
+
+function missingrate(s::SnpArray, dims::Integer)
     if isone(dims)
-        return _missingrate!(Vector{Float64}(undef, size(f, 2)), f, 1)
+        return _missingrate!(Vector{Float64}(undef, size(s, 2)), s, 1)
     elseif dims == 2 
-        return _missingrate!(Vector{Float64}(undef, f.m), f, 2)
+        return _missingrate!(Vector{Float64}(undef, s.m), s, 2)
     else
-        throw(ArgumentError("missingrate(f::SnpArray, dims=k) only defined for k = 1 or 2"))
+        throw(ArgumentError("missingrate(s::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
 end
 
 
 """
-    grm(A; method=:GRM, maf_threshold=0.01)
+    grm(s, method=:GRM, minmaf=0.01, colinds=nothing)
 
-Compute empirical kinship matrix from a SnpArray. Missing genotypes are imputed
+Compute empirical kinship matrix from a SnpArray `s`. Missing genotypes are imputed
 on the fly by mean.
 
-# Input  
-- `f`: a SnpArray
-
-# Optional Arguments
-- `method`: `:GRM` (default), `:MoM`, or `Robust`
-- `maf_threshold`: columns with MAF `<maf_threshold` are excluded; default 0.01
-- `cinds`: indices or mask of columns to be used for calculating GRM
-- `t`: Float type for calculating GRM
+# Arguments
+- `method::Symbol`: `:GRM` (default), `:MoM`, or `Robust`.
+- `minmaf::Real`: columns with MAF `<minmaf` are excluded; default 0.01.
+- `cinds`: indices or mask of columns to be used for calculating GRM.
+- `t::Type{T}`: Float type for calculating GRM; default is `Float64`.
 """
 function grm(
-    f::SnpArray;
+    s::SnpArray;
     method::Symbol = :GRM,
-    maf_threshold::Real = 0.01,
+    minmaf::Real = 0.01,
     cinds::Union{Nothing, AbstractVector{<:Integer}} = nothing,
     t::Type{T} = Float64
     ) where T <: AbstractFloat
-    mf = maf(f)
-    colinds = something(cinds, mf .≥ maf_threshold)
+    mf = maf(s)
+    colinds = something(cinds, mf .≥ minmaf)
     n = eltype(colinds) == Bool ? count(colinds) : length(colinds)
-    G = Mmap.mmap(Matrix{t}, f.m, n)
+    G = Mmap.mmap(Matrix{t}, s.m, n)
     if method == :GRM
-        Base.copyto!(G, f, colinds, model=:additive, impute=true, center=true, scale=true)
+        Base.copyto!(G, s, colinds, model=:additive, impute=true, center=true, scale=true)
         Φ = G * transpose(G)
         Φ ./= 2n
     elseif method == :MoM
-        Base.copyto!(G, f, colinds, model=:additive, impute=true)
+        Base.copyto!(G, s, colinds, model=:additive, impute=true)
         G .-= 1
         Φ = G * transpose(G)
         c = sum(x -> abs2(x) + abs2(1 - x), mf)
@@ -399,18 +427,18 @@ function grm(
             Φ[i] = (Φ[i] / 2 + shft) * scal
         end
     elseif method == :Robust
-        Base.copyto!(G, f, colinds, model=:additive, center=true, impute=true)
+        Base.copyto!(G, s, colinds, model=:additive, center=true, impute=true)
         scal = sum(x -> 4x * (1 - x), mf)
         Φ = G * transpose(G)
         Φ ./= scal
     else
-        throw(ArgumentError("method should be :GRM, :MoM, or :Robust; got $method"))
+        throw(ArgumentError("method should be :GRM, :MoM, or :Robust"))
     end
     Φ
 end # function grm
 
 """
-    SnpArrays.filter(A[, min_success_rate_per_row, min_success_rate_per_col, maxiters])
+    SnpArrays.filter(s[, min_success_rate_per_row, min_success_rate_per_col, maxiters])
 
 Filter a SnpArray by genotyping success rate.
 
@@ -425,11 +453,11 @@ Filter a SnpArray by genotyping success rate.
 - `cmask`: BitVector indicating remaining cols.
 """
 function filter(
-    f::SnpArray, 
+    s::SnpArray, 
     min_success_rate_per_row::Real = 0.98,
     min_success_rate_per_col::Real = 0.98,
     maxiters::Integer = 5)
-    m, n = size(f)
+    m, n = size(s)
     rc, cc = zeros(Int, m), zeros(Int, n)
     rmask, cmask = trues(m), trues(n)
     rmiss, cmiss = 1 - min_success_rate_per_row, 1 - min_success_rate_per_col
@@ -439,7 +467,7 @@ function filter(
         @inbounds for j in 1:n
             cmask[j] || continue
             for i in 1:m
-                rmask[i] && f[i, j] == 0x01 && (rc[i] += 1; cc[j] += 1)
+                rmask[i] && s[i, j] == 0x01 && (rc[i] += 1; cc[j] += 1)
             end
         end
         rows, cols = count(rmask), count(cmask)
