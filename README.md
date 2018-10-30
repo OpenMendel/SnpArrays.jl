@@ -26,6 +26,6 @@ If you use [OpenMendel](https://openmendel.github.io) analysis packages in your 
 
 ## Acknowledgments
 
-Current implementation incorporates ideas in Doug Bates's package [BEDFiles](https://github.com/dmbates/BEDFiles.jl).
+Current implementation incorporates ideas in the package [BEDFiles.jl] (https://github.com/dmbates/BEDFiles.jl) by Doug Bates (@dmbates).
 
 This project is supported by the National Institutes of Health under NIGMS awards R01GM053275 and R25GM103774 and NHGRI award R01HG006139.
