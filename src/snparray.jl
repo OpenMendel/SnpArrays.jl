@@ -14,6 +14,8 @@ struct SnpArray <: AbstractMatrix{UInt8}
     m::Int
 end
 
+AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}}
+
 function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
     data = open(bednm, args...; kwargs...) do io
         read(io, UInt16) == 0x1b6c || throw(ArgumentError("wrong magic number in file $bednm"))
@@ -202,116 +204,91 @@ function minorallele!(out::AbstractVector{Bool}, s::SnpArray)
 end
 minorallele(s::SnpArray) = minorallele!(Vector{Bool}(undef, size(s, 2)), s)
 
-function _copyto_additive!(v::AbstractVector{T}, s::SnpArray, j::Integer) where T <: AbstractFloat
-    @inbounds for i in 1:s.m
-        fij = s[i, j]
-        v[i] = iszero(fij) ? zero(T) : isone(fij) ? T(NaN) : fij - 1
-    end
-    v
+@inline function convert(::Type{T}, x::UInt8, ::Val{1}) where T <: AbstractFloat
+    iszero(x) ? zero(T) : isone(x) ? T(NaN) : T(x - 1)
 end
 
-function _copyto_dominant!(v::AbstractVector{T}, s::SnpArray, j::Integer) where T <: AbstractFloat
-    @inbounds for i in 1:s.m
-        fij = s[i, j]
-        v[i] = iszero(fij) ? zero(T) : isone(fij) ? T(NaN) : one(T)
-    end
-    v
+@inline function convert(::Type{T}, x::UInt8, ::Val{2}) where T <: AbstractFloat
+    iszero(x) ? zero(T) : isone(x) ? T(NaN) : one(T)
 end
 
-function _copyto_recessive!(v::AbstractVector{T}, s::SnpArray, j::Integer) where T <: AbstractFloat
-    @inbounds for i in 1:s.m
-        fij = s[i, j]
-        v[i] = (iszero(fij) || fij == 2) ? zero(T) : isone(fij) ? T(NaN) : one(T)
-    end    
-    v
+@inline function convert(::Type{T}, x::UInt8, ::Val{3}) where T <: AbstractFloat
+    (iszero(x) || x == 2) ? zero(T) : isone(x) ? T(NaN) : one(T)
 end
 
 """
-    Base.copyto!(v, s, j, model=:additive, center=false, scale=false, impute=false)
+    Base.copyto!(v, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
 
-Copy column `j` of SnpArray `s` to `v` according genetic model `model`.
+Copy SnpArray `s` to numeric vector or matrix `v`.
 
 # Arguments
-- `model::Symbol=:additive`: `:additive` (default), `:dominant`, or `recessive`.  
+- `model::Union{Val{1}, Val{2}, Val{3}}=ADDITIVE_MODEL`: `ADDITIVE_MODEL` (default), `DOMINANT_MODEL`, or `RECESSIVE_MODEL`.  
 - `center::Bool=false`: center column by mean.
-- `scale::Bool=false`: scale column by variance.
+- `scale::Bool=false`: scale column by theoretical variance.
 - `impute::Bool=falase`: impute missing values by column mean.
+
+# Example
+
 """
 function Base.copyto!(
-    v::AbstractVector{T}, 
-    s::SnpArray, 
-    j::Integer;
-    model::Symbol = :additive,
+    v::AbstractVecOrMat{T}, 
+    s::AbstractSnpArray;
+    model::Union{Val{1}, Val{2}, Val{3}} = ADDITIVE_MODEL,
     center::Bool = false,
     scale::Bool = false,
     impute::Bool = false
     ) where T <: AbstractFloat
-    if model == :additive
-        _copyto_additive!(v, s, j)
-    elseif model == :dominant
-        _copyto_dominant!(v, s, j)
-    elseif model == :recessive
-        _copyto_recessive!(v, s, j)
-    else
-        throw(ArgumentError("model has to be :additive, :dominant, or :recessive"))
+    m, n = size(s, 1), size(s, 2)
+    # no center, scale, or impute
+    if !center && !scale && !impute
+        @inbounds for j in 1:n
+            @simd for i in 1:m
+                v[i, j] = SnpArrays.convert(T, s[i, j], model)
+            end
+        end
+        return v
     end
-    if center || scale || impute
-        cc = _counts(s, 1)
-        μ = model == :additive ? (cc[3, j] + 2cc[4, j]) / (cc[1, j] + cc[3, j] + cc[4, j]) : 
-            model == :dominant ? (cc[3, j] +  cc[4, j]) / (cc[1, j] + cc[3, j] + cc[4, j]) :
-            cc[4, j] / (cc[1, j] + cc[3, j] + cc[4, j])
-        σ = model == :additive ? sqrt(μ * (1 - μ / 2)) : sqrt(μ * (1 - μ))
-        doscale = scale && (σ > 0)
-        @inbounds for i in 1:f.m
-            impute && isnan(v[i]) && (v[i] = T(μ))
-            center && (v[i] -= μ)
-            doscale && (v[i] /= σ)
+    # center, scale, impute
+    @inbounds for j in 1:n
+        μj, mj = zero(T), 0
+        @simd for i in 1:m
+            vij = SnpArrays.convert(T, s[i, j], model)
+            v[i, j] = vij
+            μj += isnan(vij) ? zero(T) : vij
+            mj += isnan(vij) ? 0 : 1
+        end
+        μj /= mj
+        σj = model == ADDITIVE_MODEL ? sqrt(μj * (1 - μj / 2)) : sqrt(μj * (1 - μj))
+        @simd for i in 1:m
+            impute && isnan(v[i, j]) && (v[i, j] = μj)
+            center && (v[i, j] -= μj)
+            scale && σj > 0 && (v[i, j] /= σj)
         end
     end
-    v
+    return v
 end
 
-function Base.copyto!(
-    v::AbstractMatrix{T}, 
-    s::SnpArray, 
-    colinds::AbstractVector{<:Integer};
-    kwargs...
-    ) where T <: AbstractFloat
-    for (vj, j) in enumerate(colinds)
-        Base.copyto!(view(v, :, vj), s, j; kwargs...)
-    end
-    v
-end
 
-function Base.copyto!(
-    v::AbstractMatrix{T}, 
-    s::SnpArray, 
-    colmask::AbstractVector{Bool};
-    kwargs...
-    ) where T <: AbstractFloat
-    length(colmask) == size(s, 2) || throw(ArgumentError("`length(colmask)` does not match `size(s, 2)`"))
-    vj = 1
-    for j in 1:length(colmask)
-        if colmask[j]
-            Base.copyto!(view(v, :, vj), s, j; kwargs...)
-            vj += 1
-        end
-    end
-    v
-end
+"""
+    Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
 
-Base.copyto!(v::AbstractMatrix{<:AbstractFloat}, s::SnpArray; kwargs...) = Base.copyto!(v, s, 1:size(s, 2); kwargs...)
+Convert a SnpArray `s` to a numeric vector or matrix of same shape as `s`.
 
-function Base.convert(t::Type{Vector{T}}, s::SnpArray, j::Integer; kwargs...) where T <: AbstractFloat
-    Base.copyto!(Vector{T}(undef, s.m), s, j; kwargs...)
+# Arguments
+- `t::Type{AbstractVecOrMat{T}}`: Vector or matrix type.
+- `model::Union{Val{1}, Val{2}, Val{3}}=ADDITIVE_MODEL`: `ADDITIVE_MODEL` (default), `DOMINANT_MODEL`, or `RECESSIVE_MODEL`.  
+- `center::Bool=false`: center column by mean.
+- `scale::Bool=false`: scale column by theoretical variance.
+- `impute::Bool=falase`: impute missing values by column mean.
+"""
+function Base.convert(
+    ::Type{T},
+    s::AbstractSnpArray;
+    kwargs...) where T <: Array
+    T(s; kwargs...)
 end
-function Base.convert(t::Type{Matrix{T}}, s::SnpArray, colinds::AbstractVector{<:Integer}; kwargs...) where T <: AbstractFloat
-    Base.copyto!(Matrix{T}(undef, s.m, length(colinds)), s, colinds; kwargs...)
-end
-function Base.convert(t::Type{Matrix{T}}, s::SnpArray, colmask::AbstractVector{Bool}; kwargs...) where T <: AbstractFloat
-    Base.copyto!(Matrix{T}(undef, s.m, count(colmask)), s, colmask; kwargs...)
-end
-Base.convert(t::Type{Matrix{T}}, s::SnpArray; kwargs...) where T <: AbstractFloat = Base.convert(t, s, 1:size(s, 2); kwargs...)
+Array{T,N}(s::AbstractSnpArray; kwargs...) where {T,N} = copyto!(Array{T,N}(undef, size(s)), s; kwargs...)
+
 
 """    
     outer(s::SnpArray, colinds)
@@ -389,18 +366,17 @@ function missingrate(s::SnpArray, dims::Integer)
     end
 end
 
-
 """
     grm(s, method=:GRM, minmaf=0.01, colinds=nothing)
 
 Compute empirical kinship matrix from a SnpArray `s`. Missing genotypes are imputed
-on the fly by mean.
+on the fly by column mean.
 
 # Arguments
-- `method::Symbol`: `:GRM` (default), `:MoM`, or `Robust`.
-- `minmaf::Real`: columns with MAF `<minmaf` are excluded; default 0.01.
-- `cinds`: indices or mask of columns to be used for calculating GRM.
-- `t::Type{T}`: Float type for calculating GRM; default is `Float64`.
+- `method::Symbol=:GRM`: `:GRM` (default), `:MoM`, or `Robust`.
+- `minmaf::Real=0.01`: columns with MAF `<minmaf` are excluded; default 0.01.
+- `cinds=nothing`: indices or mask of columns to be used for calculating GRM.
+- `t::Type{T}=Float64`: Float type for calculating GRM; default is `Float64`.
 """
 function grm(
     s::SnpArray;
@@ -411,24 +387,33 @@ function grm(
     ) where T <: AbstractFloat
     mf = maf(s)
     colinds = something(cinds, mf .≥ minmaf)
-    n = eltype(colinds) == Bool ? count(colinds) : length(colinds)
-    G = Mmap.mmap(Matrix{t}, s.m, n)
+    @views grm(s[:, colinds], mf[colinds], method, t)
+end # function grm
+
+function grm(
+    s::AbstractSnpArray,
+    maf::AbstractVector,
+    method::Symbol = :GRM,
+    ::Type{T} = Float64
+    ) where T <: AbstractFloat
+    m, n = size(s)
+    G = Mmap.mmap(Matrix{T}, m, n)
     if method == :GRM
-        Base.copyto!(G, s, colinds, model=:additive, impute=true, center=true, scale=true)
+        Base.copyto!(G, s, model=ADDITIVE_MODEL, impute=true, center=true, scale=true)
         Φ = G * transpose(G)
         Φ ./= 2n
     elseif method == :MoM
-        Base.copyto!(G, s, colinds, model=:additive, impute=true)
+        Base.copyto!(G, s, model=ADDITIVE_MODEL, impute=true)
         G .-= 1
         Φ = G * transpose(G)
-        c = sum(x -> abs2(x) + abs2(1 - x), mf)
+        c = sum(x -> abs2(x) + abs2(1 - x), maf)
         shft, scal = n / 2 - c, 1 / (n - c)
         @inbounds @simd for i in eachindex(Φ)
             Φ[i] = (Φ[i] / 2 + shft) * scal
         end
     elseif method == :Robust
-        Base.copyto!(G, s, colinds, model=:additive, center=true, impute=true)
-        scal = sum(x -> 4x * (1 - x), mf)
+        Base.copyto!(G, s, model=ADDITIVE_MODEL, center=true, impute=true)
+        scal = sum(x -> 4x * (1 - x), maf)
         Φ = G * transpose(G)
         Φ ./= scal
     else
