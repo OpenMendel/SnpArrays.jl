@@ -1,4 +1,4 @@
-using SnpArrays, SparseArrays, Test
+using SnpArrays, SparseArrays, LinearAlgebra, Test
 
 const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"))
 const mouse = SnpArray(SnpArrays.datadir("mouse.bed"))
@@ -67,4 +67,78 @@ end
     @test isa(mp, SparseMatrixCSC)
     @test sum(mp, dims = 1) == view(cc, 2:2, :)
     @test sum(mp, dims = 2) == view(counts(mouse, dims=2), 2:2, :)'
+end
+
+@testset "create bed" begin
+    tmpbf = SnpArray("tmp.bed", 5, 3)
+    @test isfile("tmp.bed")
+    @test all(tmpbf .== 0x00)
+    fill!(tmpbf, 0x02)
+    tmpbf2 = SnpArray("tmp.bed", 5)
+    @test all(tmpbf2 .== 0x02)
+    rm("tmp.bed")
+    tmpbf = SnpArray("tmp.bed", SnpArray(undef, 5, 3))
+    fill!(tmpbf, 0x01)
+    @test all(tmpbf .== 0x01)
+    rm("tmp.bed")
+end
+
+@testset "convert" begin
+    # check convert coding
+    tmpbf = SnpArray(undef, 4, 1)
+    tmpbf[1] = 0x00
+    tmpbf[2] = 0x01
+    tmpbf[3] = 0x02
+    tmpbf[4] = 0x03
+    # additive model
+    v = convert(Matrix{Float64}, tmpbf, model=ADDITIVE_MODEL)
+    @test all([v[1], v[3], v[4]] .== [0.0, 1.0, 2.0])
+    @test isnan(v[2])
+    # dominant model
+    v = convert(Matrix{Float64}, tmpbf, model=DOMINANT_MODEL)
+    @test all([v[1], v[3], v[4]] .== [0.0, 1.0, 1.0])
+    @test isnan(v[2])
+    # recessive model
+    v = convert(Matrix{Float64}, tmpbf, model=RECESSIVE_MODEL)
+    @test all([v[1], v[3], v[4]] .== [0.0, 0.0, 1.0])
+    @test isnan(v[2])
+    # mouse test data
+    cmns = mean(mouse, dims = 1)
+    cvrs = var(mouse, dims = 1)
+    cstd = std(mouse, dims = 1)
+    v = convert(Vector{Float64}, @view(mouse[:, 1]))
+    @test isnan(mean(v))
+    @test mean(filter(!isnan, v)) ≈ cmns[1]
+    @test isnan(var(v))
+    @test var(filter(!isnan, v)) ≈ cvrs[1]
+    @test isnan(std(v))
+    @test std(filter(!isnan, v)) ≈ cstd[1]
+end
+
+@testset "maf" begin
+    @test all(0 .≤ maf(mouse) .≤ 0.5)
+    @test all(0 .≤ maf(EUR) .≤ 0.5)
+end
+
+@testset "grm" begin
+    Φgrm = grm(EUR, method=:GRM)
+    @test issymmetric(Φgrm)
+    @test all(eigvals(Φgrm) .≥ 0)
+    Φmom = grm(EUR, method=:MoM)
+    @test issymmetric(Φmom)
+    Φrbs = grm(EUR, method=:Robust)
+    @test issymmetric(Φrbs)
+    @test all(eigvals(Φrbs) .≥ 0)
+end
+
+@testset "filter" begin
+    rowmask, colmask =  SnpArrays.filter(mouse, 0.99, 0.99)
+    SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask; des="tmp")
+    tmpbf = SnpArray("tmp.bed")
+    @test size(tmpbf) == (1907, 9997)
+    @test all(missingrate(tmpbf, 1) .≤ 0.01)
+    @test all(missingrate(tmpbf, 2) .≤ 0.01)
+    rm("tmp.bed")
+    rm("tmp.bim")
+    rm("tmp.fam")
 end
