@@ -2,7 +2,7 @@ __precompile__()
 
 module SnpArrays
 
-using LinearAlgebra, Missings, Mmap, OffsetArrays, SparseArrays, Statistics, StatsBase
+using LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
 import Statistics: mean, std, var
 import StatsBase: counts
