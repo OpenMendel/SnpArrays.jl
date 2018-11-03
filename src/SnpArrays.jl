@@ -15,6 +15,8 @@ const DOMINANT_MODEL = Val(2)
 const RECESSIVE_MODEL = Val(3)
 
 include("snparray.jl")
+include("grm.jl")
+include("filter.jl")
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 

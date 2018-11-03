@@ -122,11 +122,14 @@ end
 
 @testset "grm" begin
     Φgrm = grm(EUR, method=:GRM)
+    @test size(Φgrm) == (size(EUR, 1), size(EUR, 1))
     @test issymmetric(Φgrm)
     @test all(eigvals(Φgrm) .≥ 0)
     Φmom = grm(EUR, method=:MoM)
+    @test size(Φmom) == (size(EUR, 1), size(EUR, 1))
     @test issymmetric(Φmom)
     Φrbs = grm(EUR, method=:Robust)
+    @test size(Φrbs) == (size(EUR, 1), size(EUR, 1))
     @test issymmetric(Φrbs)
     @test all(eigvals(Φrbs) .≥ 0)
 end
