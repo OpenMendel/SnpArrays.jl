@@ -193,7 +193,7 @@ maf(s::SnpArray) = maf!(Vector{Float64}(undef, size(s, 2)), s)
     minorallele(out, s)
 
 Populate `out` with minor allele indicators. `out[j] == true` means A2 is the minor 
-allele of `j`th column; `out[j[ == false` means A1 is the minor allele.
+allele of `j`th column; `out[j] == false` means A1 is the minor allele.
 """
 function minorallele!(out::AbstractVector{Bool}, s::SnpArray)
     cc = _counts(s, 1)
@@ -202,7 +202,14 @@ function minorallele!(out::AbstractVector{Bool}, s::SnpArray)
     end
     out
 end
-minorallele(s::SnpArray) = minorallele!(Vector{Bool}(undef, size(s, 2)), s)
+
+"""
+    minorallele(s)
+
+Calculate minor allele indicators. `out[j] == true` means A2 is the minor 
+allele of `j`th column; `out[j] == false` means A1 is the minor allele.
+"""
+minorallele(s::SnpArray) = minorallele!(BitVector(undef, size(s, 2)), s)
 
 @inline function convert(::Type{T}, x::UInt8, ::Val{1}) where T <: AbstractFloat
     iszero(x) ? zero(T) : isone(x) ? T(NaN) : T(x - 1)
@@ -226,9 +233,6 @@ Copy SnpArray `s` to numeric vector or matrix `v`.
 - `center::Bool=false`: center column by mean.
 - `scale::Bool=false`: scale column by theoretical variance.
 - `impute::Bool=falase`: impute missing values by column mean.
-
-# Example
-
 """
 function Base.copyto!(
     v::AbstractVecOrMat{T}, 
@@ -289,34 +293,6 @@ function Base.convert(
 end
 Array{T,N}(s::AbstractSnpArray; kwargs...) where {T,N} = copyto!(Array{T,N}(undef, size(s)), s; kwargs...)
 
-
-"""    
-    outer(s::SnpArray, colinds)
-    outer(s::SnpArray)
-
-Return the "outer product", `f * f'` using the `Float32[0, NaN, 1, 2]` encoding of `s`.
-
-The `colinds` argument, when given, causes the operation to be performed on that subset
-of the columns.
-"""
-function outer(s::SnpArray, colinds::AbstractVector{<:Integer})
-    m = size(s, 1)
-    outer!(Symmetric(zeros(Float32, (m, m))), s, colinds)
-end    
-outer(s::SnpArray) = outer(s, 1:size(s, 2))
-
-"""
-    outer!(sy::Symmetric, s::SnpArray, colinds)
-
-Update `sy` with the sum of the outer products of the columns in `colind` from `f`    
-"""
-function outer!(sy::Symmetric{T}, s::SnpArray, colinds::AbstractVector{<:Integer}) where T
-    tempv = Vector{T}(undef, s.m)
-    for j in colinds
-        LinearAlgebra.BLAS.syr!(sy.uplo, one(T), copyto!(tempv, s, j), sy.data)
-    end
-    sy
-end
 
 """
     missingpos(s::SnpArray)

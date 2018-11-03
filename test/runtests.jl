@@ -116,8 +116,12 @@ end
 end
 
 @testset "maf" begin
+    cc = counts(mouse, dims=1)
     @test all(0 .≤ maf(mouse) .≤ 0.5)
+    @test all(minorallele(mouse) .== (cc[1, :] .> cc[4, :]))
+    cc = counts(EUR, dims=1)
     @test all(0 .≤ maf(EUR) .≤ 0.5)
+    @test all(minorallele(EUR) .== (cc[1, :] .> cc[4, :]))
 end
 
 @testset "grm" begin
