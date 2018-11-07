@@ -1,0 +1,21 @@
+## Documentation: http://docs.travis-ci.com/user/languages/julia/
+language: julia
+sudo: required
+os:
+  - linux
+  - osx
+julia:
+  - 0.7
+  - 1.0
+  - nightly
+notifications:
+  email: false
+git:
+  depth: 99999999
+
+after_script:  # TODO: change to after_success once https://github.com/JuliaLang/julia/issues/28306 is fixed
+  # push coverage results to Codecov and Coveralls
+  - julia -e 'using Pkg, SnpArrays; cd(joinpath(dirname(pathof(BEDFiles)), "..")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder()); Coveralls.submit(process_folder())'
+  # Update the documentation
+  #- julia -e 'using Pkg; Pkg.add("Documenter")'
+  #- julia -e 'using SnpArrays; ENV["DOCUMENTER_DEBUG"] = "true"; include(joinpath(dirname(pathof(SnpArrays)), "..", "docs", "make.jl"))'
