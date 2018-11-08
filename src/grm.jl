@@ -29,8 +29,7 @@ function grm(
     ::Type{T} = Float64
     ) where T <: AbstractFloat
     m, n = size(s)
-    # G = Mmap.mmap(Matrix{T}, m, n) # about same speed
-    G = Matrix{T}(undef, m, n)
+    G = Mmap.mmap(Matrix{T}, m, n) # slightly faster than G = Matrix{T}(undef, m, n)
     if method == :GRM
         Base.copyto!(G, s, model=ADDITIVE_MODEL, impute=true, center=true, scale=true)
         Φ = G * transpose(G)

@@ -4,9 +4,10 @@ module SnpArrays
 
 using LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
+import LinearAlgebra: mul!
 import Statistics: mean, std, var
 import StatsBase: counts
-export AbstractSnpArray, SnpArray
+export AbstractSnpArray, SnpArray, SnpBitMatrix
 export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
 export ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL
 
@@ -17,6 +18,7 @@ const RECESSIVE_MODEL = Val(3)
 include("snparray.jl")
 include("grm.jl")
 include("filter.jl")
+include("linalg.jl")
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 

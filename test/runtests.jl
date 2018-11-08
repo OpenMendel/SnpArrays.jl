@@ -1,7 +1,7 @@
 using SnpArrays, SparseArrays, LinearAlgebra, Test
 
-const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"))
-const mouse = SnpArray(SnpArrays.datadir("mouse.bed"))
+const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed")) # no missing genotypes
+const mouse = SnpArray(SnpArrays.datadir("mouse.bed")) # has missing genotypes
 
 @testset "size" begin
     @test size(EUR) == (379, 54051)
@@ -148,4 +148,17 @@ end
     rm("tmp.bed")
     rm("tmp.bim")
     rm("tmp.fam")
+end
+
+@testset "lin. alg." begin
+    v2 = randn(size(EUR, 2))
+    @test all(SnpBitMatrix{Float64}(EUR) * v2 .≈ convert(Matrix{Float64}, EUR) * v2)
+    @test all(SnpBitMatrix{Float64}(EUR, center=true) * v2 .≈ convert(Matrix{Float64}, EUR, center=true) * v2)
+    @test all(SnpBitMatrix{Float64}(EUR, scale=true) * v2 .≈ convert(Matrix{Float64}, EUR, scale=true) * v2)
+    @test all(SnpBitMatrix{Float64}(EUR, center=true, scale=true) * v2 .≈ convert(Matrix{Float64}, EUR, center=true, scale=true) * v2)
+    v1 = randn(size(EUR, 1))
+    @test all(transpose(SnpBitMatrix{Float64}(EUR)) * v1 .≈ transpose(convert(Matrix{Float64}, EUR)) * v1)
+    @test all(transpose(SnpBitMatrix{Float64}(EUR, center=true)) * v1 .≈ transpose(convert(Matrix{Float64}, EUR, center=true)) * v1)
+    @test all(transpose(SnpBitMatrix{Float64}(EUR, scale=true)) * v1 .≈ transpose(convert(Matrix{Float64}, EUR, scale=true)) * v1)
+    @test all(transpose(SnpBitMatrix{Float64}(EUR, center=true, scale=true)) * v1 .≈ transpose(convert(Matrix{Float64}, EUR, center=true, scale=true)) * v1)
 end
