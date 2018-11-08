@@ -114,9 +114,9 @@ Base.eltype(s::SnpArray) = UInt8
 
 Base.length(s::SnpArray) = s.m * size(s.data, 2)
 
-Statistics.mean(s::SnpArray; dims=:) = _mean(s, dims)
+Statistics.mean(s::SnpArray; dims=:, model=ADDITIVE_MODEL) = _mean(s, dims, model)
 
-function _mean(s::SnpArray,  dims::Integer)
+function _mean(s::SnpArray,  dims::Integer, ::typeof(ADDITIVE_MODEL))
     m, n = size(s)
     if isone(dims)
         cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
@@ -137,15 +137,69 @@ function _mean(s::SnpArray,  dims::Integer)
     end
 end
 
-function _mean(s::SnpArray, ::Colon)
+function _mean(s::SnpArray,  dims::Integer, ::typeof(DOMINANT_MODEL))
+    m, n = size(s)
+    if isone(dims)
+        cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
+        means = Matrix{Float64}(undef, (1, n))
+        @inbounds for j in 1:n
+            means[j] = (cc[3, j] + cc[4, j]) / (cc[1, j] + cc[3, j] + cc[4, j])
+        end
+        return means
+    elseif dims == 2
+        rc = _counts(s, 2)
+        means = Matrix{Float64}(undef, (m, 1))
+        @inbounds for i in 1:m
+            means[i] = (rc[3, i] + rc[4, i]) / (rc[1, i] + rc[3, i] + rc[4, i])
+        end
+        return means
+    else
+        throw(ArgumentError("mean(s::SnpArray, dims=k) only defined for k = 1 or 2"))
+    end
+end
+
+function _mean(s::SnpArray,  dims::Integer, ::typeof(RECESSIVE_MODEL))
+    m, n = size(s)
+    if isone(dims)
+        cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
+        means = Matrix{Float64}(undef, (1, n))
+        @inbounds for j in 1:n
+            means[j] = cc[4, j] / (cc[1, j] + cc[3, j] + cc[4, j])
+        end
+        return means
+    elseif dims == 2
+        rc = _counts(s, 2)
+        means = Matrix{Float64}(undef, (m, 1))
+        @inbounds for i in 1:m
+            means[i] = rc[4, i] / (rc[1, i] + rc[3, i] + rc[4, i])
+        end
+        return means
+    else
+        throw(ArgumentError("mean(s::SnpArray, dims=k) only defined for k = 1 or 2"))
+    end
+end
+
+function _mean(s::SnpArray, ::Colon, ::typeof(ADDITIVE_MODEL))
     rc = _counts(s, 2)
-    (sum(view(rc, 3, :)) + 2sum(view(rc, 4, :))) / sum(view(rc, [1, 3, 4], :))
+    @views (sum(rc[3, :]) + 2sum(rc[4, :])) /  sum(rc[[1, 3, 4], :])
+end
+
+function _mean(s::SnpArray, ::Colon, ::typeof(DOMINANT_MODEL))
+    rc = _counts(s, 2)
+    @views (sum(rc[3, :]) + sum(rc[4, :])) /  sum(rc[[1, 3, 4], :])
+end
+
+function _mean(s::SnpArray, ::Colon, ::typeof(RECESSIVE_MODEL))
+    rc = _counts(s, 2)
+    @views sum(rc[4, :]) /  sum(rc[[1, 3, 4], :])
 end
 
 Base.size(s::SnpArray) = s.m, size(s.data, 2)
 
 Base.size(s::SnpArray, k::Integer) = 
 k == 1 ? s.m : k == 2 ? size(s.data, 2) : k > 2 ? 1 : error("Dimension k out of range")
+
+# TODO: need to implement `var` for different SNP models
 
 Statistics.var(s::SnpArray; corrected::Bool=true, mean=nothing, dims=:) = _var(s, corrected, mean, dims)
 
