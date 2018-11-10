@@ -128,14 +128,14 @@ end
     Φgrm = grm(EUR, method=:GRM)
     @test size(Φgrm) == (size(EUR, 1), size(EUR, 1))
     @test issymmetric(Φgrm)
-    @test all(eigvals(Φgrm) .≥ 0)
+    @test eigmin(Φgrm) > -1e-8
     Φmom = grm(EUR, method=:MoM)
     @test size(Φmom) == (size(EUR, 1), size(EUR, 1))
     @test issymmetric(Φmom)
     Φrbs = grm(EUR, method=:Robust)
     @test size(Φrbs) == (size(EUR, 1), size(EUR, 1))
     @test issymmetric(Φrbs)
-    @test all(eigvals(Φrbs) .≥ 0)
+    @test eigmin(Φrbs) > -1e-8
 end
 
 @testset "filter" begin
