@@ -162,3 +162,52 @@ end
     @test all(transpose(SnpBitMatrix{Float64}(EUR, scale=true)) * v1 .≈ transpose(convert(Matrix{Float64}, EUR, scale=true)) * v1)
     @test all(transpose(SnpBitMatrix{Float64}(EUR, center=true, scale=true)) * v1 .≈ transpose(convert(Matrix{Float64}, EUR, center=true, scale=true)) * v1)
 end
+
+@testset "split-merge-readwrite" begin
+    EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
+    # split
+    splitted = SnpArrays.split_plink(SnpArrays.datadir("EUR_subset"); prefix="tmp.chr.")
+    piece = splitted["17"]
+    @test piece.people == 379
+    @test piece.snps == 11041
+    @test size(piece.person_info) == (379, 6)
+    @test size(piece.snp_info) == (11041, 6)
+    @test size(piece.snparray) == (379, 11041)
+    @test size(piece.snparray.columncounts) == (4, 11041)
+    @test piece.snparray.m == 379
+    @test size(piece.snparray.data) == (95, 11041)
+    
+    merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
+    @test EUR_data.people == merged.people
+    @test EUR_data.snps == merged.snps
+    @test EUR_data.person_info == merged.person_info
+    @test EUR_data.snp_info == merged.snp_info # note: the ordering of merged data might be different on other dataset b/c sorted order of chromosomes
+
+    output = SnpData("tmp.merged")
+    @test EUR_data.people == output.people
+    @test EUR_data.snps == output.snps
+    @test EUR_data.person_info == output.person_info
+    @test EUR_data.snp_info == output.snp_info
+    
+    # cleanup
+    isfile("tmp.merged.bim") && rm("tmp.merged.bim")
+    isfile("tmp.merged.fam") && rm("tmp.merged.fam")
+    isfile("tmp.merged.bed") && rm("tmp.merged.bed")
+    
+    # merge from splitted files
+    merged_from_splitted_files = merge_plink("tmp.chr"; des = "tmp.merged")
+    @test EUR_data.people == merged_from_splitted_files.people
+    @test EUR_data.snps == merged_from_splitted_files.snps
+    @test EUR_data.person_info == merged_from_splitted_files.person_info
+    @test EUR_data.snp_info == merged_from_splitted_files.snp_info
+    
+    # cleanup
+    isfile("tmp.merged.bim") && rm("tmp.merged.bim")
+    isfile("tmp.merged.fam") && rm("tmp.merged.fam")
+    isfile("tmp.merged.bed") && rm("tmp.merged.bed")
+    for k in keys(splitted)
+        isfile("tmp.chr.$(k).bim") && rm("tmp.chr.$(k).bim")
+        isfile("tmp.chr.$(k).fam") && rm("tmp.chr.$(k).fam")
+        isfile("tmp.chr.$(k).bed") && rm("tmp.chr.$(k).bed")
+    end  
+end
