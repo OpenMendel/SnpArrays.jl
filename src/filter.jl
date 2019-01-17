@@ -56,7 +56,7 @@ Filter `src` Plink files according to row indices `rowinds` and column indices
 - `colinds`: column indices.
 
 # Keyword arguments
-- `des`: output Plink file name; default is `src * ".filtered"`.
+- `des`: output Plink file name; defualt is `src * ".filtered"`.
 """
 function filter(
     src::AbstractString, 
