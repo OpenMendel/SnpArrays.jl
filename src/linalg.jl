@@ -11,7 +11,7 @@ struct SnpBitMatrix{T} <: AbstractMatrix{T}
 end
 
 function SnpBitMatrix{T}(
-    s::SnpArray;
+    s::AbstractSnpArray;
     model = ADDITIVE_MODEL,
     center::Bool = false,
     scale::Bool = false) where T <: AbstractFloat
@@ -56,7 +56,7 @@ function SnpBitMatrix{T}(
         B2 = falses(0, 0)
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=DOMINANT_MODEL)
+            μ[:] = mean(s, dims=1, model=RECESSIVE_MODEL)
         else
             μ = T[]
         end
@@ -81,7 +81,7 @@ Base.size(bm::SnpBitMatrix) = size(bm.B1)
 Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
 
 eltype(bm::SnpBitMatrix) = eltype(bm.μ)
-issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B1)
+issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B2) && issymmetric(bm.B1)
 
 function mul!(
     out::AbstractVector{T}, 
