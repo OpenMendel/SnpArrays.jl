@@ -19,14 +19,10 @@ function SnpData(plink_file::AbstractString)
     
     # load snp info
     plink_bim_file = string(plink_file, ".bim")
-    snp_info = convert(DataFrame, readdlm(plink_bim_file, AbstractString))
-    rename!(snp_info, f => t for (f, t) = zip(names(snp_info), 
-                SNP_INFO_KEYS))
-    snp_info[:genetic_distance] = map(x -> parse(Float64, x), 
-        snp_info[:genetic_distance])
-    snp_info[:position] = map(x -> parse(Int, x), snp_info[:position])
-    snp_info[:allele1] = map(x -> x[1], snp_info[:allele1])
-    snp_info[:allele2] = map(x -> x[1], snp_info[:allele2])
+    snp_info = categorical!(
+                   CSV.read(plink_bim_file, delim='\t', header=SNP_INFO_KEYS, 
+                        types=[String, String, Float64, Int, String, String]),
+                   [:allele1, :allele2])
     
     # load person info
     plink_fam_file = string(plink_file, ".fam")
