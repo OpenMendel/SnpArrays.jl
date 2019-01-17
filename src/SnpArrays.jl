@@ -6,6 +6,8 @@ using LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
 import DataFrames: DataFrame, rename!
 import DelimitedFiles: readdlm, writedlm
+import CSV: categorical!
+import CSV # for CSV.read, to avoid clash with Base.read
 import Glob: glob
 import LinearAlgebra: mul!
 import Statistics: mean, std, var
