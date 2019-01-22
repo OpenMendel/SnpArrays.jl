@@ -345,7 +345,7 @@ function Base.convert(
     kwargs...) where T <: Array
     T(s; kwargs...)
 end
-Array{T,N}(s::SnpArray; kwargs...) where {T,N} = copyto!(Array{T,N}(undef, size(s)), s; kwargs...)
+Array{T,N}(s::AbstractSnpArray; kwargs...) where {T,N} = copyto!(Array{T,N}(undef, size(s)), s; kwargs...)
 
 
 """
