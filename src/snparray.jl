@@ -341,7 +341,7 @@ Convert a SnpArray `s` to a numeric vector or matrix of same shape as `s`.
 """
 function Base.convert(
     ::Type{T},
-    s::SnpArray;
+    s::AbstractSnpArray;
     kwargs...) where T <: Array
     T(s; kwargs...)
 end
