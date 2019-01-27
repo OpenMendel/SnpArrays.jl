@@ -53,11 +53,11 @@ function SnpArray(file::AbstractString, m::Integer, n::Integer)
     SnpArray(file, m, "r+")
 end
 
-StatsBase.counts(s::SnpArray; dims=:) = _counts(s, dims)
+StatsBase.counts(s::AbstractSnpArray; dims=:) = _counts(s, dims)
 
-function _counts(s::SnpArray, dims::Integer)
+function _counts(s::AbstractSnpArray, dims::Integer)
     if isone(dims)
-        cc = s.columncounts
+        cc = (typeof(s) == SnpArray) ? s.columncounts : zeros(Int, (4, size(s, 2)))
         if all(iszero, cc)
             m, n = size(s)
             @inbounds for j in 1:n
@@ -68,7 +68,7 @@ function _counts(s::SnpArray, dims::Integer)
         end
         return cc
     elseif dims == 2
-        rc = s.rowcounts
+        rc = (typeof(s) == SnpArray) ? s.rowcounts : zeros(Int, (4, size(s, 1)))
         if all(iszero, rc)
             m, n = size(s)
             @inbounds for j in 1:n
@@ -81,9 +81,9 @@ function _counts(s::SnpArray, dims::Integer)
     else
         throw(ArgumentError("counts(s::SnpArray, dims=k) only defined for k = 1 or 2"))
     end
-end
+end        
 
-_counts(s::SnpArray, ::Colon) = sum(_counts(s, 1), dims=2)
+_counts(s::AbstractSnpArray, ::Colon) = sum(_counts(s, 1), dims=2)
 
 function Base.getindex(s::SnpArray, i::Int)  # Linear indexing
     d, r = divrem(i - 1, s.m)
@@ -114,9 +114,9 @@ Base.eltype(s::SnpArray) = UInt8
 
 Base.length(s::SnpArray) = s.m * size(s.data, 2)
 
-Statistics.mean(s::SnpArray; dims=:, model=ADDITIVE_MODEL) = _mean(s, dims, model)
+Statistics.mean(s::AbstractSnpArray; dims=:, model=ADDITIVE_MODEL) = _mean(s, dims, model)
 
-function _mean(s::SnpArray,  dims::Integer, ::typeof(ADDITIVE_MODEL))
+function _mean(s::AbstractSnpArray,  dims::Integer, ::typeof(ADDITIVE_MODEL))
     m, n = size(s)
     if isone(dims)
         cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
@@ -137,7 +137,7 @@ function _mean(s::SnpArray,  dims::Integer, ::typeof(ADDITIVE_MODEL))
     end
 end
 
-function _mean(s::SnpArray,  dims::Integer, ::typeof(DOMINANT_MODEL))
+function _mean(s::AbstractSnpArray,  dims::Integer, ::typeof(DOMINANT_MODEL))
     m, n = size(s)
     if isone(dims)
         cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
@@ -158,7 +158,7 @@ function _mean(s::SnpArray,  dims::Integer, ::typeof(DOMINANT_MODEL))
     end
 end
 
-function _mean(s::SnpArray,  dims::Integer, ::typeof(RECESSIVE_MODEL))
+function _mean(s::AbstractSnpArray,  dims::Integer, ::typeof(RECESSIVE_MODEL))
     m, n = size(s)
     if isone(dims)
         cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
@@ -179,17 +179,17 @@ function _mean(s::SnpArray,  dims::Integer, ::typeof(RECESSIVE_MODEL))
     end
 end
 
-function _mean(s::SnpArray, ::Colon, ::typeof(ADDITIVE_MODEL))
+function _mean(s::AbstractSnpArray, ::Colon, ::typeof(ADDITIVE_MODEL))
     rc = _counts(s, 2)
     @views (sum(rc[3, :]) + 2sum(rc[4, :])) /  sum(rc[[1, 3, 4], :])
 end
 
-function _mean(s::SnpArray, ::Colon, ::typeof(DOMINANT_MODEL))
+function _mean(s::AbstractSnpArray, ::Colon, ::typeof(DOMINANT_MODEL))
     rc = _counts(s, 2)
     @views (sum(rc[3, :]) + sum(rc[4, :])) /  sum(rc[[1, 3, 4], :])
 end
 
-function _mean(s::SnpArray, ::Colon, ::typeof(RECESSIVE_MODEL))
+function _mean(s::AbstractSnpArray, ::Colon, ::typeof(RECESSIVE_MODEL))
     rc = _counts(s, 2)
     @views sum(rc[4, :]) /  sum(rc[[1, 3, 4], :])
 end
@@ -201,9 +201,9 @@ k == 1 ? s.m : k == 2 ? size(s.data, 2) : k > 2 ? 1 : error("Dimension k out of 
 
 # TODO: need to implement `var` for different SNP models
 
-Statistics.var(s::SnpArray; corrected::Bool=true, mean=nothing, dims=:) = _var(s, corrected, mean, dims)
+Statistics.var(s::AbstractSnpArray; corrected::Bool=true, mean=nothing, dims=:) = _var(s, corrected, mean, dims)
 
-function _var(s::SnpArray, corrected::Bool, mean, dims::Integer)
+function _var(s::AbstractSnpArray, corrected::Bool, mean, dims::Integer)
     m, n = size(s)
     means = something(mean, Statistics.mean(s, dims=dims))
     if isone(dims)
@@ -233,7 +233,7 @@ end
 
 Populate `out` with minor allele frequencies of SnpArray `s`.
 """
-function maf!(out::AbstractVector{T}, s::SnpArray) where T <: AbstractFloat
+function maf!(out::AbstractVector{T}, s::AbstractSnpArray) where T <: AbstractFloat
     cc = _counts(s, 1)
     @inbounds for j in 1:size(s, 2)
         out[j] = (cc[3, j] + 2cc[4, j]) / 2(cc[1, j] + cc[3, j] + cc[4, j])
@@ -241,7 +241,7 @@ function maf!(out::AbstractVector{T}, s::SnpArray) where T <: AbstractFloat
     end
     out
 end
-maf(s::SnpArray) = maf!(Vector{Float64}(undef, size(s, 2)), s)
+maf(s::AbstractSnpArray) = maf!(Vector{Float64}(undef, size(s, 2)), s)
 
 """
     minorallele(out, s)
@@ -249,7 +249,7 @@ maf(s::SnpArray) = maf!(Vector{Float64}(undef, size(s, 2)), s)
 Populate `out` with minor allele indicators. `out[j] == true` means A2 is the minor 
 allele of `j`th column; `out[j] == false` means A1 is the minor allele.
 """
-function minorallele!(out::AbstractVector{Bool}, s::SnpArray)
+function minorallele!(out::AbstractVector{Bool}, s::AbstractSnpArray)
     cc = _counts(s, 1)
     @inbounds for j in 1:size(s, 2)
         out[j] = cc[1, j] > cc[4, j]
@@ -263,7 +263,7 @@ end
 Calculate minor allele indicators. `out[j] == true` means A2 is the minor 
 allele of `j`th column; `out[j] == false` means A1 is the minor allele.
 """
-minorallele(s::SnpArray) = minorallele!(BitVector(undef, size(s, 2)), s)
+minorallele(s::AbstractSnpArray) = minorallele!(BitVector(undef, size(s, 2)), s)
 
 @inline function convert(::Type{T}, x::UInt8, ::Val{1}) where T <: AbstractFloat
     iszero(x) ? zero(T) : isone(x) ? T(NaN) : T(x - 1)
@@ -353,7 +353,7 @@ Array{T,N}(s::AbstractSnpArray; kwargs...) where {T,N} = copyto!(Array{T,N}(unde
 
 Return a `SparseMatrixCSC{Bool,Int32}` of the same size as `s` indicating the positions with missing data.
 """
-function missingpos(s::SnpArray)
+function missingpos(s::AbstractSnpArray)
     m, n = size(s)
     colptr = sizehint!(Int32[1], n + 1)
     rowval = Int32[]
@@ -368,7 +368,7 @@ function missingpos(s::SnpArray)
     SparseMatrixCSC(m, n, colptr, rowval, fill(true, length(rowval)))
 end
 
-function _missingrate!(out::AbstractVector{<:AbstractFloat}, s::SnpArray,  dims::Integer)
+function _missingrate!(out::AbstractVector{<:AbstractFloat}, s::AbstractSnpArray,  dims::Integer)
     m, n = size(s)
     if isone(dims)
         cc = _counts(s, 1)   # need to use extractor to force evaluation if needed
@@ -386,7 +386,7 @@ function _missingrate!(out::AbstractVector{<:AbstractFloat}, s::SnpArray,  dims:
     out
 end
 
-function missingrate(s::SnpArray, dims::Integer)
+function missingrate(s::AbstractSnpArray, dims::Integer)
     if isone(dims)
         return _missingrate!(Vector{Float64}(undef, size(s, 2)), s, 1)
     elseif dims == 2 
