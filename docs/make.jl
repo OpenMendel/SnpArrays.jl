@@ -1,10 +1,20 @@
 using Documenter, SnpArrays
 
-ENV["DOCUMENTER_DEBUG"] = "true"
-makedocs()
+makedocs(
+    format = :html,
+    sitename = "SnpArrays.jl",
+    authors = "Hua Zhou",
+    clean = true,
+    debug = true,
+    pages = [
+        "index.md"
+    ]
+)
+
 deploydocs(
-  deps   = Deps.pip("pygments", "mkdocs", "mkdocs-material", "python-markdown-math"),
-  repo   = "github.com:OpenMendel/SnpArrays.jl.git",
-  julia  = "0.6",
-  osname = "linux"
-  )
+    repo   = "github.com/OpenMendel/SnpArrays.jl.git",
+    target = "build",
+    deps   = nothing,
+    make   = nothing
+)
+

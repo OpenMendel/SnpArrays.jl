@@ -1,144 +1,133 @@
-#---------------------------------------------------------------------------#
-# SnpData type
-#---------------------------------------------------------------------------#
+const SNP_INFO_KEYS = [:chromosome, :snpid, :genetic_distance, :position, :allele1, :allele2]
+const PERSON_INFO_KEYS = [:fid, :iid, :father, :mother, :sex, :phenotype]
 
 """
-Type for SNP and person information.
-"""
-mutable struct SnpData
-  people::Int                       # number of rows (individuals)
-  snps::Int                         # number of columns (snps)
-  personid::Vector{AbstractString}  # names of individuals
-  snpid::Vector{AbstractString}     # SNP ids
-  chromosome::Vector{AbstractString}# SNP chromosome
-  genetic_distance::Vector{Float64} # genetic distance
-  basepairs::Vector{Int}            # SNP base pair position
-  allele1::Vector{AbstractString}   # A1 code
-  allele2::Vector{AbstractString}   # A2 code
-  maf::Vector{Float64}              # minor allele frequencies
-  minor_allele::BitVector           # bit vector designating the minor allele
-  snpmatrix::SnpLike{2}             # matrix of genotypes or haplotypes
-  missings_per_person::Vector{Int}  # number of missing genotypes per person
-  missings_per_snp::Vector{Int}     # number of missing genotypes per snp
-end # end SnpData
+    SnpData
+    SnpData(plknm)
 
+Type to store SNP and person information along with the SnpArray.
 """
-Construct a SnpData type from a PLINK file.
-"""
+struct SnpData
+    people::Int
+    snps::Int
+    snparray::SnpArray
+    snp_info::DataFrame  
+    person_info::DataFrame 
+end
+
 function SnpData(plink_file::AbstractString)
+    
+    # load snp info
+    plink_bim_file = string(plink_file, ".bim")
+    snp_info = categorical!(
+                   CSV.read(plink_bim_file, delim='\t', header=SNP_INFO_KEYS, 
+                        types=[String, String, Float64, Int, String, String]),
+                   [:allele1, :allele2])
+    
+    # load person info
+    plink_fam_file = string(plink_file, ".fam")
+    person_info = convert(DataFrame, readdlm(plink_fam_file, AbstractString))
+    rename!(person_info, f => t for (f, t) = zip(names(person_info),
+                PERSON_INFO_KEYS))
 
-  # load snp info
-  plink_bim_file = string(plink_file, ".bim")
-  snp_info = readdlm(plink_bim_file, AbstractString)
-  chromosome = snp_info[:, 1]
-  snpid = snp_info[:, 2]
-  genetic_distance = map(x -> parse(Float64, x), snp_info[:, 3])
-  basepairs = map(x -> parse(Int, x), snp_info[:, 4])
-  allele1 = snp_info[:, 5]
-  allele2 = snp_info[:, 6]
-
-  # load person info
-  plink_fam_file = string(plink_file, ".fam")
-  person_info = readdlm(plink_fam_file, AbstractString)
-  personid = person_info[:, 2]
-
-  # load snp array matrix
-  snpmatrix = SnpArray(plink_file)
-  maf, minor_allele, missings_per_snp, missings_per_person = summarize(snpmatrix)
-  people, snps = size(snpmatrix)
-
-  # construct SnpData unfiltered
-  SnpData(people, snps, personid, snpid, chromosome, genetic_distance, basepairs,
-    allele1, allele2, maf, minor_allele, snpmatrix, missings_per_person,
-    missings_per_snp)
+    # load snp array 
+    snparray = SnpArray(string(plink_file, ".bed"))
+    people, snps = size(snparray)
+    
+    SnpData(people, snps, snparray, snp_info, person_info)
 end
 
 """
-Write snp data to Plink bed and bim files.
+    split_plink(src; prefix)
+
+Split `src` Plink files or SnpData according to chromosome. returns: a dictionary of splitted data keyed by name of chromosome 
 """
-function writeplink(filename::AbstractString, snpdata::SnpData)
-  bimfile = filename * ".bim"
-  bedfile = filename * ".bed"
-  isfile(bimfile) && error("($bimfile) alread exists.")
-  isfile(bedfile) && error("($bedfile) alread exists.")
-  # write bim file
-  writedlm(bimfile, zip(snpdata.chromosome, snpdata.snpid,
-    snpdata.genetic_distance, snpdata.basepairs, snpdata.allele1, snpdata.allele2))
-  # write bed file
-  fid = open(bedfile, "w+")
-  write(fid, UInt8[0x6c])
-  write(fid, UInt8[0x1b])
-  write(fid, UInt8[0x01])
-  plinkbits = Mmap.mmap(fid, BitArray{3},
-    (2, 4ceil(Int, 0.25snpdata.people), snpdata.snps))
-  copy!(view(plinkbits, 1, 1:snpdata.people, :), snpdata.snpmatrix.A1)
-  copy!(view(plinkbits, 2, 1:snpdata.people, :), snpdata.snpmatrix.A2)
-  close(fid)
+function split_plink(src::AbstractString; prefix::AbstractString = src * ".chr.")
+    data = SnpData(src)
+    r = Dict{AbstractString, SnpData}()
+    for chr in unique(data.snp_info[:chromosome])
+        ind = (chr .== data.snp_info[:chromosome])
+        subarray = filter(src, trues(data.people), ind; des = prefix * chr)
+        r[chr] = SnpData(prefix * chr)
+    end
+    r
 end
 
 """
-    filter(snpdata, snp_idx, ppl_idx)
+    merge_plink(d)
+    merge_plink(des, d)
 
-Filter a SnpData `snpdata` according SNP (column) index vector `snp_idx` and
-person (column) index vector `ppl_idx`.
-
-# Input
-- `snpdata`: a SnpData.
-- `snp_idx`: a Bitvector of SNP index.
-- `ppl_idx`: a BitVector of person index.
-
-# Output
-- filtered snpdata.
+Merge the SnpData of the splitted plink files. 
+Returns: merged SnpData. If `des` is given, it is written on that destination.
 """
-function filter(
-  snpdata :: SnpData,
-  snp_idx :: BitVector,
-  ppl_idx :: BitVector
-  )
-  # subset vectors and matrices
-  snpmatrix        = snpdata.snpmatrix[ppl_idx, snp_idx]
-  personid         = snpdata.personid[ppl_idx]
-  snpid            = snpdata.snpid[snp_idx]
-  chromosome       = snpdata.chromosome[snp_idx]
-  genetic_distance = snpdata.genetic_distance[snp_idx]
-  basepairs        = snpdata.basepairs[snp_idx]
-  allele1          = snpdata.allele1[snp_idx]
-  allele2          = snpdata.allele2[snp_idx]
+function merge_plink(d::Dict{AbstractString, SnpData})
+    ks = sort(collect(keys(d)))
+   
+    # get person_info
+    person_info = d[ks[1]].person_info
+    
+    # vcat snp_info
+    snp_info = vcat([d[k].snp_info for k in ks]...)
+    
+    # hcat snparray
+    data = hcat([d[k].snparray.data for k in ks]...)
+    rowcounts = d[ks[1]].snparray.rowcounts
+    columncounts = hcat([d[k].snparray.columncounts for k in ks]...)
+    snparray = SnpArray(data, rowcounts, columncounts, size(data)[1])
 
-  # compute summary fields with summarize
-  maf, minor_allele, missings_per_snp, missings_per_person = summarize(snpmatrix)
+    people, snps = size(person_info,1), size(snp_info, 1)
+    SnpData(people, snps, snparray, snp_info, person_info)
+end
 
-  # compute size fields with size
-  people, snps = size(snpmatrix)
+merge_plink(des::AbstractString, d::Dict{AbstractString, SnpData}) = write_plink(des, merge_plink(d))
 
-  SnpData(people, snps, personid, snpid, chromosome, genetic_distance,
-    basepairs, allele1, allele2, maf, minor_allele, snpmatrix,
-    missings_per_person, missings_per_snp)
+
+"""
+    merge_plink(prefix; des::AbstractString = prefix * ".merged")
+
+merge the plink files beginning with `prefix`. 
+"""
+function merge_plink(prefix::AbstractString; des::AbstractString = prefix * ".merged")
+    l = glob(prefix * "*.bed")
+    matching_srcs = map(x -> splitext(x)[1], l)
+    d = Dict{AbstractString, SnpData}()
+    for fn in matching_srcs
+        chrsnpdata = SnpData(fn)
+        chr = chrsnpdata.snp_info[:chromosome][1]
+        @assert all(chr .== chrsnpdata.snp_info[:chromosome]) "Not all chrs are the same in $fn.bim."
+        d[chr] = chrsnpdata
+    end
+    merge_plink(des, d)
 end
 
 """
-    filter(S[, min_success_rate_per_person, min_success_rate_per_person, maxiters])
+    write_plink(filename, snpdata)
 
-Filter a SnpData by genotyping success rate.
-
-# Input
-- `S`: a SnpData.
-- `min_success_rate_per_snp`: threshold for SNP genotyping success rate.
-- `min_success_rate_per_person`: threshold for person genotyping success rate.
-- `maxiters`: maximum number of filtering iterations.
-
-# Output
-- filtered SnpData.
+Write SnpData to Plink bed, bim, fam files. 
+Returns: `snpdata`
 """
-function filter(
-  snpdata::SnpData,
-  min_success_rate_per_snp::Float64 = 0.98,
-  min_success_rate_per_person::Float64 = 0.98,
-  maxiters::Int = 3
-  )
-  # filter snparray
-  snp_idx, ppl_idx = filter(snpdata.snpmatrix, min_success_rate_per_snp,
-    min_success_rate_per_person, maxiters)
-  # filter snpdata
-  filter(snpdata, snp_idx, ppl_idx)
+function write_plink(filename::AbstractString, snpdata::SnpData)
+    bimfile = filename * ".bim"
+    bedfile = filename * ".bed"
+    famfile = filename * ".fam"
+    isfile(bimfile) && error("($bimfile) already exists.")
+    isfile(bedfile) && error("($bedfile) already exists.")
+    isfile(famfile) && error("($famfile) already exists.")
+    
+    # write bim file
+    snp_info = snpdata.snp_info
+    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
+    
+    # write fam file
+    person_info = snpdata.person_info
+    writedlm(famfile, hcat([person_info[k] 
+                                for k in PERSON_INFO_KEYS]...))
+    
+    # write bed file
+    open(bedfile, "w") do io
+        write(io, 0x1b6c)
+        write(io, 0x01)
+        write(io, snpdata.snparray.data)
+    end
+    snpdata
 end
