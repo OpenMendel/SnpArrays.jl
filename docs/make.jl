@@ -14,7 +14,6 @@ makedocs(
 deploydocs(
     repo   = "github.com/OpenMendel/SnpArrays.jl.git",
     target = "build",
-    julia  = "1.0",
     deps   = nothing,
     make   = nothing
 )
