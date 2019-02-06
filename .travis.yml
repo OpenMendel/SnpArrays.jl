@@ -15,5 +15,5 @@ git:
   depth: 99999999
 
 after_script:
-  - julia -e 'using Pkg, SnpArrays; 'cd(joinpath(dirname(pathof(SnpArrays)), "..")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder()); Coveralls.submit(process_folder())'
+  - julia -e 'using Pkg, SnpArrays; cd(joinpath(dirname(pathof(SnpArrays)), "..")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder()); Coveralls.submit(process_folder())'
   - julia -e 'using SnpArrays; include(joinpath(dirname(pathof(SnpArrays)), "..", "docs", "make.jl"))'
