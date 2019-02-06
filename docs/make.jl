@@ -1,7 +1,7 @@
 using Documenter, SnpArrays
 
 makedocs(
-    format = :html,
+    format = Documenter.HTML(),
     sitename = "SnpArrays.jl",
     authors = "Hua Zhou",
     clean = true,
