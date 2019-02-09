@@ -241,6 +241,33 @@ v2 = randn(size(EURsub, 2))
 @test all(EURsubbm' * v1 .≈ EURsubfm' * v1)
 end
 
+@testset "subarrays" begin
+    @test all(@view(EUR[1:2:10, 1:2:10]) .==
+        [[0x03 0x03 0x02 0x02 0x03];
+            [0x03 0x03 0x03 0x03 0x03];
+            [0x03 0x03 0x03 0x03 0x03];
+            [0x02 0x03 0x02 0x00 0x02];
+            [0x03 0x03 0x02 0x02 0x03]
+            ])
+    @test all(convert(Matrix{Float64}, @view(EUR[1:2:10, 1:2:10])) .≈ 
+        [[2.0 2.0 1.0 1.0 2.0];
+            [2.0 2.0 2.0 2.0 2.0];
+            [2.0 2.0 2.0 2.0 2.0];
+            [1.0 2.0 1.0 0.0 1.0];
+            [2.0 2.0 1.0 1.0 2.0]
+            ])
+    
+    EURsub = @view EUR[1:2:100, 1:2:100]
+    EURsubbm = SnpBitMatrix{Float64}(EURsub, model=ADDITIVE_MODEL, center=true, scale=true) # BitMatrix from the SubArray 
+    EURsubfm = convert(Matrix{Float64}, EURsub, model=ADDITIVE_MODEL, center=true, scale=true) # Float64 Matrix from the SubArray
+
+    v1 = randn(size(EURsub, 1))
+    v2 = randn(size(EURsub, 2))
+    
+    @test all(EURsubbm * v2 .≈ EURsubfm * v2)
+    @test all(EURsubbm' * v1 .≈ EURsubfm' * v1)
+end
+
 @testset "split-merge-readwrite" begin
 EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
 # split
