@@ -24,8 +24,6 @@ function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
             return Mmap.mmap(io)
         elseif endswith(bednm, ".bed.gz") || endswith(bednm, ".bed.zlib") || endswith(bednm, ".bed.zz")
             return read(io)
-        else
-            throw(ArgumentError("bedfile name should end with .bed or .bed.gz or .bed.zlib or .bed.zz"))
         end
     end
     drows = (m + 3) >> 2   # the number of rows in the Matrix{UInt8}
