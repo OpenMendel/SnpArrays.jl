@@ -1,5 +1,4 @@
-using CodecZlib, SnpArrays, TranscodingStreams
-using LinearAlgebra, SparseArrays, Test
+using LinearAlgebra, SnpArrays, SparseArrays, Test
 
 const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed")) # no missing genotypes
 const mouse = SnpArray(SnpArrays.datadir("mouse.bed")) # has missing genotypes
