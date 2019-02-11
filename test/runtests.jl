@@ -1,4 +1,5 @@
-using SnpArrays, SparseArrays, LinearAlgebra, Test
+using CodecZlib, SnpArrays, TranscodingStreams
+using LinearAlgebra, SparseArrays, Test
 
 const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed")) # no missing genotypes
 const mouse = SnpArray(SnpArrays.datadir("mouse.bed")) # has missing genotypes
@@ -237,4 +238,48 @@ end
         isfile("tmp.chr.$(k).fam") && rm("tmp.chr.$(k).fam")
         isfile("tmp.chr.$(k).bed") && rm("tmp.chr.$(k).bed")
     end  
+end
+
+@testset "(de)compress" begin
+    for format in ["gz", "zlib", "zz"]
+        # compress mouse Plink files
+        compress_plink(SnpArrays.datadir("mouse"), format)
+        @test isfile(SnpArrays.datadir("mouse.bed." * format))
+        @test isfile(SnpArrays.datadir("mouse.fam." * format))
+        @test isfile(SnpArrays.datadir("mouse.bim." * format))
+        # read in compressed Plink files
+        mouse_zip = SnpArray(SnpArrays.datadir("mouse.bed." * format))
+        fill!(mouse.rowcounts, 0)
+        fill!(mouse.columncounts, 0)
+        @time begin
+            SnpArrays._counts(mouse, 1)
+            SnpArrays._counts(mouse, 2)
+        end
+        fill!(mouse_zip.rowcounts, 0)
+        fill!(mouse_zip.columncounts, 0)
+        @time begin
+            SnpArrays._counts(mouse_zip, 1)
+            SnpArrays._counts(mouse_zip, 2)
+        end
+        @test mouse.m == mouse_zip.m
+        @test norm(mouse.rowcounts - mouse_zip.rowcounts) < 1e-8
+        @test norm(mouse.columncounts - mouse_zip.columncounts) < 1e-8
+        @test norm(mouse.data - mouse_zip.data) < 1e-8
+        # Decompress Plink files
+        decompress_plink(SnpArrays.datadir("mouse"), format, SnpArrays.datadir("mouse2"))
+        @test stat(SnpArrays.datadir("mouse") * ".bed").size == 
+            stat(SnpArrays.datadir("mouse2") * ".bed").size
+        @test stat(SnpArrays.datadir("mouse") * ".fam").size == 
+            stat(SnpArrays.datadir("mouse2") * ".fam").size
+        @test stat(SnpArrays.datadir("mouse") * ".bim").size == 
+            stat(SnpArrays.datadir("mouse2") * ".bim").size
+        # clean up
+        isfile(SnpArrays.datadir("mouse.bed." * format)) && rm(SnpArrays.datadir("mouse.bed." * format))
+        isfile(SnpArrays.datadir("mouse.fam." * format)) && rm(SnpArrays.datadir("mouse.fam." * format))
+        isfile(SnpArrays.datadir("mouse.bim." * format)) && rm(SnpArrays.datadir("mouse.bim." * format))
+        isfile(SnpArrays.datadir("mouse2.bed")) && rm(SnpArrays.datadir("mouse2.bed"))
+        isfile(SnpArrays.datadir("mouse2.fam")) && rm(SnpArrays.datadir("mouse2.fam"))
+        isfile(SnpArrays.datadir("mouse2.bim")) && rm(SnpArrays.datadir("mouse2.bim"))
+    end
+    @test_throws ArgumentError SnpArray(SnpArrays.datadir("mouse.bed.zip"))
 end
