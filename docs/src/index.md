@@ -50,13 +50,13 @@ using SnpArrays, BenchmarkTools
 
 ## Example data
 
-An example data set, from a study published in 2006, is about 5 Mb in size. Data from recent studies, which have samples from tens of thousands of individuals at over a million SNP positions, would be in the tens or even hundreds of Gb range.
+There are two example data sets attached to this package. 
 
-Example data location can be retrieved by
+Data set `mouse`, from a study published in 2006, is about 5 Mb in size. It contains missing genotypes. Example data location can be retrieved by
 
 
 ```julia
-SnpArrays.datadir("mouse")
+mousepath = SnpArrays.datadir("mouse")
 ```
 
 
@@ -68,21 +68,40 @@ SnpArrays.datadir("mouse")
 
 
 ```julia
-;ls -l ../data/mouse.bed ../data/mouse.fam ../data/mouse.bim
+run(`ls -l $(mousepath).bed $mousepath.bim $mousepath.fam`);
 ```
 
-    -rw-r--r--  1 huazhou  staff  4922753 Feb  5 22:44 ../data/mouse.bed
-    -rw-r--r--  1 huazhou  staff   306000 Feb  5 22:44 ../data/mouse.bim
-    -rw-r--r--  1 huazhou  staff    92060 Feb  5 22:44 ../data/mouse.fam
+    -rw-r--r--  1 huazhou  staff  4922753 Feb 11 11:13 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bed
+    -rw-r--r--  1 huazhou  staff   306000 Feb 11 11:13 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bim
+    -rw-r--r--  1 huazhou  staff    92060 Feb 11 11:13 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.fam
 
+
+Data set `EUR_subset` contains no missing genotypes. It is located at
+
+
+```julia
+eurpath = SnpArrays.datadir("EUR_subset")
+run(`ls -l $eurpath.bed $eurpath.bim $eurpath.fam`);
+```
+
+    -rw-r--r--  1 huazhou  staff  5134848 Feb  6 08:12 /Users/huazhou/.julia/dev/SnpArrays/src/../data/EUR_subset.bed
+    -rw-r--r--  1 huazhou  staff  1907367 Feb  6 08:12 /Users/huazhou/.julia/dev/SnpArrays/src/../data/EUR_subset.bim
+    -rw-r--r--  1 huazhou  staff     7472 Feb  6 08:12 /Users/huazhou/.julia/dev/SnpArrays/src/../data/EUR_subset.fam
+
+
+Data from recent studies, which have samples from tens of thousands of individuals at over a million SNP positions, would be in the tens or even hundreds of Gb range.
+
+# SnpArray
+
+`SnpArray` is the fundamental type for dealing with genotype data in Plink bed file. Each row of `SnpArray` is a sample and each column a SNP.
 
 ## Constructor
 
 There are various ways to initialize a SnpArray.
 
-### Intitialize from Plink files
+### Intitialize from Plink file set
 
-All three files (`.bed`, `.fam`, `.bim`) need to be present.
+SnpArray can be initialized from the Plink bed file. The corresponding `.fam` needs to be present, which is used to determine the number of individuals.
 
 
 ```julia
@@ -143,7 +162,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      115.421 μs (61 allocations: 389.45 KiB)
+      106.086 μs (62 allocations: 389.25 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -162,14 +181,163 @@ mouse[1, 1] = 0x00
 
      [1] | at ./int.jl:320 [inlined]
 
-     [2] setindex!(::SnpArray, ::UInt8, ::Int64, ::Int64) at /Users/huazhou/.julia/dev/SnpArrays/src/snparray.jl:109
+     [2] setindex!(::SnpArray, ::UInt8, ::Int64, ::Int64) at /Users/huazhou/.julia/dev/SnpArrays/src/snparray.jl:163
 
-     [3] top-level scope at In[8]:1
+     [3] top-level scope at In[9]:1
 
 
 To possibly change genoytpes in a bed file, open with write permission
 ```julia
 mouse = SnpArray(SnpArrays.datadir("mouse.bed"), "w")
+```
+
+### Initialize from only bed file
+
+If only the bed file is present, user is required to supply the number of individuals in the second argument.
+
+
+```julia
+SnpArray(SnpArrays.datadir("mouse.bed"), 1940)
+```
+
+
+
+
+    1940×10150 SnpArray:
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+     0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
+        ⋮                             ⋮  ⋱           ⋮                        
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02     0x01  0x01  0x01  0x01  0x01  0x01
+     0x00  0x00  0x00  0x00  0x03  0x00     0x03  0x03  0x03  0x03  0x03  0x03
+
+
+
+### Initialize from compressed Plink files
+
+SnpArray can be initialized from Plink files in compressed formats: `gz`, `zlib`, or `zz`.
+
+Let us first compress the mouse data in gzip format. We see gz format takes less than 1/3 storage of original Plink files.
+
+
+```julia
+compress_plink(SnpArrays.datadir("mouse"), "gz")
+run(`ls -l $mousepath.bed.gz $mousepath.bim.gz $mousepath.fam.gz`);
+```
+
+    -rw-r--r--  1 huazhou  staff  1324936 Feb 11 16:54 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bed.gz
+    -rw-r--r--  1 huazhou  staff   105403 Feb 11 16:54 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bim.gz
+    -rw-r--r--  1 huazhou  staff    15338 Feb 11 16:54 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.fam.gz
+
+
+To initialize SnpArray from gzipped Plink file, simply used the bed file with name ending with `.bed.gz`:
+
+
+```julia
+# requires corresponding `.fam.gz` file
+SnpArray(SnpArrays.datadir("mouse.bed.gz"))
+```
+
+
+
+
+    1940×10150 SnpArray:
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+     0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
+        ⋮                             ⋮  ⋱           ⋮                        
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02     0x01  0x01  0x01  0x01  0x01  0x01
+     0x00  0x00  0x00  0x00  0x03  0x00     0x03  0x03  0x03  0x03  0x03  0x03
+
+
+
+or
+
+
+```julia
+# does not require corresponding `.fam.gz` file
+SnpArray(SnpArrays.datadir("mouse.bed.gz"), 1940)
+```
+
+
+
+
+    1940×10150 SnpArray:
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+     0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
+        ⋮                             ⋮  ⋱           ⋮                        
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02     0x01  0x01  0x01  0x01  0x01  0x01
+     0x00  0x00  0x00  0x00  0x03  0x00     0x03  0x03  0x03  0x03  0x03  0x03
+
+
+
+
+```julia
+# clean up
+rm(SnpArrays.datadir("mouse.bed.gz"))
+rm(SnpArrays.datadir("mouse.fam.gz"))
+rm(SnpArrays.datadir("mouse.bim.gz"))
 ```
 
 ### Initialize and create bed file
@@ -247,11 +415,11 @@ tmpbf = SnpArray(undef, 5, 3)
 
 
     5×3 SnpArray:
-     0x00  0x03  0x01
-     0x00  0x03  0x00
-     0x01  0x03  0x00
-     0x03  0x02  0x00
+     0x00  0x01  0x01
      0x00  0x00  0x00
+     0x01  0x00  0x00
+     0x02  0x01  0x00
+     0x00  0x02  0x00
 
 
 
@@ -266,11 +434,11 @@ tmpbf = SnpArray("tmp.bed", tmpbf)
 
 
     5×3 SnpArray:
-     0x00  0x03  0x01
-     0x00  0x03  0x00
-     0x01  0x03  0x00
-     0x03  0x02  0x00
+     0x00  0x01  0x01
      0x00  0x00  0x00
+     0x01  0x00  0x00
+     0x02  0x01  0x00
+     0x00  0x02  0x00
 
 
 
@@ -284,11 +452,11 @@ tmpbf
 
 
     5×3 SnpArray:
-     0x02  0x03  0x01
-     0x00  0x03  0x00
-     0x01  0x03  0x00
-     0x03  0x02  0x00
+     0x02  0x01  0x01
      0x00  0x00  0x00
+     0x01  0x00  0x00
+     0x02  0x01  0x00
+     0x00  0x02  0x00
 
 
 
@@ -597,7 +765,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      3.700 μs (0 allocations: 0 bytes)
+      3.890 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -647,7 +815,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      7.340 μs (0 allocations: 0 bytes)
+      6.241 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -696,7 +864,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      6.578 μs (0 allocations: 0 bytes)
+      5.933 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -712,7 +880,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      45.683 ms (10150 allocations: 475.78 KiB)
+      41.749 ms (10150 allocations: 475.78 KiB)
 
 
 Copy whole SnpArray
@@ -723,7 +891,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      43.772 ms (0 allocations: 0 bytes)
+      40.963 ms (0 allocations: 0 bytes)
 
 
 ## Summaries
@@ -758,7 +926,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      6.794 ns (0 allocations: 0 bytes)
+      6.436 ns (0 allocations: 0 bytes)
 
 
 ### Minor allele frequencies
@@ -893,7 +1061,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      16.596 μs (2 allocations: 79.39 KiB)
+      12.386 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1062,7 +1230,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      34.167 ms (19273 allocations: 1.81 MiB)
+      34.162 ms (19273 allocations: 1.81 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1146,7 +1314,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      463.315 ms (30 allocations: 28.95 MiB)
+      450.243 ms (30 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1194,7 +1362,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      273.586 ms (31 allocations: 14.60 MiB)
+      262.004 ms (31 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1324,7 +1492,7 @@ count(rowmask), count(colmask)
 @btime(SnpArrays.filter($mouse, 0.999, 0.999));
 ```
 
-      79.685 ms (8 allocations: 96.52 KiB)
+      82.404 ms (8 allocations: 96.52 KiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -1355,9 +1523,10 @@ SnpArrays.filter(SnpArrays.datadir("mouse"), 1:5, 1:5)
 
 
 ```julia
-rm(SnpArrays.datadir("mouse") * ".filtered.bed")
-rm(SnpArrays.datadir("mouse") * ".filtered.fam")
-rm(SnpArrays.datadir("mouse") * ".filtered.bim")
+# clean up
+rm(SnpArrays.datadir("mouse.filtered.bed"))
+rm(SnpArrays.datadir("mouse.filtered.fam"))
+rm(SnpArrays.datadir("mouse.filtered.bim"))
 ```
 
 Filter a set of Plink files according to logical vectors.
@@ -1405,24 +1574,27 @@ SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
 ;ls -l ../data/mouse.filtered.bed ../data/mouse.filtered.fam ../data/mouse.filtered.bim
 ```
 
-    -rw-r--r--  1 huazhou  staff  1660543 Feb  6 00:58 ../data/mouse.filtered.bed
-    -rw-r--r--  1 huazhou  staff   167081 Feb  6 00:58 ../data/mouse.filtered.bim
-    -rw-r--r--  1 huazhou  staff    53798 Feb  6 00:58 ../data/mouse.filtered.fam
+    -rw-r--r--  1 huazhou  staff  1660543 Feb 11 16:56 ../data/mouse.filtered.bed
+    -rw-r--r--  1 huazhou  staff   167081 Feb 11 16:56 ../data/mouse.filtered.bim
+    -rw-r--r--  1 huazhou  staff    53798 Feb 11 16:56 ../data/mouse.filtered.fam
 
 
 
 ```julia
-rm(SnpArrays.datadir("mouse") * ".filtered.bed")
-rm(SnpArrays.datadir("mouse") * ".filtered.fam")
-rm(SnpArrays.datadir("mouse") * ".filtered.bim")
+# clean up
+rm(SnpArrays.datadir("mouse.filtered.bed"))
+rm(SnpArrays.datadir("mouse.filtered.fam"))
+rm(SnpArrays.datadir("mouse.filtered.bim"))
 ```
 
-## Linear algebra with SnpArray
+# SnpBitMatrix
 
 In some applications we want to perform linear algebra using SnpArray directly without expanding it to numeric matrix. This is achieved by the `SnpBitMatrix` type. The implementation assumes:
 
 1. the SnpArray does not have missing genotypes, and
 2. the matrix corresponding to SnpArray is the matrix of A2 allele counts.
+
+## Constructor
 
 First let's load a data set without missing genotypes.
 
@@ -1473,7 +1645,7 @@ const EURbm = SnpBitMatrix{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scal
 
 The constructor shares the same keyword arguments as the `convert` or `copyto!` functions. The type parameter, `Float64` in this example, indicates the SnpBitMatrix acts like a Float64 matrix.
 
-The memory usage of the SnpBitMatrix should be similar to the SnpArray, or equivalently bed file size, if `model=ADDITIVE_MODEL` or half of that of SnpArray if `model=DOMINANT_MODEL` or `model=RECESSIVE_MODEL`.
+The memory usage of the SnpBitMatrix should be similar to the SnpArray, or equivalently bed file size, if `model=ADDITIVE_MODEL`, or half of that of SnpArray if `model=DOMINANT_MODEL` or `model=RECESSIVE_MODEL`.
 
 
 ```julia
@@ -1486,6 +1658,8 @@ Base.summarysize(EUR), Base.summarysize(EURbm)
     (6876757, 6421960)
 
 
+
+## Linear algebra
 
 A SnpBitMatrix acts similar to a regular matrix and responds to `size`, `eltype`, and SnpBitMatrix-vector multiplications.
 
@@ -1515,7 +1689,7 @@ norm(EURbm * v2 -  A * v2)
 
 
 
-    8.633822146761887e-11
+    8.391402854145664e-11
 
 
 
@@ -1527,11 +1701,11 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    4.090297569187614e-12
+    1.4821285850191225e-11
 
 
 
-In this example, the Float64 matrix fits into memory so Matrix{Float64}-vector multiplication (highly optimized BLAS) is much faster than the SnpBitMatrix-vector multiplication.
+In this example, the Float64 matrix fits into memory so the SnpBitMatrix-vector multiplication is much slower than Matrix{Float64}-vector multiplication (highly optimized BLAS).
 
 
 ```julia
@@ -1540,7 +1714,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $EURbm, $v2));
 ```
 
-      83.564 ms (0 allocations: 0 bytes)
+      81.402 ms (0 allocations: 0 bytes)
 
 
 
@@ -1548,7 +1722,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $A, $v2));
 ```
 
-      8.595 ms (0 allocations: 0 bytes)
+      7.972 ms (0 allocations: 0 bytes)
 
 
 
@@ -1556,7 +1730,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($EURbm), $v1));
 ```
 
-      79.320 ms (1 allocation: 16 bytes)
+      76.149 ms (1 allocation: 16 bytes)
 
 
 
@@ -1564,7 +1738,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($A), $v1));
 ```
 
-      7.298 ms (0 allocations: 0 bytes)
+      6.553 ms (0 allocations: 0 bytes)
 
 
 In another test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 folder faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
@@ -1613,7 +1787,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    4.4375914278459096e-14
+    1.4013130168871e-13
 
 
 
@@ -1625,13 +1799,15 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    1.0301030099229582e-13
+    2.311523530689605e-13
 
 
 
 # SnpData
 
 We can create a `SnpData`, which has a `SnpArray` with information on SNP and subject appended.
+
+## Constructor
 
 
 ```julia
@@ -1694,6 +1870,8 @@ EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
     │ 379 │ 379       │ NA20828   │ 0         │ 0         │ 2         │ 1         │)
 
 
+
+## Split
 
 We can split `SnpData` by SNP's choromosomes using `split_plink`.
 
@@ -1778,6 +1956,8 @@ piece = splitted["17"]
     │ 379 │ 379       │ NA20828   │ 0         │ 0         │ 2         │ 1         │)
 
 
+
+## Merge
 
 We can merge the splitted dictionary back into one SnpData using `merge_plink`.
 
@@ -1909,7 +2089,8 @@ merged_from_splitted_files = merge_plink("tmp.chr"; des = "tmp.merged.2")
 
 
 ```julia
-isfile("tmp.merged.bim") && rm("tmp.merged.bim") # cleanup
+# cleanup
+isfile("tmp.merged.bim") && rm("tmp.merged.bim") 
 isfile("tmp.merged.fam") && rm("tmp.merged.fam")
 isfile("tmp.merged.bed") && rm("tmp.merged.bed")
 isfile("tmp.merged.2.bim") && rm("tmp.merged.2.bim")

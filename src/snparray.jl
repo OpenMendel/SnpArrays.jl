@@ -1,8 +1,8 @@
 """
-    SnpArray
-    SnpArray(bednm, m)
-    SnpArray(plknm)
-    SnpArray(undef, m, n)
+SnpArray
+SnpArray(bednm, m)
+SnpArray(plknm)
+SnpArray(undef, m, n)
 
 Raw .bed file as a shared, memory-mapped Matrix{UInt8}.  The number of rows, `m`
 is stored separately because it is not uniquely determined by the size of the `data` field.
@@ -17,10 +17,14 @@ end
 AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}}
 
 function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
-    data = open(bednm, args...; kwargs...) do io
+    data = openbed(bednm, args...; kwargs...) do io
         read(io, UInt16) == 0x1b6c || throw(ArgumentError("wrong magic number in file $bednm"))
         read(io, UInt8) == 0x01 || throw(ArgumentError(".bed file, $bednm, is not in correct orientation"))
-        Mmap.mmap(io)
+        if endswith(bednm, ".bed")
+            return Mmap.mmap(io)
+        elseif endswith(bednm, ".bed.gz") || endswith(bednm, ".bed.zlib") || endswith(bednm, ".bed.zz")
+            return read(io)
+        end
     end
     drows = (m + 3) >> 2   # the number of rows in the Matrix{UInt8}
     n, r = divrem(length(data), drows)
@@ -28,15 +32,35 @@ function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
     SnpArray(reshape(data, (drows, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
 
-SnpArray(nm::AbstractString, args...; kwargs...) = 
-    SnpArray(nm, countlines(string(splitext(nm)[1], ".fam")), args...; kwargs...)
+function SnpArray(bednm::AbstractString, args...; kwargs...)
+    if endswith(bednm, ".bed")
+        m = countlines(bednm[1:end-3] * "fam")
+    else 
+        if endswith(bednm, ".bed.gz")
+            m = open(GzipDecompressorStream, bednm[1:end-6] * "fam.gz") do stream
+                countlines(stream)
+            end
+        elseif endswith(bednm, ".bed.zlib")
+            m = open(ZlibDecompressorStream, bednm[1:end-8] * "fam.zlib") do stream
+                countlines(stream)
+            end
+        elseif endswith(bednm, ".bed.zz")
+            m = open(DeflateDecompressorStream, bednm[1:end-6] * "fam.zz") do stream
+                countlines(stream)
+            end
+        else
+            throw(ArgumentError("bedfile name should end with .bed or .bed.gz or .bed.zlib or .bed.zz"))
+        end
+    end
+    SnpArray(bednm, m, args...; kwargs...)
+end
 
 function SnpArray(::UndefInitializer, m::Integer, n::Integer)
     SnpArray(Matrix{UInt8}(undef, ((m + 3) >> 2, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
 
 function SnpArray(file::AbstractString, s::SnpArray)
-    open(file, "w+") do io
+    openbed(file, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
         write(io, s.data)
@@ -45,12 +69,42 @@ function SnpArray(file::AbstractString, s::SnpArray)
 end
 
 function SnpArray(file::AbstractString, m::Integer, n::Integer)
-    open(file, "w+") do io
+    openbed(file, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
         write(io, fill(0x00, ((m + 3) >> 2, n)))
     end
     SnpArray(file, m, "r+")
+end
+
+"""
+openbed(bedfile, args...; kwargs...)
+
+Open BED file (`.bed` or `.bed.gz` or `.bed.zlib` or `.bed.zz`) and return an IO stream.
+"""
+function openbed(bedfile::AbstractString, args...; kwargs...)
+    endswith(bedfile, ".bed") || endswith(bedfile, ".bed.gz") || 
+        endswith(bedfile, ".bed.zlib") || endswith(bedfile, ".bed.zz") || 
+        throw(ArgumentError("bedfile name should end with .bed or .bed.gz or .bed.zlib or .bed.zz"))
+    io = open(bedfile, args...; kwargs...)
+    endswith(bedfile, ".bed") && (return io)
+    if endswith(bedfile, ".bed.gz")
+        stream = iswritable(io) ? GzipCompressorStream : GzipDecompressorStream
+    elseif endswith(bedfile, ".bed.zlib")
+        stream = iswritable(io) ? ZlibCompressorStream : ZlibDecompressorStream
+    elseif endswith(bedfile, ".bed.zz")
+        stream = iswritable(io) ? DeflateCompressorStream : DeflateDecompressorStream
+    end
+    stream(io)
+end
+
+function openbed(f::Function, args...)
+    io = openbed(args...)
+    try
+        f(io)
+    finally
+        close(io)
+    end
 end
 
 StatsBase.counts(s::AbstractSnpArray; dims=:) = _counts(s, dims)
@@ -229,7 +283,7 @@ function _var(s::AbstractSnpArray, corrected::Bool, mean, dims::Integer)
 end
 
 """
-    maf!(out, s)
+maf!(out, s)
 
 Populate `out` with minor allele frequencies of SnpArray `s`.
 """
@@ -244,7 +298,7 @@ end
 maf(s::AbstractSnpArray) = maf!(Vector{Float64}(undef, size(s, 2)), s)
 
 """
-    minorallele(out, s)
+minorallele(out, s)
 
 Populate `out` with minor allele indicators. `out[j] == true` means A2 is the minor 
 allele of `j`th column; `out[j] == false` means A1 is the minor allele.
@@ -258,7 +312,7 @@ function minorallele!(out::AbstractVector{Bool}, s::AbstractSnpArray)
 end
 
 """
-    minorallele(s)
+minorallele(s)
 
 Calculate minor allele indicators. `out[j] == true` means A2 is the minor 
 allele of `j`th column; `out[j] == false` means A1 is the minor allele.
@@ -278,7 +332,7 @@ end
 end
 
 """
-    Base.copyto!(v, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+Base.copyto!(v, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
 
 Copy SnpArray `s` to numeric vector or matrix `v`.
 
@@ -328,7 +382,7 @@ end
 
 
 """
-    Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
 
 Convert a SnpArray `s` to a numeric vector or matrix of same shape as `s`.
 
@@ -349,7 +403,7 @@ Array{T,N}(s::AbstractSnpArray; kwargs...) where {T,N} = copyto!(Array{T,N}(unde
 
 
 """
-    missingpos(s::SnpArray)
+missingpos(s::SnpArray)
 
 Return a `SparseMatrixCSC{Bool,Int32}` of the same size as `s` indicating the positions with missing data.
 """
