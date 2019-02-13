@@ -13,6 +13,7 @@ struct SnpData
     snparray::SnpArray
     snp_info::DataFrame  
     person_info::DataFrame 
+    src::AbstractString
 end
 
 function SnpData(plink_file::AbstractString)
@@ -34,24 +35,73 @@ function SnpData(plink_file::AbstractString)
     snparray = SnpArray(string(plink_file, ".bed"))
     people, snps = size(snparray)
     
-    SnpData(people, snps, snparray, snp_info, person_info)
+    SnpData(people, snps, snparray, snp_info, person_info, plink_file)
 end
 
 """
-    split_plink(src; prefix)
+    show(io::IO, x::SnpData)
 
-Split `src` Plink files or SnpData according to chromosome. returns: a dictionary of splitted data keyed by name of chromosome 
+Simple string representation of SnpData
 """
-function split_plink(src::AbstractString; prefix::AbstractString = src * ".chr.")
-    data = SnpData(src)
+function Base.show(io::IO, x::SnpData)
+    print(io, "SnpData(people: $(x.people), snps: $(x.snps),\n" *
+        join([
+                "snp_info: \n$((join(split(string(first(x.snp_info, 6)), "\n")[2:end], "\n")))",
+                x.snps > 6 ? "...," : ",",
+                "person_info: \n$((join(split(string(first(x.person_info, 6)), "\n")[2:end], "\n")))",
+                x.people > 6 ? "...," : ",",
+                "src: $(x.src)"], 
+                "\n") *
+        "\n)")
+end
+
+
+"""
+    filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString)
+    filter(s; des::AbstractString, f_person::Function, f_snp::Function)
+
+Filter `s` according to `f_person` and `f_snp`. The resultiing plink files are saved at `des.[bed|bim|fam]`.
+"""
+function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString = s.src * ".filtered")
+    snps = sum(colinds)
+    people = sum(rowinds)
+    snparray = SnpArrays.filter(s.src, rowinds, colinds; des=des)
+    snp_info = s.snp_info[colinds, :]
+    person_info = s.person_info[rowinds, :]
+    src = des
+    SnpData(people, snps, snparray, snp_info, person_info, src)
+end
+function filter(s::SnpData; des::AbstractString = s.src * ".filtered", f_person::Function = (x -> true), f_snp::Function = (x -> true))
+    colinds = collect(f_snp(r)::Bool for r in eachrow(s.snp_info)) 
+    rowinds = collect(f_person(r)::Bool for r in eachrow(s.person_info))
+    SnpArrays.filter(s::SnpData, rowinds::Vector{Bool}, colinds::Vector{Bool}; des = des::AbstractString)
+end
+filter(s::AbstractString; des::AbstractString = s.src * ".filtered", 
+    f_person::Function = (x -> true), f_snp::Function = (x -> true)) = SnpArrays.filter(SnpData(s); des = des, f_person = f_person, f_snp = f_snp)
+
+
+"""
+    split_plink(s, key; prefix)
+
+Split data `s` according to chromosome, sex, or phenotype. Returns a dictionary of splitted data.
+"""
+function split_plink(s::SnpData, key::Symbol = :chromosome; prefix = s.src * string(key))
+    key in [:chromosome, :sex, :phenotype] || throw(ArgumentError("key should be one of :chromosome, :sex, or :phenotype"))
     r = Dict{AbstractString, SnpData}()
-    for chr in unique(data.snp_info[:chromosome])
-        ind = (chr .== data.snp_info[:chromosome])
-        subarray = filter(src, trues(data.people), ind; des = prefix * chr)
-        r[chr] = SnpData(prefix * chr)
+    if key == :chromosome
+        for chr in unique(s.snp_info[key])
+            r[chr] = SnpArrays.filter(s; des = prefix * chr, f_snp = x -> (x[key] == chr))
+        end
+        r
+    else
+        for val in unique(s.person_info[key])
+            r[val] = SnpArrays.filter(s; des = prefix * string(val), f_person = x -> (x[key] == val))
+        end
+        r
     end
-    r
 end
+split_plink(src::AbstractString, key::Symbol = :chromosome; prefix = s.src * string(key)) = split_plink(SnpData(src), key; prefix = prefix)
+
 
 """
     merge_plink(d)
@@ -76,7 +126,7 @@ function merge_plink(d::Dict{AbstractString, SnpData})
     snparray = SnpArray(data, rowcounts, columncounts, size(data)[1])
 
     people, snps = size(person_info,1), size(snp_info, 1)
-    SnpData(people, snps, snparray, snp_info, person_info)
+    SnpData(people, snps, snparray, snp_info, person_info, "")
 end
 
 merge_plink(des::AbstractString, d::Dict{AbstractString, SnpData}) = write_plink(des, merge_plink(d))
@@ -110,9 +160,9 @@ function write_plink(filename::AbstractString, snpdata::SnpData)
     bimfile = filename * ".bim"
     bedfile = filename * ".bed"
     famfile = filename * ".fam"
-    isfile(bimfile) && error("($bimfile) already exists.")
-    isfile(bedfile) && error("($bedfile) already exists.")
-    isfile(famfile) && error("($famfile) already exists.")
+    # isfile(bimfile) && error("($bimfile) already exists.")
+    # isfile(bedfile) && error("($bedfile) already exists.")
+    # isfile(famfile) && error("($famfile) already exists.")
     
     # write bim file
     snp_info = snpdata.snp_info
@@ -129,7 +179,7 @@ function write_plink(filename::AbstractString, snpdata::SnpData)
         write(io, 0x01)
         write(io, snpdata.snparray.data)
     end
-    snpdata
+    SnpData(snpdata.people, snpdata.snps, snpdata.snparray, snpdata.snp_info, snpdata.person_info, filename)
 end
 
 """

@@ -241,37 +241,30 @@ v2 = randn(size(EURsub, 2))
 @test all(EURsubbm' * v1 .≈ EURsubfm' * v1)
 end
 
-@testset "subarrays" begin
-    @test all(@view(EUR[1:2:10, 1:2:10]) .==
-        [[0x03 0x03 0x02 0x02 0x03];
-            [0x03 0x03 0x03 0x03 0x03];
-            [0x03 0x03 0x03 0x03 0x03];
-            [0x02 0x03 0x02 0x00 0x02];
-            [0x03 0x03 0x02 0x02 0x03]
-            ])
-    @test all(convert(Matrix{Float64}, @view(EUR[1:2:10, 1:2:10])) .≈ 
-        [[2.0 2.0 1.0 1.0 2.0];
-            [2.0 2.0 2.0 2.0 2.0];
-            [2.0 2.0 2.0 2.0 2.0];
-            [1.0 2.0 1.0 0.0 1.0];
-            [2.0 2.0 1.0 1.0 2.0]
-            ])
-    
-    EURsub = @view EUR[1:2:100, 1:2:100]
-    EURsubbm = SnpBitMatrix{Float64}(EURsub, model=ADDITIVE_MODEL, center=true, scale=true) # BitMatrix from the SubArray 
-    EURsubfm = convert(Matrix{Float64}, EURsub, model=ADDITIVE_MODEL, center=true, scale=true) # Float64 Matrix from the SubArray
-
-    v1 = randn(size(EURsub, 1))
-    v2 = randn(size(EURsub, 2))
-    
-    @test all(EURsubbm * v2 .≈ EURsubfm * v2)
-    @test all(EURsubbm' * v1 .≈ EURsubfm' * v1)
-end
-
 @testset "split-merge-readwrite" begin
 EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
+
+# filter
+chr17 = SnpArrays.filter(SnpArrays.datadir("EUR_subset"); des="tmp.filter.chr17", f_snp = x -> x[:chromosome] == "17")
+@test chr17.snps == 11041
+@test chr17.people == 379
+male = SnpArrays.filter(EUR_data; des="tmp.filter.male", f_person = x -> x[:sex] == "1")
+@test male.snps == 54051
+@test male.people == 178
+chr17_male = SnpArrays.filter(EUR_data; des="tmp.filter.chr17.male", f_snp = x -> x[:chromosome] == "17", f_person = x -> x[:sex] == "1")
+@test chr17_male.snps == 11041
+@test chr17_male.people == 178
+@test size(chr17_male.snparray) == (178, 11041)
+# cleanup
+for ft in ["bim", "fam", "bed"]
+    isfile("tmp.filter.chr17." * ft) && rm("tmp.filter.chr17." * ft)
+    isfile("tmp.filter.male." * ft) && rm("tmp.filter.male." * ft)
+    isfile("tmp.filter.chr17.male." * ft) && rm("tmp.filter.chr17.male." * ft)
+end
+
+
 # split
-splitted = SnpArrays.split_plink(SnpArrays.datadir("EUR_subset"); prefix="tmp.chr.")
+splitted = SnpArrays.split_plink(SnpArrays.datadir("EUR_subset"); prefix="tmp.split.chr.")
 piece = splitted["17"]
 @test piece.people == 379
 @test piece.snps == 11041
@@ -281,6 +274,10 @@ piece = splitted["17"]
 @test size(piece.snparray.columncounts) == (4, 11041)
 @test piece.snparray.m == 379
 @test size(piece.snparray.data) == (95, 11041)
+splitted_bysex = SnpArrays.split_plink(EUR_data, :sex; prefix="tmp.split.sex.")
+@test splitted_bysex["1"].people == 178
+@test splitted_bysex["2"].people == 201
+
 
 merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
 @test EUR_data.people == merged.people
@@ -300,7 +297,7 @@ isfile("tmp.merged.fam") && rm("tmp.merged.fam")
 isfile("tmp.merged.bed") && rm("tmp.merged.bed")
 
 # merge from splitted files
-merged_from_splitted_files = merge_plink("tmp.chr"; des = "tmp.merged")
+merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged")
 @test EUR_data.people == merged_from_splitted_files.people
 @test EUR_data.snps == merged_from_splitted_files.snps
 @test EUR_data.person_info == merged_from_splitted_files.person_info
@@ -310,10 +307,16 @@ merged_from_splitted_files = merge_plink("tmp.chr"; des = "tmp.merged")
 isfile("tmp.merged.bim") && rm("tmp.merged.bim")
 isfile("tmp.merged.fam") && rm("tmp.merged.fam")
 isfile("tmp.merged.bed") && rm("tmp.merged.bed")
+
 for k in keys(splitted)
-    isfile("tmp.chr.$(k).bim") && rm("tmp.chr.$(k).bim")
-    isfile("tmp.chr.$(k).fam") && rm("tmp.chr.$(k).fam")
-    isfile("tmp.chr.$(k).bed") && rm("tmp.chr.$(k).bed")
+    for ft in ["bim", "fam", "bed"]
+        isfile("tmp.split.chr.$(k)." * ft) && rm("tmp.split.chr.$(k)." * ft)
+    end
+end  
+for k in keys(splitted_bysex)
+    for ft in ["bim", "fam", "bed"]
+        isfile("tmp.split.sex.$(k)." * ft) && rm("tmp.split.sex.$(k)." * ft)
+    end
 end  
 end
 
