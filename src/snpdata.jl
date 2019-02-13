@@ -56,12 +56,14 @@ function Base.show(io::IO, x::SnpData)
 end
 
 
+
 """
     filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString)
     filter(s; des::AbstractString, f_person::Function, f_snp::Function)
 
 Filter `s` according to `f_person` and `f_snp`. The resultiing plink files are saved at `des.[bed|bim|fam]`.
 """
+@inline trueftn(x) = true
 function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString = s.src * ".filtered")
     snps = sum(colinds)
     people = sum(rowinds)
@@ -70,13 +72,14 @@ function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::Abstrac
     person_info = s.person_info[rowinds, :]
     SnpData(people, snps, snparray, snp_info, person_info, des)
 end
-function filter(s::SnpData; des::AbstractString = s.src * ".filtered", f_person::Function = (x -> true), f_snp::Function = (x -> true))
+function filter(s::SnpData; des::AbstractString = s.src * ".filtered", f_person::Function = trueftn, f_snp::Function = trueftn)
+    f_person == trueftn && f_snp == trueftn && @warn "No nontrivial function provided. Just copying."
     colinds = collect(f_snp(r)::Bool for r in eachrow(s.snp_info)) 
     rowinds = collect(f_person(r)::Bool for r in eachrow(s.person_info))
     SnpArrays.filter(s::SnpData, rowinds::Vector{Bool}, colinds::Vector{Bool}; des = des::AbstractString)
 end
 filter(s::AbstractString; des::AbstractString = s.src * ".filtered", 
-    f_person::Function = (x -> true), f_snp::Function = (x -> true)) = SnpArrays.filter(SnpData(s); des = des, f_person = f_person, f_snp = f_snp)
+    f_person::Function = trueftn, f_snp::Function = trueftn) = SnpArrays.filter(SnpData(s); des = des, f_person = f_person, f_snp = f_snp)
 
 
 """
