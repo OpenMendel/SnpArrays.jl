@@ -68,8 +68,7 @@ function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::Abstrac
     snparray = SnpArrays.filter(s.src, rowinds, colinds; des=des)
     snp_info = s.snp_info[colinds, :]
     person_info = s.person_info[rowinds, :]
-    src = des
-    SnpData(people, snps, snparray, snp_info, person_info, src)
+    SnpData(people, snps, snparray, snp_info, person_info, des)
 end
 function filter(s::SnpData; des::AbstractString = s.src * ".filtered", f_person::Function = (x -> true), f_snp::Function = (x -> true))
     colinds = collect(f_snp(r)::Bool for r in eachrow(s.snp_info)) 
