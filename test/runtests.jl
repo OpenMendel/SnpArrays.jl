@@ -321,7 +321,7 @@ end
 end
 
 @testset "(de)compress" begin
-for format in ["gz", "zlib", "zz"]
+for format in SnpArrays.ALLOWED_FORMAT
     # compress mouse Plink files
     compress_plink(SnpArrays.datadir("mouse"), format)
     @test isfile(SnpArrays.datadir("mouse.bed." * format))

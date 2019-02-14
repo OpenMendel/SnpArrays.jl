@@ -5,7 +5,10 @@ authors = ["Hua Zhou <hwachou@gmail.com>", "Douglas Bates <dmbates@gmail.com>", 
 version = "0.2.0"
 
 [deps]
+CodecBzip2 = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+CodecXz = "ba30903b-d9e8-5048-a5ec-d1f5b0d4b47b" 
+CodecZstd = "6b39b394-51ab-5f42-8807-6242bab2b4c2"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -16,6 +19,7 @@ Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 
 [compat]
 StatsBase = ">=0.11.0"

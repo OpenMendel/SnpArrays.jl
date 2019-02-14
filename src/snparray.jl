@@ -17,12 +17,13 @@ end
 AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}}
 
 function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
-    data = openbed(bednm, args...; kwargs...) do io
+    checkplinkfilename(bednm, "bed")
+    data = makestream(bednm, args...; kwargs...) do io
         read(io, UInt16) == 0x1b6c || throw(ArgumentError("wrong magic number in file $bednm"))
         read(io, UInt8) == 0x01 || throw(ArgumentError(".bed file, $bednm, is not in correct orientation"))
         if endswith(bednm, ".bed")
             return Mmap.mmap(io)
-        elseif endswith(bednm, ".bed.gz") || endswith(bednm, ".bed.zlib") || endswith(bednm, ".bed.zz")
+        else
             return read(io)
         end
     end
@@ -32,25 +33,19 @@ function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
     SnpArray(reshape(data, (drows, n)), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
 
-function SnpArray(bednm::AbstractString, args...; kwargs...)
-    if endswith(bednm, ".bed")
-        m = countlines(bednm[1:end-3] * "fam")
-    else 
-        if endswith(bednm, ".bed.gz")
-            m = open(GzipDecompressorStream, bednm[1:end-6] * "fam.gz") do stream
-                countlines(stream)
-            end
-        elseif endswith(bednm, ".bed.zlib")
-            m = open(ZlibDecompressorStream, bednm[1:end-8] * "fam.zlib") do stream
-                countlines(stream)
-            end
-        elseif endswith(bednm, ".bed.zz")
-            m = open(DeflateDecompressorStream, bednm[1:end-6] * "fam.zz") do stream
-                countlines(stream)
-            end
-        else
-            throw(ArgumentError("bedfile name should end with .bed or .bed.gz or .bed.zlib or .bed.zz"))
-        end
+function SnpArray(
+    bednm::AbstractString, 
+    args...; 
+    famnm::Union{AbstractString, Nothing}=nothing, 
+    kwargs...)
+    checkplinkfilename(bednm, "bed")
+    # check user supplied fam filename
+    famnm == nothing || isfile(famnm) || throw(ArgumentError("file $famnm not found"))
+    # check availability of fam file corresponding to the bed file
+    famnm = replace(bednm, ".bed" => ".fam") 
+    isfile(famnm) || throw(ArgumentError("fam file not found"))
+    m = makestream(famnm) do stream
+        countlines(stream)
     end
     SnpArray(bednm, m, args...; kwargs...)
 end
@@ -60,7 +55,7 @@ function SnpArray(::UndefInitializer, m::Integer, n::Integer)
 end
 
 function SnpArray(file::AbstractString, s::SnpArray)
-    openbed(file, "w+") do io
+    makestream(file, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
         write(io, s.data)
@@ -69,42 +64,12 @@ function SnpArray(file::AbstractString, s::SnpArray)
 end
 
 function SnpArray(file::AbstractString, m::Integer, n::Integer)
-    openbed(file, "w+") do io
+    makestream(file, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
         write(io, fill(0x00, ((m + 3) >> 2, n)))
     end
     SnpArray(file, m, "r+")
-end
-
-"""
-openbed(bedfile, args...; kwargs...)
-
-Open BED file (`.bed` or `.bed.gz` or `.bed.zlib` or `.bed.zz`) and return an IO stream.
-"""
-function openbed(bedfile::AbstractString, args...; kwargs...)
-    endswith(bedfile, ".bed") || endswith(bedfile, ".bed.gz") || 
-        endswith(bedfile, ".bed.zlib") || endswith(bedfile, ".bed.zz") || 
-        throw(ArgumentError("bedfile name should end with .bed or .bed.gz or .bed.zlib or .bed.zz"))
-    io = open(bedfile, args...; kwargs...)
-    endswith(bedfile, ".bed") && (return io)
-    if endswith(bedfile, ".bed.gz")
-        stream = iswritable(io) ? GzipCompressorStream : GzipDecompressorStream
-    elseif endswith(bedfile, ".bed.zlib")
-        stream = iswritable(io) ? ZlibCompressorStream : ZlibDecompressorStream
-    elseif endswith(bedfile, ".bed.zz")
-        stream = iswritable(io) ? DeflateCompressorStream : DeflateDecompressorStream
-    end
-    stream(io)
-end
-
-function openbed(f::Function, args...)
-    io = openbed(args...)
-    try
-        f(io)
-    finally
-        close(io)
-    end
 end
 
 StatsBase.counts(s::AbstractSnpArray; dims=:) = _counts(s, dims)

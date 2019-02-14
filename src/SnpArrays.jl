@@ -2,7 +2,8 @@ __precompile__()
 
 module SnpArrays
 
-using CodecZlib, LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
+using CodecZlib, CodecXz, CodecBzip2, CodecZstd, TranscodingStreams
+using LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
 import DataFrames: DataFrame, rename!, eachrow
 import DelimitedFiles: readdlm, writedlm
@@ -21,6 +22,7 @@ const ADDITIVE_MODEL = Val(1)
 const DOMINANT_MODEL = Val(2)
 const RECESSIVE_MODEL = Val(3)
 
+include("codec.jl")
 include("snparray.jl")
 include("filter.jl")
 include("snpdata.jl")
