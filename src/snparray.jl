@@ -40,10 +40,13 @@ function SnpArray(
     kwargs...)
     checkplinkfilename(bednm, "bed")
     # check user supplied fam filename
-    famnm == nothing || isfile(famnm) || throw(ArgumentError("file $famnm not found"))
-    # check availability of fam file corresponding to the bed file
-    famnm = replace(bednm, ".bed" => ".fam") 
-    isfile(famnm) || throw(ArgumentError("fam file not found"))
+    if famnm == nothing
+        famnm = replace(bednm, ".bed" => ".fam") 
+        isfile(famnm) || throw(ArgumentError("fam file not found"))
+    else # user supplied fam file name
+        checkplinkfilename(famnm, "fam")
+        isfile(famnm) || throw(ArgumentError("file $famnm not found"))
+    end
     m = makestream(famnm) do stream
         countlines(stream)
     end
