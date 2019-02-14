@@ -162,7 +162,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      106.086 μs (62 allocations: 389.25 KiB)
+      113.694 μs (75 allocations: 390.23 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -181,7 +181,7 @@ mouse[1, 1] = 0x00
 
      [1] | at ./int.jl:320 [inlined]
 
-     [2] setindex!(::SnpArray, ::UInt8, ::Int64, ::Int64) at /Users/huazhou/.julia/dev/SnpArrays/src/snparray.jl:163
+     [2] setindex!(::SnpArray, ::UInt8, ::Int64, ::Int64) at /Users/huazhou/.julia/dev/SnpArrays/src/snparray.jl:131
 
      [3] top-level scope at In[9]:1
 
@@ -235,9 +235,13 @@ SnpArray(SnpArrays.datadir("mouse.bed"), 1940)
 
 ### Initialize from compressed Plink files
 
-SnpArray can be initialized from Plink files in compressed formats: `gz`, `zlib`, or `zz`.
+SnpArray can be initialized from Plink files in compressed formats: `gz`, `zlib`, `zz`, `xz`, `zst`, or `bz2`. For a complete list type
+```julia
+SnpArrays.ALLOWED_FORMAT
+```
+If you want to support a new compressed format, file an issue.
 
-Let us first compress the mouse data in gzip format. We see gz format takes less than 1/3 storage of original Plink files.
+Let us first compress the mouse data in gz format. We see gz format takes less than 1/3 storage of original Plink files.
 
 
 ```julia
@@ -245,9 +249,9 @@ compress_plink(SnpArrays.datadir("mouse"), "gz")
 run(`ls -l $mousepath.bed.gz $mousepath.bim.gz $mousepath.fam.gz`);
 ```
 
-    -rw-r--r--  1 huazhou  staff  1324936 Feb 11 16:54 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bed.gz
-    -rw-r--r--  1 huazhou  staff   105403 Feb 11 16:54 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bim.gz
-    -rw-r--r--  1 huazhou  staff    15338 Feb 11 16:54 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.fam.gz
+    -rw-r--r--  1 huazhou  staff  1324936 Feb 13 19:44 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bed.gz
+    -rw-r--r--  1 huazhou  staff   105403 Feb 13 19:44 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bim.gz
+    -rw-r--r--  1 huazhou  staff    15338 Feb 13 19:44 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.fam.gz
 
 
 To initialize SnpArray from gzipped Plink file, simply used the bed file with name ending with `.bed.gz`:
@@ -335,9 +339,9 @@ SnpArray(SnpArrays.datadir("mouse.bed.gz"), 1940)
 
 ```julia
 # clean up
-rm(SnpArrays.datadir("mouse.bed.gz"))
-rm(SnpArrays.datadir("mouse.fam.gz"))
-rm(SnpArrays.datadir("mouse.bim.gz"))
+isfile(SnpArrays.datadir("mouse.bed.gz")) && rm(SnpArrays.datadir("mouse.bed.gz"))
+isfile(SnpArrays.datadir("mouse.fam.gz")) && rm(SnpArrays.datadir("mouse.fam.gz"))
+isfile(SnpArrays.datadir("mouse.bim.gz")) && rm(SnpArrays.datadir("mouse.bim.gz"))
 ```
 
 ### Initialize and create bed file
@@ -401,7 +405,8 @@ tmpbf
 
 
 ```julia
-rm("tmp.bed")
+# clean up
+isfile("tmp.bed") && rm("tmp.bed")
 ```
 
 Initialize 5 rows and 3 columns with undefined genotypes without memory-mapping to any file
@@ -415,11 +420,11 @@ tmpbf = SnpArray(undef, 5, 3)
 
 
     5×3 SnpArray:
-     0x00  0x01  0x01
-     0x00  0x00  0x00
-     0x01  0x00  0x00
-     0x02  0x01  0x00
-     0x00  0x02  0x00
+     0x00  0x00  0x01
+     0x00  0x01  0x00
+     0x03  0x03  0x00
+     0x00  0x03  0x00
+     0x02  0x03  0x00
 
 
 
@@ -434,11 +439,11 @@ tmpbf = SnpArray("tmp.bed", tmpbf)
 
 
     5×3 SnpArray:
-     0x00  0x01  0x01
-     0x00  0x00  0x00
-     0x01  0x00  0x00
-     0x02  0x01  0x00
-     0x00  0x02  0x00
+     0x00  0x00  0x01
+     0x00  0x01  0x00
+     0x03  0x03  0x00
+     0x00  0x03  0x00
+     0x02  0x03  0x00
 
 
 
@@ -452,17 +457,18 @@ tmpbf
 
 
     5×3 SnpArray:
-     0x02  0x01  0x01
-     0x00  0x00  0x00
-     0x01  0x00  0x00
-     0x02  0x01  0x00
-     0x00  0x02  0x00
+     0x02  0x00  0x01
+     0x00  0x01  0x00
+     0x03  0x03  0x00
+     0x00  0x03  0x00
+     0x02  0x03  0x00
 
 
 
 
 ```julia
-rm("tmp.bed")
+# clean up
+isfile("tmp.bed") && rm("tmp.bed")
 ```
 
 ## `convert` and `copyto!`
@@ -532,7 +538,6 @@ convert(Matrix{Float64}, mouse)
 
     When `convert` or `copyto!` a slice or subarray of SnpArray, using `view`, `@view` or `views` is necessary for both correctness and efficiency. Without view, it's simply converting the UInt8 coding in original bed file.
     
-!!!
 
 Convert a column to Float64 vector using defaults (`model=ADDITIVE_MODEL`, `center=false`, `scale=false`, `impute=false`).
 
@@ -765,7 +770,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      3.890 μs (0 allocations: 0 bytes)
+      3.633 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -815,7 +820,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      6.241 μs (0 allocations: 0 bytes)
+      6.722 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -864,7 +869,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      5.933 μs (0 allocations: 0 bytes)
+      6.503 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -880,7 +885,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      41.749 ms (10150 allocations: 475.78 KiB)
+      41.699 ms (10150 allocations: 475.78 KiB)
 
 
 Copy whole SnpArray
@@ -891,7 +896,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      40.963 ms (0 allocations: 0 bytes)
+      40.196 ms (0 allocations: 0 bytes)
 
 
 ## Summaries
@@ -926,7 +931,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      6.436 ns (0 allocations: 0 bytes)
+      6.787 ns (0 allocations: 0 bytes)
 
 
 ### Minor allele frequencies
@@ -1061,7 +1066,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      12.386 μs (2 allocations: 79.39 KiB)
+      12.447 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1230,7 +1235,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      34.162 ms (19273 allocations: 1.81 MiB)
+      34.595 ms (19273 allocations: 1.81 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1314,7 +1319,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      450.243 ms (30 allocations: 28.95 MiB)
+      463.338 ms (30 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1362,7 +1367,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      262.004 ms (31 allocations: 14.60 MiB)
+      270.971 ms (31 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1492,7 +1497,7 @@ count(rowmask), count(colmask)
 @btime(SnpArrays.filter($mouse, 0.999, 0.999));
 ```
 
-      82.404 ms (8 allocations: 96.52 KiB)
+      81.472 ms (8 allocations: 96.52 KiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -1574,9 +1579,9 @@ SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
 ;ls -l ../data/mouse.filtered.bed ../data/mouse.filtered.fam ../data/mouse.filtered.bim
 ```
 
-    -rw-r--r--  1 huazhou  staff  1660543 Feb 11 16:56 ../data/mouse.filtered.bed
-    -rw-r--r--  1 huazhou  staff   167081 Feb 11 16:56 ../data/mouse.filtered.bim
-    -rw-r--r--  1 huazhou  staff    53798 Feb 11 16:56 ../data/mouse.filtered.fam
+    -rw-r--r--  1 huazhou  staff  1660543 Feb 13 19:46 ../data/mouse.filtered.bed
+    -rw-r--r--  1 huazhou  staff   167081 Feb 13 19:46 ../data/mouse.filtered.bim
+    -rw-r--r--  1 huazhou  staff    53798 Feb 13 19:46 ../data/mouse.filtered.fam
 
 
 
@@ -1689,7 +1694,7 @@ norm(EURbm * v2 -  A * v2)
 
 
 
-    8.391402854145664e-11
+    6.871429734380031e-11
 
 
 
@@ -1701,7 +1706,7 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    1.4821285850191225e-11
+    1.317834840487359e-11
 
 
 
@@ -1714,7 +1719,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $EURbm, $v2));
 ```
 
-      81.402 ms (0 allocations: 0 bytes)
+      81.315 ms (0 allocations: 0 bytes)
 
 
 
@@ -1722,7 +1727,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $A, $v2));
 ```
 
-      7.972 ms (0 allocations: 0 bytes)
+      9.023 ms (0 allocations: 0 bytes)
 
 
 
@@ -1730,7 +1735,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($EURbm), $v1));
 ```
 
-      76.149 ms (1 allocation: 16 bytes)
+      76.417 ms (1 allocation: 16 bytes)
 
 
 
@@ -1738,7 +1743,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($A), $v1));
 ```
 
-      6.553 ms (0 allocations: 0 bytes)
+      6.780 ms (0 allocations: 0 bytes)
 
 
 In another test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 folder faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
@@ -1787,7 +1792,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    1.4013130168871e-13
+    1.844206789270813e-13
 
 
 
@@ -1799,7 +1804,7 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    2.311523530689605e-13
+    5.6506957808775897e-14
 
 
 
@@ -1817,34 +1822,21 @@ EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
 
 
 
-    SnpData(379, 54051, UInt8[0x03 0x03 … 0x03 0x03; 0x03 0x02 … 0x03 0x03; … ; 0x02 0x03 … 0x03 0x03; 0x03 0x03 … 0x03 0x03], 54051×6 DataFrames.DataFrame. Omitted printing of 2 columns
-    │ Row   │ chromosome │ snpid       │ genetic_distance │ position │
-    │       │ [90mString[39m     │ [90mString[39m      │ [90mFloat64[39m          │ [90mInt64[39m    │
-    ├───────┼────────────┼─────────────┼──────────────────┼──────────┤
-    │ 1     │ 17         │ rs34151105  │ 0.0              │ 1665     │
-    │ 2     │ 17         │ rs143500173 │ 0.0              │ 2748     │
-    │ 3     │ 17         │ rs113560219 │ 0.0              │ 4702     │
-    │ 4     │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │
-    │ 5     │ 17         │ rs8069133   │ 0.000499         │ 32311    │
-    │ 6     │ 17         │ rs112221137 │ 0.000605         │ 36405    │
-    │ 7     │ 17         │ rs34889101  │ 0.00062          │ 36975    │
-    │ 8     │ 17         │ rs35840960  │ 0.000668         │ 38827    │
-    │ 9     │ 17         │ rs144918387 │ 0.000775         │ 42965    │
-    │ 10    │ 17         │ rs62057022  │ 0.000948         │ 49640    │
-    ⋮
-    │ 54041 │ 22         │ rs6010070   │ 0.750874         │ 51180959 │
-    │ 54042 │ 22         │ rs6010072   │ 0.750878         │ 51181519 │
-    │ 54043 │ 22         │ rs6009960   │ 0.750879         │ 51181568 │
-    │ 54044 │ 22         │ rs56807126  │ 0.750879         │ 51181624 │
-    │ 54045 │ 22         │ rs6010073   │ 0.750882         │ 51181986 │
-    │ 54046 │ 22         │ rs184517959 │ 0.750893         │ 51183421 │
-    │ 54047 │ 22         │ rs113391741 │ 0.750923         │ 51187440 │
-    │ 54048 │ 22         │ rs151247655 │ 0.750938         │ 51189403 │
-    │ 54049 │ 22         │ rs187225588 │ 0.751001         │ 51197602 │
-    │ 54050 │ 22         │ rs9616967   │ 0.75109          │ 51209343 │
-    │ 54051 │ 22         │ rs148755559 │ 0.751156         │ 51218133 │, 379×6 DataFrames.DataFrame
+    SnpData(people: 379, snps: 54051,
+    snp_info: 
+    │ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1      │ allele2      │
+    │     │ String     │ String      │ Float64          │ Int64    │ Categorical… │ Categorical… │
+    ├─────┼────────────┼─────────────┼──────────────────┼──────────┼──────────────┼──────────────┤
+    │ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T            │ C            │
+    │ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T            │ A            │
+    │ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T            │ C            │
+    │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
+    │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
+    │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
+    ...,
+    person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
-    │     │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │
+    │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
     ├─────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
     │ 1   │ 1         │ HG00096   │ 0         │ 0         │ 1         │ 1         │
     │ 2   │ 2         │ HG00097   │ 0         │ 0         │ 2         │ 1         │
@@ -1852,44 +1844,181 @@ EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    │ 7   │ 7         │ HG00103   │ 0         │ 0         │ 1         │ 1         │
-    │ 8   │ 8         │ HG00104   │ 0         │ 0         │ 2         │ 1         │
-    │ 9   │ 9         │ HG00106   │ 0         │ 0         │ 2         │ 1         │
-    │ 10  │ 10        │ HG00108   │ 0         │ 0         │ 1         │ 1         │
-    ⋮
-    │ 369 │ 369       │ NA20810   │ 0         │ 0         │ 1         │ 1         │
-    │ 370 │ 370       │ NA20811   │ 0         │ 0         │ 1         │ 1         │
-    │ 371 │ 371       │ NA20812   │ 0         │ 0         │ 1         │ 1         │
-    │ 372 │ 372       │ NA20813   │ 0         │ 0         │ 2         │ 1         │
-    │ 373 │ 373       │ NA20814   │ 0         │ 0         │ 1         │ 1         │
-    │ 374 │ 374       │ NA20815   │ 0         │ 0         │ 1         │ 1         │
-    │ 375 │ 375       │ NA20816   │ 0         │ 0         │ 1         │ 1         │
-    │ 376 │ 376       │ NA20818   │ 0         │ 0         │ 2         │ 1         │
-    │ 377 │ 377       │ NA20819   │ 0         │ 0         │ 2         │ 1         │
-    │ 378 │ 378       │ NA20826   │ 0         │ 0         │ 2         │ 1         │
-    │ 379 │ 379       │ NA20828   │ 0         │ 0         │ 2         │ 1         │)
+    ...,
+    src: /Users/huazhou/.julia/dev/SnpArrays/src/../data/EUR_subset
+    )
+
+
+
+## Filter
+
+We can filter SnpData by functions `f_person` and `f_snp`. `f_person` applies to the field `person_info` and selects persons (rows) for which `f_person` is `true`.`f_snp` applies to the field `snp_info` and selects snps (columns) for which `f_snp` is `true`. The first argument can be either a `SnpData` or an `AbstractString`.
+
+
+```julia
+SnpArrays.filter(EUR_data; des="tmp.filter.chr.17", f_snp = x -> x[:chromosome]=="17")
+```
+
+
+
+
+    SnpData(people: 379, snps: 11041,
+    snp_info: 
+    │ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1      │ allele2      │
+    │     │ String     │ String      │ Float64          │ Int64    │ Categorical… │ Categorical… │
+    ├─────┼────────────┼─────────────┼──────────────────┼──────────┼──────────────┼──────────────┤
+    │ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T            │ C            │
+    │ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T            │ A            │
+    │ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T            │ C            │
+    │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
+    │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
+    │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
+    ...,
+    person_info: 
+    │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
+    │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
+    ├─────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
+    │ 1   │ 1         │ HG00096   │ 0         │ 0         │ 1         │ 1         │
+    │ 2   │ 2         │ HG00097   │ 0         │ 0         │ 2         │ 1         │
+    │ 3   │ 3         │ HG00099   │ 0         │ 0         │ 2         │ 1         │
+    │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
+    │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
+    │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
+    ...,
+    src: tmp.filter.chr.17
+    )
+
+
+
+
+```julia
+SnpArrays.filter(SnpArrays.datadir("EUR_subset"); des="tmp.filter.chr.17", f_snp = x -> x[:chromosome]=="17")
+```
+
+
+
+
+    SnpData(people: 379, snps: 11041,
+    snp_info: 
+    │ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1      │ allele2      │
+    │     │ String     │ String      │ Float64          │ Int64    │ Categorical… │ Categorical… │
+    ├─────┼────────────┼─────────────┼──────────────────┼──────────┼──────────────┼──────────────┤
+    │ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T            │ C            │
+    │ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T            │ A            │
+    │ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T            │ C            │
+    │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
+    │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
+    │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
+    ...,
+    person_info: 
+    │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
+    │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
+    ├─────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
+    │ 1   │ 1         │ HG00096   │ 0         │ 0         │ 1         │ 1         │
+    │ 2   │ 2         │ HG00097   │ 0         │ 0         │ 2         │ 1         │
+    │ 3   │ 3         │ HG00099   │ 0         │ 0         │ 2         │ 1         │
+    │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
+    │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
+    │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
+    ...,
+    src: tmp.filter.chr.17
+    )
+
+
+
+
+```julia
+SnpArrays.filter(EUR_data; des="tmp.filter.sex.male", f_person = x -> x[:sex] == "1")
+```
+
+
+
+
+    SnpData(people: 178, snps: 54051,
+    snp_info: 
+    │ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1      │ allele2      │
+    │     │ String     │ String      │ Float64          │ Int64    │ Categorical… │ Categorical… │
+    ├─────┼────────────┼─────────────┼──────────────────┼──────────┼──────────────┼──────────────┤
+    │ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T            │ C            │
+    │ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T            │ A            │
+    │ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T            │ C            │
+    │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
+    │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
+    │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
+    ...,
+    person_info: 
+    │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
+    │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
+    ├─────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
+    │ 1   │ 1         │ HG00096   │ 0         │ 0         │ 1         │ 1         │
+    │ 2   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
+    │ 3   │ 7         │ HG00103   │ 0         │ 0         │ 1         │ 1         │
+    │ 4   │ 10        │ HG00108   │ 0         │ 0         │ 1         │ 1         │
+    │ 5   │ 11        │ HG00109   │ 0         │ 0         │ 1         │ 1         │
+    │ 6   │ 14        │ HG00112   │ 0         │ 0         │ 1         │ 1         │
+    ...,
+    src: tmp.filter.sex.male
+    )
+
+
+
+Both `f_person` and `f_snp` can be used at the same time.
+
+
+```julia
+SnpArrays.filter(EUR_data; des="tmp.filter.chr.17.sex.male", f_person = x -> x[:sex] == "1", f_snp = x -> x[:chromosome] == "17")
+```
+
+
+
+
+    SnpData(people: 178, snps: 11041,
+    snp_info: 
+    │ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1      │ allele2      │
+    │     │ String     │ String      │ Float64          │ Int64    │ Categorical… │ Categorical… │
+    ├─────┼────────────┼─────────────┼──────────────────┼──────────┼──────────────┼──────────────┤
+    │ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T            │ C            │
+    │ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T            │ A            │
+    │ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T            │ C            │
+    │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
+    │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
+    │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
+    ...,
+    person_info: 
+    │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
+    │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
+    ├─────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
+    │ 1   │ 1         │ HG00096   │ 0         │ 0         │ 1         │ 1         │
+    │ 2   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
+    │ 3   │ 7         │ HG00103   │ 0         │ 0         │ 1         │ 1         │
+    │ 4   │ 10        │ HG00108   │ 0         │ 0         │ 1         │ 1         │
+    │ 5   │ 11        │ HG00109   │ 0         │ 0         │ 1         │ 1         │
+    │ 6   │ 14        │ HG00112   │ 0         │ 0         │ 1         │ 1         │
+    ...,
+    src: tmp.filter.chr.17.sex.male
+    )
 
 
 
 ## Split
 
-We can split `SnpData` by SNP's choromosomes using `split_plink`.
+We can split `SnpData` by SNP's choromosomes or each person's sex or phenotype using `split_plink`. Again, the first argument can be an `SnpData` or an `AbstractString`.
 
 
 ```julia
-splitted = SnpArrays.split_plink(SnpArrays.datadir("EUR_subset"); prefix="tmp.chr.")
+splitted = SnpArrays.split_plink(SnpArrays.datadir("EUR_subset"), :chromosome; prefix="tmp.split.chr.")
 ```
 
 
 
 
     Dict{AbstractString,SnpData} with 6 entries:
-      "21" => SnpData(379, 5813, UInt8[0x02 0x02 … 0x03 0x03; 0x03 0x03 … 0x03 0x03…
-      "17" => SnpData(379, 11041, UInt8[0x03 0x03 … 0x03 0x03; 0x03 0x02 … 0x03 0x0…
-      "19" => SnpData(379, 9690, UInt8[0x02 0x02 … 0x03 0x02; 0x03 0x03 … 0x00 0x03…
-      "20" => SnpData(379, 9327, UInt8[0x03 0x03 … 0x02 0x03; 0x03 0x03 … 0x02 0x03…
-      "22" => SnpData(379, 5938, UInt8[0x03 0x03 … 0x03 0x03; 0x03 0x02 … 0x03 0x03…
-      "18" => SnpData(379, 12242, UInt8[0x03 0x02 … 0x02 0x03; 0x03 0x03 … 0x03 0x0…
+      "21" => SnpData(people: 379, snps: 5813,…
+      "17" => SnpData(people: 379, snps: 11041,…
+      "19" => SnpData(people: 379, snps: 9690,…
+      "20" => SnpData(people: 379, snps: 9327,…
+      "22" => SnpData(people: 379, snps: 5938,…
+      "18" => SnpData(people: 379, snps: 12242,…
 
 
 
@@ -1903,34 +2032,21 @@ piece = splitted["17"]
 
 
 
-    SnpData(379, 11041, UInt8[0x03 0x03 … 0x03 0x03; 0x03 0x02 … 0x03 0x02; … ; 0x02 0x03 … 0x03 0x02; 0x03 0x03 … 0x00 0x03], 11041×6 DataFrames.DataFrame. Omitted printing of 2 columns
-    │ Row   │ chromosome │ snpid       │ genetic_distance │ position │
-    │       │ [90mString[39m     │ [90mString[39m      │ [90mFloat64[39m          │ [90mInt64[39m    │
-    ├───────┼────────────┼─────────────┼──────────────────┼──────────┤
-    │ 1     │ 17         │ rs34151105  │ 0.0              │ 1665     │
-    │ 2     │ 17         │ rs143500173 │ 0.0              │ 2748     │
-    │ 3     │ 17         │ rs113560219 │ 0.0              │ 4702     │
-    │ 4     │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │
-    │ 5     │ 17         │ rs8069133   │ 0.000499         │ 32311    │
-    │ 6     │ 17         │ rs112221137 │ 0.000605         │ 36405    │
-    │ 7     │ 17         │ rs34889101  │ 0.00062          │ 36975    │
-    │ 8     │ 17         │ rs35840960  │ 0.000668         │ 38827    │
-    │ 9     │ 17         │ rs144918387 │ 0.000775         │ 42965    │
-    │ 10    │ 17         │ rs62057022  │ 0.000948         │ 49640    │
-    ⋮
-    │ 11031 │ 17         │ rs7501742   │ 1.28534          │ 81050982 │
-    │ 11032 │ 17         │ rs4056      │ 1.28534          │ 81063675 │
-    │ 11033 │ 17         │ rs77182059  │ 1.28534          │ 81072675 │
-    │ 11034 │ 17         │ rs71193771  │ 1.28534          │ 81082286 │
-    │ 11035 │ 17         │ rs189547061 │ 1.28534          │ 81082531 │
-    │ 11036 │ 17         │ rs187145448 │ 1.28534          │ 81087107 │
-    │ 11037 │ 17         │ rs141554018 │ 1.28534          │ 81089800 │
-    │ 11038 │ 17         │ rs144646847 │ 1.28534          │ 81103302 │
-    │ 11039 │ 17         │ rs11489019  │ 1.28534          │ 81106522 │
-    │ 11040 │ 17         │ rs139247601 │ 1.28534          │ 81130897 │
-    │ 11041 │ 17         │ rs181245287 │ 1.28534          │ 81170925 │, 379×6 DataFrames.DataFrame
+    SnpData(people: 379, snps: 11041,
+    snp_info: 
+    │ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1      │ allele2      │
+    │     │ String     │ String      │ Float64          │ Int64    │ Categorical… │ Categorical… │
+    ├─────┼────────────┼─────────────┼──────────────────┼──────────┼──────────────┼──────────────┤
+    │ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T            │ C            │
+    │ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T            │ A            │
+    │ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T            │ C            │
+    │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
+    │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
+    │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
+    ...,
+    person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
-    │     │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │
+    │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
     ├─────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
     │ 1   │ 1         │ HG00096   │ 0         │ 0         │ 1         │ 1         │
     │ 2   │ 2         │ HG00097   │ 0         │ 0         │ 2         │ 1         │
@@ -1938,22 +2054,28 @@ piece = splitted["17"]
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    │ 7   │ 7         │ HG00103   │ 0         │ 0         │ 1         │ 1         │
-    │ 8   │ 8         │ HG00104   │ 0         │ 0         │ 2         │ 1         │
-    │ 9   │ 9         │ HG00106   │ 0         │ 0         │ 2         │ 1         │
-    │ 10  │ 10        │ HG00108   │ 0         │ 0         │ 1         │ 1         │
-    ⋮
-    │ 369 │ 369       │ NA20810   │ 0         │ 0         │ 1         │ 1         │
-    │ 370 │ 370       │ NA20811   │ 0         │ 0         │ 1         │ 1         │
-    │ 371 │ 371       │ NA20812   │ 0         │ 0         │ 1         │ 1         │
-    │ 372 │ 372       │ NA20813   │ 0         │ 0         │ 2         │ 1         │
-    │ 373 │ 373       │ NA20814   │ 0         │ 0         │ 1         │ 1         │
-    │ 374 │ 374       │ NA20815   │ 0         │ 0         │ 1         │ 1         │
-    │ 375 │ 375       │ NA20816   │ 0         │ 0         │ 1         │ 1         │
-    │ 376 │ 376       │ NA20818   │ 0         │ 0         │ 2         │ 1         │
-    │ 377 │ 377       │ NA20819   │ 0         │ 0         │ 2         │ 1         │
-    │ 378 │ 378       │ NA20826   │ 0         │ 0         │ 2         │ 1         │
-    │ 379 │ 379       │ NA20828   │ 0         │ 0         │ 2         │ 1         │)
+    ...,
+    src: tmp.split.chr.17
+    )
+
+
+
+
+```julia
+@assert all(piece.snp_info[:chromosome].== "17")
+```
+
+
+```julia
+splitted_sex = SnpArrays.split_plink(EUR_data, :sex; prefix="tmp.split.sex.")
+```
+
+
+
+
+    Dict{AbstractString,SnpData} with 2 entries:
+      "1" => SnpData(people: 178, snps: 54051,…
+      "2" => SnpData(people: 201, snps: 54051,…
 
 
 
@@ -1969,34 +2091,21 @@ merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included
 
 
 
-    SnpData(379, 54051, UInt8[0x03 0x03 … 0x03 0x03; 0x03 0x02 … 0x03 0x03; … ; 0x03 0x03 … 0x03 0x02; 0x03 0x03 … 0x03 0x03], 54051×6 DataFrames.DataFrame. Omitted printing of 2 columns
-    │ Row   │ chromosome │ snpid       │ genetic_distance │ position │
-    │       │ [90mString[39m     │ [90mString[39m      │ [90mFloat64[39m          │ [90mInt64[39m    │
-    ├───────┼────────────┼─────────────┼──────────────────┼──────────┤
-    │ 1     │ 17         │ rs34151105  │ 0.0              │ 1665     │
-    │ 2     │ 17         │ rs143500173 │ 0.0              │ 2748     │
-    │ 3     │ 17         │ rs113560219 │ 0.0              │ 4702     │
-    │ 4     │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │
-    │ 5     │ 17         │ rs8069133   │ 0.000499         │ 32311    │
-    │ 6     │ 17         │ rs112221137 │ 0.000605         │ 36405    │
-    │ 7     │ 17         │ rs34889101  │ 0.00062          │ 36975    │
-    │ 8     │ 17         │ rs35840960  │ 0.000668         │ 38827    │
-    │ 9     │ 17         │ rs144918387 │ 0.000775         │ 42965    │
-    │ 10    │ 17         │ rs62057022  │ 0.000948         │ 49640    │
-    ⋮
-    │ 54041 │ 22         │ rs6010070   │ 0.750874         │ 51180959 │
-    │ 54042 │ 22         │ rs6010072   │ 0.750878         │ 51181519 │
-    │ 54043 │ 22         │ rs6009960   │ 0.750879         │ 51181568 │
-    │ 54044 │ 22         │ rs56807126  │ 0.750879         │ 51181624 │
-    │ 54045 │ 22         │ rs6010073   │ 0.750882         │ 51181986 │
-    │ 54046 │ 22         │ rs184517959 │ 0.750893         │ 51183421 │
-    │ 54047 │ 22         │ rs113391741 │ 0.750923         │ 51187440 │
-    │ 54048 │ 22         │ rs151247655 │ 0.750938         │ 51189403 │
-    │ 54049 │ 22         │ rs187225588 │ 0.751001         │ 51197602 │
-    │ 54050 │ 22         │ rs9616967   │ 0.75109          │ 51209343 │
-    │ 54051 │ 22         │ rs148755559 │ 0.751156         │ 51218133 │, 379×6 DataFrames.DataFrame
+    SnpData(people: 379, snps: 54051,
+    snp_info: 
+    │ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1      │ allele2      │
+    │     │ String     │ String      │ Float64          │ Int64    │ Categorical… │ Categorical… │
+    ├─────┼────────────┼─────────────┼──────────────────┼──────────┼──────────────┼──────────────┤
+    │ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T            │ C            │
+    │ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T            │ A            │
+    │ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T            │ C            │
+    │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
+    │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
+    │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
+    ...,
+    person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
-    │     │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │
+    │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
     ├─────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
     │ 1   │ 1         │ HG00096   │ 0         │ 0         │ 1         │ 1         │
     │ 2   │ 2         │ HG00097   │ 0         │ 0         │ 2         │ 1         │
@@ -2004,22 +2113,9 @@ merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    │ 7   │ 7         │ HG00103   │ 0         │ 0         │ 1         │ 1         │
-    │ 8   │ 8         │ HG00104   │ 0         │ 0         │ 2         │ 1         │
-    │ 9   │ 9         │ HG00106   │ 0         │ 0         │ 2         │ 1         │
-    │ 10  │ 10        │ HG00108   │ 0         │ 0         │ 1         │ 1         │
-    ⋮
-    │ 369 │ 369       │ NA20810   │ 0         │ 0         │ 1         │ 1         │
-    │ 370 │ 370       │ NA20811   │ 0         │ 0         │ 1         │ 1         │
-    │ 371 │ 371       │ NA20812   │ 0         │ 0         │ 1         │ 1         │
-    │ 372 │ 372       │ NA20813   │ 0         │ 0         │ 2         │ 1         │
-    │ 373 │ 373       │ NA20814   │ 0         │ 0         │ 1         │ 1         │
-    │ 374 │ 374       │ NA20815   │ 0         │ 0         │ 1         │ 1         │
-    │ 375 │ 375       │ NA20816   │ 0         │ 0         │ 1         │ 1         │
-    │ 376 │ 376       │ NA20818   │ 0         │ 0         │ 2         │ 1         │
-    │ 377 │ 377       │ NA20819   │ 0         │ 0         │ 2         │ 1         │
-    │ 378 │ 378       │ NA20826   │ 0         │ 0         │ 2         │ 1         │
-    │ 379 │ 379       │ NA20828   │ 0         │ 0         │ 2         │ 1         │)
+    ...,
+    src: tmp.merged
+    )
 
 
 
@@ -2027,40 +2123,27 @@ You can also merge the plink formatted files based on their common prefix.
 
 
 ```julia
-merged_from_splitted_files = merge_plink("tmp.chr"; des = "tmp.merged.2")
+merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
 ```
 
 
 
 
-    SnpData(379, 54051, UInt8[0x03 0x03 … 0x03 0x03; 0x03 0x02 … 0x03 0x03; … ; 0x03 0x03 … 0x03 0x02; 0x03 0x03 … 0x03 0x03], 54051×6 DataFrames.DataFrame. Omitted printing of 2 columns
-    │ Row   │ chromosome │ snpid       │ genetic_distance │ position │
-    │       │ [90mString[39m     │ [90mString[39m      │ [90mFloat64[39m          │ [90mInt64[39m    │
-    ├───────┼────────────┼─────────────┼──────────────────┼──────────┤
-    │ 1     │ 17         │ rs34151105  │ 0.0              │ 1665     │
-    │ 2     │ 17         │ rs143500173 │ 0.0              │ 2748     │
-    │ 3     │ 17         │ rs113560219 │ 0.0              │ 4702     │
-    │ 4     │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │
-    │ 5     │ 17         │ rs8069133   │ 0.000499         │ 32311    │
-    │ 6     │ 17         │ rs112221137 │ 0.000605         │ 36405    │
-    │ 7     │ 17         │ rs34889101  │ 0.00062          │ 36975    │
-    │ 8     │ 17         │ rs35840960  │ 0.000668         │ 38827    │
-    │ 9     │ 17         │ rs144918387 │ 0.000775         │ 42965    │
-    │ 10    │ 17         │ rs62057022  │ 0.000948         │ 49640    │
-    ⋮
-    │ 54041 │ 22         │ rs6010070   │ 0.750874         │ 51180959 │
-    │ 54042 │ 22         │ rs6010072   │ 0.750878         │ 51181519 │
-    │ 54043 │ 22         │ rs6009960   │ 0.750879         │ 51181568 │
-    │ 54044 │ 22         │ rs56807126  │ 0.750879         │ 51181624 │
-    │ 54045 │ 22         │ rs6010073   │ 0.750882         │ 51181986 │
-    │ 54046 │ 22         │ rs184517959 │ 0.750893         │ 51183421 │
-    │ 54047 │ 22         │ rs113391741 │ 0.750923         │ 51187440 │
-    │ 54048 │ 22         │ rs151247655 │ 0.750938         │ 51189403 │
-    │ 54049 │ 22         │ rs187225588 │ 0.751001         │ 51197602 │
-    │ 54050 │ 22         │ rs9616967   │ 0.75109          │ 51209343 │
-    │ 54051 │ 22         │ rs148755559 │ 0.751156         │ 51218133 │, 379×6 DataFrames.DataFrame
+    SnpData(people: 379, snps: 54051,
+    snp_info: 
+    │ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1      │ allele2      │
+    │     │ String     │ String      │ Float64          │ Int64    │ Categorical… │ Categorical… │
+    ├─────┼────────────┼─────────────┼──────────────────┼──────────┼──────────────┼──────────────┤
+    │ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T            │ C            │
+    │ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T            │ A            │
+    │ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T            │ C            │
+    │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
+    │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
+    │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
+    ...,
+    person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
-    │     │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │ [90mAbstract…[39m │
+    │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
     ├─────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
     │ 1   │ 1         │ HG00096   │ 0         │ 0         │ 1         │ 1         │
     │ 2   │ 2         │ HG00097   │ 0         │ 0         │ 2         │ 1         │
@@ -2068,37 +2151,26 @@ merged_from_splitted_files = merge_plink("tmp.chr"; des = "tmp.merged.2")
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    │ 7   │ 7         │ HG00103   │ 0         │ 0         │ 1         │ 1         │
-    │ 8   │ 8         │ HG00104   │ 0         │ 0         │ 2         │ 1         │
-    │ 9   │ 9         │ HG00106   │ 0         │ 0         │ 2         │ 1         │
-    │ 10  │ 10        │ HG00108   │ 0         │ 0         │ 1         │ 1         │
-    ⋮
-    │ 369 │ 369       │ NA20810   │ 0         │ 0         │ 1         │ 1         │
-    │ 370 │ 370       │ NA20811   │ 0         │ 0         │ 1         │ 1         │
-    │ 371 │ 371       │ NA20812   │ 0         │ 0         │ 1         │ 1         │
-    │ 372 │ 372       │ NA20813   │ 0         │ 0         │ 2         │ 1         │
-    │ 373 │ 373       │ NA20814   │ 0         │ 0         │ 1         │ 1         │
-    │ 374 │ 374       │ NA20815   │ 0         │ 0         │ 1         │ 1         │
-    │ 375 │ 375       │ NA20816   │ 0         │ 0         │ 1         │ 1         │
-    │ 376 │ 376       │ NA20818   │ 0         │ 0         │ 2         │ 1         │
-    │ 377 │ 377       │ NA20819   │ 0         │ 0         │ 2         │ 1         │
-    │ 378 │ 378       │ NA20826   │ 0         │ 0         │ 2         │ 1         │
-    │ 379 │ 379       │ NA20828   │ 0         │ 0         │ 2         │ 1         │)
+    ...,
+    src: tmp.merged.2
+    )
 
 
 
 
 ```julia
-# cleanup
-isfile("tmp.merged.bim") && rm("tmp.merged.bim") 
-isfile("tmp.merged.fam") && rm("tmp.merged.fam")
-isfile("tmp.merged.bed") && rm("tmp.merged.bed")
-isfile("tmp.merged.2.bim") && rm("tmp.merged.2.bim")
-isfile("tmp.merged.2.fam") && rm("tmp.merged.2.fam")
-isfile("tmp.merged.2.bed") && rm("tmp.merged.2.bed")
-for k in keys(splitted)
-    isfile("tmp.chr.$(k).bim") && rm("tmp.chr.$(k).bim")
-    isfile("tmp.chr.$(k).fam") && rm("tmp.chr.$(k).fam")
-    isfile("tmp.chr.$(k).bed") && rm("tmp.chr.$(k).bed")
+# clean up
+for ft in ["bim", "fam", "bed"]
+    isfile("tmp.filter.chr.17." * ft) && rm("tmp.filter.chr.17." * ft)
+    isfile("tmp.filter.sex.male." * ft) && rm("tmp.filter.sex.male." * ft)
+    isfile("tmp.filter.chr.17.sex.male." * ft) && rm("tmp.filter.chr.17.sex.male." * ft)
+    for k in keys(splitted)
+        isfile("tmp.split.chr.$(k)." * ft) && rm("tmp.split.chr.$(k)." * ft)
+    end
+    for k in keys(splitted_sex)
+        isfile("tmp.split.sex.$(k)." * ft) && rm("tmp.split.sex.$(k)." * ft)
+    end
+    isfile("tmp.merged." * ft) && rm("tmp.merged." * ft)
+    isfile("tmp.merged.2." * ft) && rm("tmp.merged.2." * ft)
 end
 ```
