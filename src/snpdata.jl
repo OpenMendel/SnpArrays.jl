@@ -20,10 +20,10 @@ function SnpData(plink_file::AbstractString)
     
     # load snp info
     plink_bim_file = string(plink_file, ".bim")
-    snp_info = categorical!(
-                   CSV.read(plink_bim_file, delim='\t', header=SNP_INFO_KEYS, 
-                        types=[String, String, Float64, Int, String, String]),
-                   [:allele1, :allele2])
+    snp_info = open(plink_bim_fike) do io
+        categorial!(CSV.read(io,  delim='\t', header=SNP_INFO_KEYS, 
+        types=[String, String, Float64, Int, String, String]), [:allele1, :allele2])
+    end
     
     # load person info
     plink_fam_file = string(plink_file, ".fam")
@@ -47,9 +47,9 @@ function Base.show(io::IO, x::SnpData)
     print(io, "SnpData(people: $(x.people), snps: $(x.snps),\n" *
         join([
                 "snp_info: \n$((join(split(string(first(x.snp_info, 6)), "\n")[2:end], "\n")))",
-                x.snps > 6 ? "...," : ",",
+                x.snps > 6 ? "…," : ",",
                 "person_info: \n$((join(split(string(first(x.person_info, 6)), "\n")[2:end], "\n")))",
-                x.people > 6 ? "...," : ",",
+                x.people > 6 ? "…," : ",",
                 "src: $(x.src)"], 
                 "\n") *
         "\n)")
@@ -63,7 +63,7 @@ end
 
 Filter `s` according to `f_person` and `f_snp`. The resultiing plink files are saved at `des.[bed|bim|fam]`.
 """
-@inline trueftn(x) = true
+@inline _trueftn(x) = true
 function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString = s.src * ".filtered")
     snps = sum(colinds)
     people = sum(rowinds)
@@ -72,14 +72,14 @@ function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::Abstrac
     person_info = s.person_info[rowinds, :]
     SnpData(people, snps, snparray, snp_info, person_info, des)
 end
-function filter(s::SnpData; des::AbstractString = s.src * ".filtered", f_person::Function = trueftn, f_snp::Function = trueftn)
-    f_person == trueftn && f_snp == trueftn && @warn "No nontrivial function provided. Just copying."
+function filter(s::SnpData; des::AbstractString = s.src * ".filtered", f_person::Function = _trueftn, f_snp::Function = _trueftn)
+    f_person == _trueftn && f_snp == _trueftn && @warn "No nontrivial function provided. Just copying."
     colinds = collect(f_snp(r)::Bool for r in eachrow(s.snp_info)) 
     rowinds = collect(f_person(r)::Bool for r in eachrow(s.person_info))
     SnpArrays.filter(s::SnpData, rowinds::Vector{Bool}, colinds::Vector{Bool}; des = des::AbstractString)
 end
 filter(s::AbstractString; des::AbstractString = s.src * ".filtered", 
-    f_person::Function = trueftn, f_snp::Function = trueftn) = SnpArrays.filter(SnpData(s); des = des, f_person = f_person, f_snp = f_snp)
+    f_person::Function = _trueftn, f_snp::Function = _trueftn) = SnpArrays.filter(SnpData(s); des = des, f_person = f_person, f_snp = f_snp)
 
 
 """
