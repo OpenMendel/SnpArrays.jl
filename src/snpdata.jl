@@ -20,8 +20,8 @@ function SnpData(plink_file::AbstractString)
     
     # load snp info
     plink_bim_file = string(plink_file, ".bim")
-    snp_info = open(plink_bim_fike) do io
-        categorial!(CSV.read(io,  delim='\t', header=SNP_INFO_KEYS, 
+    snp_info = open(plink_bim_file) do io
+        categorical!(CSV.read(io,  delim='\t', header=SNP_INFO_KEYS, 
         types=[String, String, Float64, Int, String, String]), [:allele1, :allele2])
     end
     
