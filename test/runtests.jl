@@ -107,11 +107,11 @@ tmpbf = SnpArray("tmp.bed", 5, 3)
 fill!(tmpbf, 0x02)
 tmpbf2 = SnpArray("tmp.bed", 5)
 @test all(tmpbf2 .== 0x02)
-rm("tmp.bed")
+rm("tmp.bed", force=true)
 tmpbf = SnpArray("tmp.bed", SnpArray(undef, 5, 3))
 fill!(tmpbf, 0x01)
 @test all(tmpbf .== 0x01)
-rm("tmp.bed")
+rm("tmp.bed", force=true)
 end
 
 @testset "convert" begin
