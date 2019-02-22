@@ -107,11 +107,11 @@ tmpbf = SnpArray("tmp.bed", 5, 3)
 fill!(tmpbf, 0x02)
 tmpbf2 = SnpArray("tmp.bed", 5)
 @test all(tmpbf2 .== 0x02)
-rm("tmp.bed", force=true)
-tmpbf = SnpArray("tmp.bed", SnpArray(undef, 5, 3))
-fill!(tmpbf, 0x01)
-@test all(tmpbf .== 0x01)
-rm("tmp.bed", force=true)
+Sys.iswindows() || rm("tmp.bed", force=true)
+tmpbf2 = SnpArray("tmp2.bed", SnpArray(undef, 5, 3))
+fill!(tmpbf2, 0x01)
+@test all(tmpbf2 .== 0x01)
+Sys.iswindows() || rm("tmp2.bed", force=true)
 end
 
 @testset "convert" begin
@@ -176,9 +176,9 @@ tmpbf = SnpArray("tmp.bed")
 @test size(tmpbf) == (1907, 9997)
 @test all(missingrate(tmpbf, 1) .≤ 0.01)
 @test all(missingrate(tmpbf, 2) .≤ 0.01)
-rm("tmp.bed")
-rm("tmp.bim")
-rm("tmp.fam")
+Sys.iswindows() || rm("tmp.bed", force=true)
+rm("tmp.bim", force=true)
+rm("tmp.fam", force=true)
 end
 
 @testset "lin. alg." begin
@@ -257,9 +257,10 @@ chr17_male = SnpArrays.filter(EUR_data; des="tmp.filter.chr17.male", f_snp = x -
 @test size(chr17_male.snparray) == (178, 11041)
 # cleanup
 for ft in ["bim", "fam", "bed"]
-    isfile("tmp.filter.chr17." * ft) && rm("tmp.filter.chr17." * ft)
-    isfile("tmp.filter.male." * ft) && rm("tmp.filter.male." * ft)
-    isfile("tmp.filter.chr17.male." * ft) && rm("tmp.filter.chr17.male." * ft)
+    ft == "bed" && Sys.iswindows() && continue
+    rm("tmp.filter.chr17." * ft, force=true)
+    rm("tmp.filter.male." * ft, force=true)
+    rm("tmp.filter.chr17.male." * ft, force=true)
 end
 
 
@@ -292,30 +293,32 @@ output = SnpData("tmp.merged")
 @test EUR_data.snp_info == output.snp_info
 
 # cleanup
-isfile("tmp.merged.bim") && rm("tmp.merged.bim")
-isfile("tmp.merged.fam") && rm("tmp.merged.fam")
-isfile("tmp.merged.bed") && rm("tmp.merged.bed")
+rm("tmp.merged.bim", force=true)
+rm("tmp.merged.fam", force=true)
+Sys.iswindows() || rm("tmp.merged.bed", force=true)
 
 # merge from splitted files
-merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged")
+merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp2.merged")
 @test EUR_data.people == merged_from_splitted_files.people
 @test EUR_data.snps == merged_from_splitted_files.snps
 @test EUR_data.person_info == merged_from_splitted_files.person_info
 @test EUR_data.snp_info == merged_from_splitted_files.snp_info
 
 # cleanup
-isfile("tmp.merged.bim") && rm("tmp.merged.bim")
-isfile("tmp.merged.fam") && rm("tmp.merged.fam")
-isfile("tmp.merged.bed") && rm("tmp.merged.bed")
+rm("tmp2.merged.bim", force=true)
+rm("tmp2.merged.fam", force=true)
+Sys.iswindows() || rm("tmp2.merged.bed", force=true)
 
 for k in keys(splitted)
     for ft in ["bim", "fam", "bed"]
-        isfile("tmp.split.chr.$(k)." * ft) && rm("tmp.split.chr.$(k)." * ft)
+        ft == "bed" && Sys.iswindows() && continue
+        rm("tmp.split.chr.$(k)." * ft, force=true)
     end
 end  
 for k in keys(splitted_bysex)
     for ft in ["bim", "fam", "bed"]
-        isfile("tmp.split.sex.$(k)." * ft) && rm("tmp.split.sex.$(k)." * ft)
+        ft == "bed" && Sys.iswindows() && continue
+        rm("tmp.split.sex.$(k)." * ft, force=true)
     end
 end  
 end
@@ -354,12 +357,12 @@ for format in SnpArrays.ALLOWED_FORMAT
     @test stat(SnpArrays.datadir("mouse") * ".bim").size == 
     stat(SnpArrays.datadir("mouse2") * ".bim").size
     # clean up
-    isfile(SnpArrays.datadir("mouse.bed." * format)) && rm(SnpArrays.datadir("mouse.bed." * format))
-    isfile(SnpArrays.datadir("mouse.fam." * format)) && rm(SnpArrays.datadir("mouse.fam." * format))
-    isfile(SnpArrays.datadir("mouse.bim." * format)) && rm(SnpArrays.datadir("mouse.bim." * format))
-    isfile(SnpArrays.datadir("mouse2.bed")) && rm(SnpArrays.datadir("mouse2.bed"))
-    isfile(SnpArrays.datadir("mouse2.fam")) && rm(SnpArrays.datadir("mouse2.fam"))
-    isfile(SnpArrays.datadir("mouse2.bim")) && rm(SnpArrays.datadir("mouse2.bim"))
+    rm(SnpArrays.datadir("mouse.bed." * format), force=true)
+    rm(SnpArrays.datadir("mouse.fam." * format), force=true)
+    rm(SnpArrays.datadir("mouse.bim." * format), force=true)
+    rm(SnpArrays.datadir("mouse2.bed"), force=true)
+    rm(SnpArrays.datadir("mouse2.fam"), force=true)
+    rm(SnpArrays.datadir("mouse2.bim"), force=true)
 end
 @test_throws ArgumentError SnpArray(SnpArrays.datadir("mouse.bed.zip"))
 end
