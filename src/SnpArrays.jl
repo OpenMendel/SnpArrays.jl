@@ -2,7 +2,7 @@ __precompile__()
 
 module SnpArrays
 
-using CodecZlib, CodecXz, CodecBzip2, CodecZstd, TranscodingStreams
+using CodecZlib, CodecXz, CodecBzip2, CodecZstd, Distributions, TranscodingStreams
 using LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
 import DataFrames: DataFrame, rename!, eachrow
