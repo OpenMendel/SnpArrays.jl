@@ -27,41 +27,40 @@ function filter(
     # row-wise counts of missing genotypes
     rmissings = zeros(Int, m)
     # columnwise counts: n00, missing, n01, n11
-    cc = zeros(Int, 4, n)
+    cc = zeros(Int, 4)
     rmask, cmask = trues(m), trues(n)
     rmissrate, cmissrate = 1 - min_success_rate_per_row, 1 - min_success_rate_per_col
     for iter in 1:maxiters
-        # accumulate row and column counts
+        # number of remaining rows and cols
+        rows, cols = count(rmask), count(cmask)
+        # maximum allowed missing genotypes each row and col
+        rmisses, cmisses = rmissrate * rows, cmissrate * cols
         fill!(rmissings, 0)
-        fill!(cc, 0)
         @inbounds for j in 1:n
             cmask[j] || continue
+            # accumulate row and column counts
+            fill!(cc, 0)
             for i in 1:m
                 rmask[i] || continue
                 sij = s[i, j]
-                cc[sij + 1, j] += 1
+                cc[sij + 1] += 1
                 sij == 0x01 && (rmissings[i] += 1)
             end
-        end
-        rows, cols = count(rmask), count(cmask)
-        rmisses, cmisses = rmissrate * rows, cmissrate * cols
-        @inbounds for j in 1:n
-            cmask[j] || continue
             # if too many missing genotypes, filter out
-            if cc[2, j] > rmisses
+            if cc[2] > rmisses
                 cmask[j] = false; continue
             end
             # if maf too low, filter out
-            maf = (cc[3, j] + 2cc[4, j]) / 2(cc[1, j] + cc[3, j] + cc[4, j])
-            maf = maf < 0.5 ? maf : 1 - maf
+            maf = (cc[3] + 2cc[4]) / 2(cc[1] + cc[3] + cc[4])
+            maf = maf ≤ 0.5 ? maf : 1 - maf
             if maf < min_maf
                 cmask[j] = false; continue
             end
             # if HWE p-value too low, filter out
-            if min_hwe_pval > 0 && hwe(cc[1, j], cc[3, j], cc[4, j]) < min_hwe_pval
+            if min_hwe_pval > 0 && hwe(cc[1], cc[3], cc[4]) < min_hwe_pval
                 cmask[j] = false; continue
             end
-        end
+        end        
         @inbounds for i in 1:m
             rmask[i] = rmask[i] && rmissings[i] < cmisses
         end

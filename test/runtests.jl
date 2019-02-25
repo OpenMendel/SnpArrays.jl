@@ -179,6 +179,9 @@ tmpbf = SnpArray("tmp.bed")
 Sys.iswindows() || rm("tmp.bed", force=true)
 rm("tmp.bim", force=true)
 rm("tmp.fam", force=true)
+rowmask, colmask =  SnpArrays.filter(mouse, 0.99, 0.99, 0.01, 1e-8)
+@test (count(rowmask), count(colmask)) == (1907, 6292)
+@time SnpArrays.filter(mouse, 0.99, 0.99)
 end
 
 @testset "lin. alg." begin
