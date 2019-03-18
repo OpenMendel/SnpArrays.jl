@@ -1,23 +1,25 @@
 """
-    SnpArrays.filter(s[, min_success_rate_per_row, min_success_rate_per_col, min_maf, min_hwe_pval, maxiters])
+    SnpArrays.filter(s)
 
 Filter a SnpArray according to genotyping success rate, minor allele frequencies, 
-and Hardy-Weinberg test.
+and/or Hardy-Weinberg test.
 
 # Input
-- `s`: a SnpArray.
-- `min_success_rate_per_row`: threshold for SNP genotyping success rate. Default 0.98.
-- `min_success_rate_per_col`: threshold for person genotyping success rate. Default 0.98.
-- `min_maf`: minimum minor allele frequency. Default 0.01.
-- `min_hwe_pval`: minimum p-value for Hardy-Weinberg test. Default 0 (not filter HWE).
-- `maxiters`: maximum number of filtering iterations. Default is 5.
+- `s`: a SnpArray or Plink file name without the bim, fam, bed suffix.
+
+# Keyword argument
+- `min_success_rate_per_row`: Threshold for SNP genotyping success rate. Default 0.98. 
+- `min_success_rate_per_col`: Threshold for person genotyping success rate. Default 0.98. 
+- `min_maf`: Minimum minor allele frequency. Default 0.01.
+- `min_hwe_pval`: Minimum p-value for Hardy-Weinberg test. Default 0 (not filter HWE).
+- `maxiters`: Maximum number of filtering iterations. Default is 5.
 
 # Output
 - `rmask`: BitVector indicating rows after filtering.
-- `cmask`: BitVector indicating cols after filtering.
+- `cmask`: BitVector indicating columns after filtering.
 """
 function filter(
-    s::SnpArray, 
+    s::SnpArray;
     min_success_rate_per_row::Real = 0.98,
     min_success_rate_per_col::Real = 0.98,
     min_maf::Real = 0.01,
@@ -34,7 +36,7 @@ function filter(
         # number of remaining rows and cols
         rows, cols = count(rmask), count(cmask)
         # maximum allowed missing genotypes each row and col
-        rmisses, cmisses = rmissrate * rows, cmissrate * cols
+        rmisses, cmisses = rmissrate * cols, cmissrate * rows
         fill!(rmissings, 0)
         @inbounds for j in 1:n
             cmask[j] || continue
@@ -47,7 +49,7 @@ function filter(
                 sij == 0x01 && (rmissings[i] += 1)
             end
             # if too many missing genotypes, filter out
-            if cc[2] > rmisses
+            if cc[2] > cmisses
                 cmask[j] = false; continue
             end
             # if maf too low, filter out
@@ -60,15 +62,29 @@ function filter(
             if min_hwe_pval > 0 && hwe(cc[1], cc[3], cc[4]) < min_hwe_pval
                 cmask[j] = false; continue
             end
-        end        
-        @inbounds for i in 1:m
-            rmask[i] = rmask[i] && rmissings[i] < cmisses
         end
+        # filter rows/samples
+        @inbounds for i in 1:m
+            rmask[i] = rmask[i] && rmissings[i] < rmisses
+        end
+        # if no change in filter results, done
         count(cmask) == cols && count(rmask) == rows && break
         iter == maxiters && @warn("success rate not satisfied; consider increase maxiters")
     end
     rmask, cmask
 end
+
+# function filter(src::AbstractString; des::AbstractString = src * ".filtered", kwargs...)
+#     dirname = splitdir(src)[1]
+#     srcbedfile = readdir(glob"src.bed", dirname)[1]
+#     srcfamfile = readdir(glob"src.fam", dirname)[1]
+#     srcm = makestream(srcfamfile) do stream
+#         countlines(stream)
+#     end
+#     s = SnpArray(srcbedfile, srcm)
+#     rowmask, colmask = SnpArrays.filter(s; kwargs...)
+#     SnpArrays.filter(src, rowmask, colmask; des=des)
+# end
 
 """
     SnpArrays.filter(src, rowinds, colinds; des = src * ".filtered")
@@ -89,10 +105,26 @@ function filter(
     rowinds::AbstractVector{<:Integer},
     colinds::AbstractVector{<:Integer};
     des::AbstractString = src * ".filtered")
+    # source bed, fam, bim file names
+    dirname, filename = splitdir(src)
+    srcbedfile = glob(filename * ".bed", dirname)[1]
+    srcbimfile = glob(filename * ".bim", dirname)[1]
+    srcfamfile = glob(filename * ".fam", dirname)[1]
     # check source plink files
-    isfile(src * ".bed") || throw(ArgumentError("$src.bed file not found"))
-    isfile(src * ".bim") || throw(ArgumentError("$src.bim file not found"))
-    isfile(src * ".fam") || throw(ArgumentError("$src.fam file not found"))
+    isfile(srcbedfile) || throw(ArgumentError("$src.bed file not found"))
+    isfile(srcbimfile) || throw(ArgumentError("$src.bim file not found"))
+    isfile(srcfamfile) || throw(ArgumentError("$src.fam file not found"))
+    # destination bed, fam, bim file names
+    desbedfile = replace(srcbedfile, src => des)
+    desbimfile = replace(srcbimfile, src => des)
+    desfamfile = replace(srcfamfile, src => des)
+    # numbers of samples and SNPs in src
+    srcm = makestream(srcfamfile) do stream
+        countlines(stream)
+    end
+    srcn = makestream(srcbimfile) do stream
+        countlines(stream)
+    end
     # create row and column masks
     if eltype(rowinds) == Bool
         rmask = rowinds
@@ -106,25 +138,25 @@ function filter(
         cmask = falses(countlines(src * ".bim"))
         cmask[colinds] .= true
     end
-    m, n = count(rmask), count(cmask)
-    bfsrc = SnpArray(src * ".bed")
+    desm, desn = count(rmask), count(cmask)
     # write filtered bed file
-    open(des * ".bed", "w+") do io
+    bfsrc = SnpArray(srcbedfile)
+    makestream(desbedfile, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
-        write(io, Matrix{UInt8}(undef, (m + 3) >> 2, n))
+        write(io, Matrix{UInt8}(undef, (desm + 3) >> 2, desn))
     end
-    bfdes = SnpArray(des * ".bed", m, "r+")
+    bfdes  = SnpArray(desbedfile, desm, "r+")
     bfdes .= @view bfsrc[rmask, cmask]
     # write filtered fam file
-    open(des * ".fam", "w") do io
-        for (i, line) in enumerate(eachline(src * ".fam"))
+    makestream(desfamfile, "w") do io
+        for (i, line) in enumerate(eachline(srcfamfile))
             rmask[i] && println(io, line)
         end
     end
     # write filtered bim file
-    open(des * ".bim", "w") do io
-        for (j, line) in enumerate(eachline(src * ".bim"))
+    makestream(desbimfile, "w") do io
+        for (j, line) in enumerate(eachline(srcbimfile))
             cmask[j] && println(io, line)
         end
     end

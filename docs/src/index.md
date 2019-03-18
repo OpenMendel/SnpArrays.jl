@@ -22,7 +22,7 @@ This package requires Julia v0.7 or later, which can be obtained from
 The package has not yet been registered and must be installed using the repository location.
 Start julia and use the `]` key to switch to the package manager REPL
 ```julia
-(v1.0) pkg> add https://github.com/OpenMendel/SnpArrays.jl.git
+(v1.1) pkg> add https://github.com/OpenMendel/SnpArrays.jl
 ```
 Use the backspace key to return to the Julia REPL.
 
@@ -31,20 +31,21 @@ Use the backspace key to return to the Julia REPL.
 versioninfo()
 ```
 
-    Julia Version 1.0.3
-    Commit 099e826241 (2018-12-18 01:34 UTC)
+    Julia Version 1.1.0
+    Commit 80516ca202 (2019-01-21 21:24 UTC)
     Platform Info:
       OS: macOS (x86_64-apple-darwin14.5.0)
       CPU: Intel(R) Core(TM) i7-6920HQ CPU @ 2.90GHz
       WORD_SIZE: 64
       LIBM: libopenlibm
-      LLVM: libLLVM-6.0.0 (ORCJIT, skylake)
+      LLVM: libLLVM-6.0.1 (ORCJIT, skylake)
     Environment:
       JULIA_EDITOR = code
 
 
 
 ```julia
+# for use in this tutorial
 using SnpArrays, BenchmarkTools, Glob
 ```
 
@@ -169,7 +170,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      111.381 μs (75 allocations: 390.23 KiB)
+      115.086 μs (90 allocations: 391.09 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -432,11 +433,11 @@ tmpbf = SnpArray(undef, 5, 3)
 
 
     5×3 SnpArray:
-     0x00  0x02  0x01
-     0x00  0x03  0x00
-     0x03  0x00  0x00
-     0x01  0x01  0x00
-     0x02  0x01  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
@@ -451,11 +452,11 @@ tmpbf = SnpArray("tmp.bed", tmpbf)
 
 
     5×3 SnpArray:
-     0x00  0x02  0x01
-     0x00  0x03  0x00
-     0x03  0x00  0x00
-     0x01  0x01  0x00
-     0x02  0x01  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
@@ -469,11 +470,11 @@ tmpbf
 
 
     5×3 SnpArray:
-     0x02  0x02  0x01
-     0x00  0x03  0x00
-     0x03  0x00  0x00
-     0x01  0x01  0x00
-     0x02  0x01  0x00
+     0x02  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
@@ -782,7 +783,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      3.647 μs (0 allocations: 0 bytes)
+      3.402 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -832,7 +833,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      7.156 μs (0 allocations: 0 bytes)
+      6.879 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -881,7 +882,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      6.571 μs (0 allocations: 0 bytes)
+      6.302 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -897,7 +898,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      44.934 ms (10150 allocations: 475.78 KiB)
+      41.091 ms (10150 allocations: 475.78 KiB)
 
 
 Copy whole SnpArray
@@ -908,7 +909,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      44.573 ms (0 allocations: 0 bytes)
+      41.126 ms (0 allocations: 0 bytes)
 
 
 ## Summaries
@@ -943,7 +944,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      7.246 ns (0 allocations: 0 bytes)
+      6.792 ns (0 allocations: 0 bytes)
 
 
 ### Minor allele frequencies
@@ -1078,7 +1079,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      14.773 μs (2 allocations: 79.39 KiB)
+      13.113 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1247,7 +1248,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      36.155 ms (19273 allocations: 1.81 MiB)
+      35.144 ms (19273 allocations: 1.80 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1331,7 +1332,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      505.059 ms (30 allocations: 28.95 MiB)
+      466.965 ms (30 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1379,7 +1380,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      285.221 ms (31 allocations: 14.60 MiB)
+      276.116 ms (31 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1472,7 +1473,7 @@ Before GWAS, we often need to filter SNPs and/or samples according to genotyping
 SnpArrays.filter
 ```
 
-By default, it outputs row and column index vectors such that sample-wise and SNP-wise genotyping success rate are at least 0.98 and minor allele frequencies are at least 0.01. 
+By default, it outputs row and column index vectors such that sample-wise and SNP-wise genotyping success rate are at least 0.98 and minor allele frequencies are at least 0.01. User can opt to filter according to Hardy-Weinberg test by setting the minumum p-value `min_hwe_pval`.
 
 
 ```julia
@@ -1500,10 +1501,10 @@ count(rowmask), count(colmask)
 
 
 ```julia
-@btime(SnpArrays.filter($mouse, 0.999, 0.999));
+@btime(SnpArrays.filter($mouse, min_success_rate_per_row=0.999, min_success_rate_per_col=0.999));
 ```
 
-      91.253 ms (7 allocations: 17.23 KiB)
+      85.756 ms (7 allocations: 17.17 KiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -1705,7 +1706,7 @@ norm(EURbm * v2 -  A * v2)
 
 
 
-    6.023743845624726e-11
+    6.484489785912384e-11
 
 
 
@@ -1717,7 +1718,7 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    5.985807104562267e-12
+    8.354707200357845e-12
 
 
 
@@ -1730,7 +1731,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $EURbm, $v2));
 ```
 
-      81.657 ms (0 allocations: 0 bytes)
+      83.763 ms (0 allocations: 0 bytes)
 
 
 
@@ -1738,7 +1739,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $A, $v2));
 ```
 
-      7.090 ms (0 allocations: 0 bytes)
+      7.727 ms (0 allocations: 0 bytes)
 
 
 
@@ -1746,7 +1747,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($EURbm), $v1));
 ```
 
-      80.100 ms (1 allocation: 16 bytes)
+      78.741 ms (1 allocation: 16 bytes)
 
 
 
@@ -1754,7 +1755,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($A), $v1));
 ```
 
-      6.220 ms (0 allocations: 0 bytes)
+      6.715 ms (0 allocations: 0 bytes)
 
 
 In another test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 folder faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
@@ -1803,7 +1804,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    4.795005438813957e-14
+    3.692455572052395e-14
 
 
 
@@ -1815,7 +1816,7 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    5.954403578600533e-14
+    1.460805819955132e-13
 
 
 

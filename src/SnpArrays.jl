@@ -3,13 +3,12 @@ __precompile__()
 module SnpArrays
 
 using CodecZlib, CodecXz, CodecBzip2, CodecZstd, Distributions, TranscodingStreams
-using LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
+using Glob, LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
 import DataFrames: DataFrame, rename!, eachrow
 import DelimitedFiles: readdlm, writedlm
 import CSV: categorical!
 import CSV # for CSV.read, to avoid clash with Base.read
-import Glob: glob
 import LinearAlgebra: mul!
 import Statistics: mean, std, var
 import StatsBase: counts

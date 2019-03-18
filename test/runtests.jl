@@ -170,7 +170,8 @@ end
 end
 
 @testset "filter" begin
-rowmask, colmask =  SnpArrays.filter(mouse, 0.99, 0.99)
+rowmask, colmask =  SnpArrays.filter(mouse, min_success_rate_per_row=0.99, 
+    min_success_rate_per_col=0.99)
 SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask; des="tmp")
 tmpbf = SnpArray("tmp.bed")
 @test size(tmpbf) == (1907, 9997)
@@ -179,9 +180,9 @@ tmpbf = SnpArray("tmp.bed")
 Sys.iswindows() || rm("tmp.bed", force=true)
 rm("tmp.bim", force=true)
 rm("tmp.fam", force=true)
-rowmask, colmask =  SnpArrays.filter(mouse, 0.99, 0.99, 0.01, 1e-8)
+rowmask, colmask =  SnpArrays.filter(mouse, min_success_rate_per_row=0.99, 
+    min_success_rate_per_col=0.99, min_maf=0.01, min_hwe_pval=1e-8)
 @test (count(rowmask), count(colmask)) == (1907, 6292)
-@time SnpArrays.filter(mouse, 0.99, 0.99)
 end
 
 @testset "lin. alg." begin
