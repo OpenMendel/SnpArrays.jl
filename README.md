@@ -18,7 +18,7 @@ https://github.com/JuliaLang/julia repository.
 The package has not yet been registered and must be installed using the repository location.
 Start julia and use the `]` key to switch to the package manager REPL
 ```julia
-(v0.7) pkg> add https://github.com/OpenMendel/SnpArrays.jl.git
+(v1.1) pkg> add https://github.com/OpenMendel/SnpArrays.jl
 ```
 Use the backspace key to return to the Julia REPL.
 
