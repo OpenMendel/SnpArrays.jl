@@ -185,34 +185,35 @@ rowmask, colmask =  SnpArrays.filter(mouse, 0.99, 0.99, 0.01, 1e-8)
 end
 
 @testset "lin. alg." begin
+reltol = 5e-4
 for t in [Float32, Float64]
     v1 = randn(t, size(EUR, 1))
     v2 = randn(t, size(EUR, 2))
     for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL]
         @test norm(SnpBitMatrix{t}(EUR, model=model) * v2 -
             convert(Matrix{t}, EUR, model=model) * v2) / 
-            norm(convert(Matrix{t}, EUR, model=model) * v2)  < 1e-4
+            norm(convert(Matrix{t}, EUR, model=model) * v2) < reltol
         @test norm(SnpBitMatrix{t}(EUR, center=true, model=model) * v2 - 
             convert(Matrix{t}, EUR, center=true, model=model) * v2) /
-            norm(convert(Matrix{t}, EUR, center=true, model=model) * v2) < 1e-4
+            norm(convert(Matrix{t}, EUR, center=true, model=model) * v2) < reltol
         @test norm(SnpBitMatrix{t}(EUR, scale=true, model=model) * v2 - 
             convert(Matrix{t}, EUR, scale=true, model=model) * v2) /
-            norm(convert(Matrix{t}, EUR, scale=true, model=model) * v2) < 1e-4
+            norm(convert(Matrix{t}, EUR, scale=true, model=model) * v2) < reltol
         @test norm(SnpBitMatrix{t}(EUR, center=true, scale=true, model=model) * v2 - 
             convert(Matrix{t}, EUR, center=true, scale=true, model=model) * v2) /
-            norm(convert(Matrix{t}, EUR, center=true, scale=true, model=model) * v2) < 1e-4
+            norm(convert(Matrix{t}, EUR, center=true, scale=true, model=model) * v2) < reltol
         @test norm(transpose(SnpBitMatrix{t}(EUR, model=model)) * v1 - 
             transpose(convert(Matrix{t}, EUR, model=model)) * v1) /
-            norm(transpose(convert(Matrix{t}, EUR, model=model)) * v1) < 1e-4
+            norm(transpose(convert(Matrix{t}, EUR, model=model)) * v1) < reltol
         @test norm(transpose(SnpBitMatrix{t}(EUR, center=true, model=model)) * v1 - 
             transpose(convert(Matrix{t}, EUR, center=true, model=model)) * v1) /
-            norm(transpose(convert(Matrix{t}, EUR, center=true, model=model)) * v1) < 1e-4
+            norm(transpose(convert(Matrix{t}, EUR, center=true, model=model)) * v1) < reltol
         @test norm(transpose(SnpBitMatrix{t}(EUR, scale=true, model=model)) * v1 - 
             transpose(convert(Matrix{t}, EUR, scale=true, model=model)) * v1) /
-            norm(transpose(convert(Matrix{t}, EUR, scale=true, model=model)) * v1) < 1e-4
+            norm(transpose(convert(Matrix{t}, EUR, scale=true, model=model)) * v1) < reltol
         @test norm(transpose(SnpBitMatrix{t}(EUR, center=true, scale=true, model=model)) * v1 - 
             transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model)) * v1) /
-            norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model)) * v1) < 1e-4
+            norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model)) * v1) < reltol
     end
 end
 end
