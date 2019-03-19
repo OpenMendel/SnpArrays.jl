@@ -371,3 +371,13 @@ for format in SnpArrays.ALLOWED_FORMAT
 end
 @test_throws ArgumentError SnpArray(SnpArrays.datadir("mouse.bed.zip"))
 end
+
+@testset "indexin_ordered" begin
+    a1 = ["1", "4"]
+    a2 = ["1", "6"]
+    a3 = ["6", "1"]
+    b = ["1", "2", "3", "4", "5"]
+    @test all(SnpArrays.indexin_ordered(a1, b) .== [true, false, false, true, false])
+    @test all(SnpArrays.indexin_ordered(a2, b) .== [true, false, false, false, false])
+    @test all(SnpArrays.indexin_ordered(a3, b) .== [false, false, false, false, false])
+end

@@ -185,3 +185,29 @@ function hwe(n00::Integer, n01::Integer, n11::Integer)
     # TODO Fisher exact test
     return pval
 end
+
+"""
+    indexin_ordered(subset, fullset)
+
+Create a bitvector indicating position of each element of `subset` in `fullset`. 
+The order of elements in `subset` must be same as in `fullset`.
+"""
+function indexin_ordered(subset, fullset)
+    indexvector = falses(length(fullset))
+    anchor = subset[1]
+    subsetindex = 1
+    subsetsize = length(subset)
+    @inbounds for i in 1:length(fullset)
+        if anchor == fullset[i]
+            indexvector[i] = true
+            if subsetindex == subsetsize
+                break
+            else 
+                subsetindex += 1
+                anchor = subset[subsetindex]
+            end
+        end
+    end
+    subsetindex < subsetsize && @warn "element $(subset[subsetindex]) not found"
+    indexvector
+end
