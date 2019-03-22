@@ -372,12 +372,10 @@ end
 @test_throws ArgumentError SnpArray(SnpArrays.datadir("mouse.bed.zip"))
 end
 
-@testset "indexin_ordered" begin
-    a1 = ["1", "4"]
-    a2 = ["1", "6"]
-    a3 = ["6", "1"]
-    b = ["1", "2", "3", "4", "5"]
-    @test all(SnpArrays.indexin_ordered(a1, b) .== [true, false, false, true, false])
-    @test all(SnpArrays.indexin_ordered(a2, b) .== [true, false, false, false, false])
-    @test all(SnpArrays.indexin_ordered(a3, b) .== [false, false, false, false, false])
+@testset "indexin" begin
+    b = ['1', '2', '3', '4']
+    for a in [['4', '3', '1', '2'], ['3', '2', '6'], ['b', 'c', 'd', 'c']]
+        aind, bmask = SnpArrays.indexin_general(a, b)
+        @test all(a[aind] .== b[bmask])
+    end
 end

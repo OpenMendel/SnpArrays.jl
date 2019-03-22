@@ -186,28 +186,87 @@ function hwe(n00::Integer, n01::Integer, n11::Integer)
     return pval
 end
 
-"""
-    indexin_ordered(subset, fullset)
 
-Create a bitvector indicating position of each element of `subset` in `fullset`. 
-The order of elements in `subset` must be same as in `fullset`.
 """
-function indexin_ordered(subset, fullset)
-    indexvector = falses(length(fullset))
-    anchor = subset[1]
-    subsetindex = 1
-    subsetsize = length(subset)
-    @inbounds for i in 1:length(fullset)
-        if anchor == fullset[i]
-            indexvector[i] = true
-            if subsetindex == subsetsize
-                break
-            else 
-                subsetindex += 1
-                anchor = subset[subsetindex]
+    indexin_sorted(v, w)
+
+Same as `indexin_general(v, w)` but assumes `v` and `w` are sorted.
+"""
+function indexin_sorted(v::Union{AbstractArray, Tuple}, w)
+    viter, witer = keys(v), eachindex(w)
+    vind, wmask = eltype(viter)[], falses(length(w))
+    vy, wy = iterate(viter), iterate(witer)
+    if vy === nothing || wy === nothing
+        return vinds
+    end
+    viteri, i = vy
+    witerj, j = wy
+    @inbounds begin
+        vi, wj = v[viteri], w[witerj]
+        while true
+            if isless(vi, wj)
+                # advance vi
+                vy = iterate(viter, i)
+                if vy === nothing
+                    break
+                end
+                viteri, i = vy
+                vi        = v[viteri]
+            elseif isless(wj, vi)
+                # advance wj
+                wy = iterate(witer, j)
+                if wy === nothing
+                    break
+                end
+                witerj, j = wy
+                wj        = w[witerj]
+            else
+                push!(vind, viteri)
+                wmask[witerj] = true
+                # advance vi
+                vy = iterate(viter, i)
+                if vy === nothing
+                    break
+                end
+                viteri, i = vy
+                vi        = v[viteri]
+                # advance wj
+                wy = iterate(witer, j)
+                if wy === nothing
+                    break
+                end
+                witerj, j = wy
+                wj        = w[witerj]
             end
         end
     end
-    subsetindex < subsetsize && @warn "element $(subset[subsetindex]) not found"
-    indexvector
+    return vind, wmask
+end
+
+
+"""
+    indexin_general(v, w)
+
+Returns an index vector `vind` and `wmask` such that `v[vind]` is the subset 
+of `v` that appear in `w` and `wmask` is a bitvector such that `v[vind] .== w[wmask]`. 
+Repeated matches in `v` will be ignored. Only the first match is kept.
+
+# Examples
+```jldoctest
+julia> a = ['b', 'c', 'd'];
+
+julia> b = ['a', 'b', 'c'];
+
+julia> SnpArrays.indexin_general(a, b)
+([1, 2], Bool[false, true, true])
+```
+"""
+function indexin_general(v::Union{AbstractArray, Tuple}, w)
+    if issorted(v) && issorted(w)
+        return indexin_sorted(v, w)
+    else
+        Iv, Iw = sortperm(v), sortperm(w)
+        vind, wmask = indexin_sorted(v[Iv], w[Iw])
+        return Iv[vind], invpermute!(wmask, Iw)
+    end
 end
