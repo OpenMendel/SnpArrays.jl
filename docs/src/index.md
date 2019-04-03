@@ -22,7 +22,7 @@ This package requires Julia v0.7 or later, which can be obtained from
 The package has not yet been registered and must be installed using the repository location.
 Start julia and use the `]` key to switch to the package manager REPL
 ```julia
-(v1.0) pkg> add https://github.com/OpenMendel/SnpArrays.jl.git
+(v1.1) pkg> add https://github.com/OpenMendel/SnpArrays.jl
 ```
 Use the backspace key to return to the Julia REPL.
 
@@ -31,62 +31,70 @@ Use the backspace key to return to the Julia REPL.
 versioninfo()
 ```
 
-    Julia Version 1.0.3
-    Commit 099e826241 (2018-12-18 01:34 UTC)
+    Julia Version 1.1.0
+    Commit 80516ca202 (2019-01-21 21:24 UTC)
     Platform Info:
       OS: macOS (x86_64-apple-darwin14.5.0)
       CPU: Intel(R) Core(TM) i7-6920HQ CPU @ 2.90GHz
       WORD_SIZE: 64
       LIBM: libopenlibm
-      LLVM: libLLVM-6.0.0 (ORCJIT, skylake)
+      LLVM: libLLVM-6.0.1 (ORCJIT, skylake)
     Environment:
       JULIA_EDITOR = code
 
 
 
 ```julia
-using SnpArrays, BenchmarkTools
+# for use in this tutorial
+using SnpArrays, BenchmarkTools, Glob
 ```
 
 ## Example data
 
-There are two example data sets attached to this package. 
-
-Data set `mouse`, from a study published in 2006, is about 5 Mb in size. It contains missing genotypes. Example data location can be retrieved by
+There are two example data sets attached to this package. They are availabe in the `data` folder of the package.
 
 
 ```julia
-mousepath = SnpArrays.datadir("mouse")
+datapath = normpath(SnpArrays.datadir())
 ```
 
 
 
 
-    "/Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse"
+    "/Users/huazhou/.julia/dev/SnpArrays/data"
 
 
 
 
 ```julia
-run(`ls -l $(mousepath).bed $mousepath.bim $mousepath.fam`);
+readdir(glob"mouse.*", datapath)
 ```
 
-    -rw-r--r--  1 huazhou  staff  4922753 Feb 11 11:13 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bed
-    -rw-r--r--  1 huazhou  staff   306000 Feb 11 11:13 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bim
-    -rw-r--r--  1 huazhou  staff    92060 Feb 11 11:13 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.fam
+
+
+
+    3-element Array{String,1}:
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.bed"
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.bim"
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.fam"
+
 
 
 Data set `EUR_subset` contains no missing genotypes. It is located at
 
 
 ```julia
-eurpath = SnpArrays.datadir("EUR_subset")
-run(`ls -l $eurpath.bed $eurpath.bim $eurpath.fam`);
+readdir(glob"EUR_subset.*", datapath)
 ```
 
-    -rw-r--r--  1 huazhou  staff  5134848 Feb  6 08:12 /Users/huazhou/.julia/dev/SnpArrays/src/../data/EUR_subset.bed
-    -rw-r--r--  1 huazhou  staff  1907367 Feb  6 08:12 /Users/huazhou/.julia/dev/SnpArrays/src/../data/EUR_subset.bim
-    -rw-r--r--  1 huazhou  staff     7472 Feb  6 08:12 /Users/huazhou/.julia/dev/SnpArrays/src/../data/EUR_subset.fam
+
+
+
+    3-element Array{String,1}:
+     "/Users/huazhou/.julia/dev/SnpArrays/data/EUR_subset.bed"
+     "/Users/huazhou/.julia/dev/SnpArrays/data/EUR_subset.bim"
+     "/Users/huazhou/.julia/dev/SnpArrays/data/EUR_subset.fam"
+
 
 
 Data from recent studies, which have samples from tens of thousands of individuals at over a million SNP positions, would be in the tens or even hundreds of Gb range.
@@ -162,7 +170,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      113.694 μs (75 allocations: 390.23 KiB)
+      115.086 μs (90 allocations: 391.09 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -246,12 +254,17 @@ Let us first compress the mouse data in gz format. We see gz format takes less t
 
 ```julia
 compress_plink(SnpArrays.datadir("mouse"), "gz")
-run(`ls -l $mousepath.bed.gz $mousepath.bim.gz $mousepath.fam.gz`);
+readdir(glob"mouse.*.gz", datapath)
 ```
 
-    -rw-r--r--  1 huazhou  staff  1324936 Feb 13 19:44 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bed.gz
-    -rw-r--r--  1 huazhou  staff   105403 Feb 13 19:44 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.bim.gz
-    -rw-r--r--  1 huazhou  staff    15338 Feb 13 19:44 /Users/huazhou/.julia/dev/SnpArrays/src/../data/mouse.fam.gz
+
+
+
+    3-element Array{String,1}:
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.bed.gz"
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.bim.gz"
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.fam.gz"
+
 
 
 To initialize SnpArray from gzipped Plink file, simply used the bed file with name ending with `.bed.gz`:
@@ -339,9 +352,9 @@ SnpArray(SnpArrays.datadir("mouse.bed.gz"), 1940)
 
 ```julia
 # clean up
-isfile(SnpArrays.datadir("mouse.bed.gz")) && rm(SnpArrays.datadir("mouse.bed.gz"))
-isfile(SnpArrays.datadir("mouse.fam.gz")) && rm(SnpArrays.datadir("mouse.fam.gz"))
-isfile(SnpArrays.datadir("mouse.bim.gz")) && rm(SnpArrays.datadir("mouse.bim.gz"))
+rm(SnpArrays.datadir("mouse.bed.gz"), force=true)
+rm(SnpArrays.datadir("mouse.fam.gz"), force=true)
+rm(SnpArrays.datadir("mouse.bim.gz"), force=true)
 ```
 
 ### Initialize and create bed file
@@ -406,7 +419,7 @@ tmpbf
 
 ```julia
 # clean up
-isfile("tmp.bed") && rm("tmp.bed")
+rm("tmp.bed", force=true)
 ```
 
 Initialize 5 rows and 3 columns with undefined genotypes without memory-mapping to any file
@@ -420,11 +433,11 @@ tmpbf = SnpArray(undef, 5, 3)
 
 
     5×3 SnpArray:
-     0x00  0x00  0x01
-     0x00  0x01  0x00
-     0x03  0x03  0x00
-     0x00  0x03  0x00
-     0x02  0x03  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
@@ -439,11 +452,11 @@ tmpbf = SnpArray("tmp.bed", tmpbf)
 
 
     5×3 SnpArray:
-     0x00  0x00  0x01
-     0x00  0x01  0x00
-     0x03  0x03  0x00
-     0x00  0x03  0x00
-     0x02  0x03  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
@@ -457,18 +470,18 @@ tmpbf
 
 
     5×3 SnpArray:
-     0x02  0x00  0x01
-     0x00  0x01  0x00
-     0x03  0x03  0x00
-     0x00  0x03  0x00
-     0x02  0x03  0x00
+     0x02  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
 
 ```julia
 # clean up
-isfile("tmp.bed") && rm("tmp.bed")
+rm("tmp.bed", force=true)
 ```
 
 ## `convert` and `copyto!`
@@ -770,7 +783,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      3.633 μs (0 allocations: 0 bytes)
+      3.402 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -820,7 +833,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      6.722 μs (0 allocations: 0 bytes)
+      6.879 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -869,7 +882,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      6.503 μs (0 allocations: 0 bytes)
+      6.302 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -885,7 +898,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      41.699 ms (10150 allocations: 475.78 KiB)
+      41.091 ms (10150 allocations: 475.78 KiB)
 
 
 Copy whole SnpArray
@@ -896,7 +909,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      40.196 ms (0 allocations: 0 bytes)
+      41.126 ms (0 allocations: 0 bytes)
 
 
 ## Summaries
@@ -931,7 +944,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      6.787 ns (0 allocations: 0 bytes)
+      6.792 ns (0 allocations: 0 bytes)
 
 
 ### Minor allele frequencies
@@ -1066,7 +1079,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      12.447 μs (2 allocations: 79.39 KiB)
+      13.113 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1235,7 +1248,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      34.595 ms (19273 allocations: 1.81 MiB)
+      35.144 ms (19273 allocations: 1.80 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1319,7 +1332,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      463.338 ms (30 allocations: 28.95 MiB)
+      466.965 ms (30 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1367,7 +1380,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      270.971 ms (31 allocations: 14.60 MiB)
+      276.116 ms (31 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1452,31 +1465,25 @@ grm(mouse, cinds=1:2:size(mouse, 2))
 
 
 
-## Fitering by missing rate
+## Fitering
 
-Count number of rows and columns that have proportion of missingness < 0.01.
+Before GWAS, we often need to filter SNPs and/or samples according to genotyping success rates, minor allele frequencies, and Hardy-Weinberg Equilibrium test. This can be achieved by the `filter` function.
 
-
-```julia
-@show rowmr = count(missingrate(mouse, 2) .< 0.001)
-@show colmr = count(missingrate(mouse, 1) .< 0.001);
+```@docs
+SnpArrays.filter
 ```
 
-    rowmr = count(missingrate(mouse, 2) .< 0.001) = 1157
-    colmr = count(missingrate(mouse, 1) .< 0.001) = 5726
-
-
-Filter according to minimum success rates (1 - proportion of missing genotypes) per row and column
+By default, it outputs row and column index vectors such that sample-wise and SNP-wise genotyping success rate are at least 0.98 and minor allele frequencies are at least 0.01. User can opt to filter according to Hardy-Weinberg test by setting the minumum p-value `min_hwe_pval`.
 
 
 ```julia
-rowmask, colmask =  SnpArrays.filter(mouse, 0.999, 0.999)
+rowmask, colmask =  SnpArrays.filter(mouse)
 ```
 
 
 
 
-    (Bool[true, true, false, true, true, false, false, true, false, false  …  true, false, true, false, false, false, false, false, false, true], Bool[false, true, false, false, false, true, false, true, false, false  …  false, false, false, false, false, false, false, false, false, false])
+    (Bool[true, true, true, true, true, true, true, true, true, true  …  true, true, true, true, true, true, true, true, true, true], Bool[true, true, true, true, true, true, true, true, true, true  …  false, false, false, false, false, false, false, false, false, false])
 
 
 
@@ -1488,16 +1495,16 @@ count(rowmask), count(colmask)
 
 
 
-    (1157, 5726)
+    (1930, 10072)
 
 
 
 
 ```julia
-@btime(SnpArrays.filter($mouse, 0.999, 0.999));
+@btime(SnpArrays.filter($mouse, min_success_rate_per_row=0.999, min_success_rate_per_col=0.999));
 ```
 
-      81.472 ms (8 allocations: 96.52 KiB)
+      85.756 ms (7 allocations: 17.17 KiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -1529,9 +1536,9 @@ SnpArrays.filter(SnpArrays.datadir("mouse"), 1:5, 1:5)
 
 ```julia
 # clean up
-rm(SnpArrays.datadir("mouse.filtered.bed"))
-rm(SnpArrays.datadir("mouse.filtered.fam"))
-rm(SnpArrays.datadir("mouse.filtered.bim"))
+rm(SnpArrays.datadir("mouse.filtered.bed"), force=true)
+rm(SnpArrays.datadir("mouse.filtered.fam"), force=true)
+rm(SnpArrays.datadir("mouse.filtered.bim"), force=true)
 ```
 
 Filter a set of Plink files according to logical vectors.
@@ -1544,52 +1551,57 @@ SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
 
 
 
-    1157×5726 SnpArray:
-     0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x02  0x00  0x02  0x03  0x02
-     0x02  0x02  0x03  0x02  0x03  0x03     0x00  0x03  0x03  0x03  0x03  0x00
-     0x02  0x02  0x03  0x02  0x03  0x03     0x03  0x03  0x00  0x03  0x03  0x00
-     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x03  0x03  0x02  0x03  0x02
-     0x02  0x02  0x03  0x02  0x03  0x03     0x00  0x03  0x03  0x00  0x03  0x00
-     0x03  0x03  0x03  0x03  0x03  0x03  …  0x03  0x02  0x00  0x03  0x03  0x03
-     0x02  0x02  0x02  0x02  0x02  0x02     0x00  0x03  0x03  0x03  0x03  0x00
-     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x00  0x03
-     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x03  0x03  0x03  0x03  0x00
-     0x00  0x00  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x02
-     0x03  0x03  0x03  0x03  0x03  0x03  …  0x03  0x02  0x02  0x03  0x03  0x00
-     0x02  0x02  0x02  0x02  0x02  0x02     0x00  0x03  0x03  0x02  0x03  0x00
-     0x02  0x02  0x03  0x02  0x03  0x03     0x02  0x03  0x02  0x03  0x03  0x02
-        ⋮                             ⋮  ⋱     ⋮                             ⋮
-     0x00  0x00  0x02  0x00  0x02  0x02  …  0x02  0x03  0x02  0x03  0x02  0x02
-     0x00  0x00  0x02  0x02  0x02  0x02     0x02  0x03  0x03  0x02  0x03  0x03
-     0x00  0x00  0x00  0x00  0x00  0x00     0x02  0x03  0x03  0x03  0x00  0x00
-     0x02  0x02  0x03  0x02  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x02
-     0x00  0x00  0x02  0x02  0x02  0x02     0x00  0x03  0x03  0x02  0x02  0x03
-     0x02  0x02  0x03  0x02  0x03  0x03  …  0x02  0x03  0x03  0x03  0x03  0x02
-     0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x03  0x03  0x02  0x03  0x00
-     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x03  0x02  0x03  0x03  0x00
-     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x03  0x03  0x03
-     0x02  0x02  0x03  0x02  0x03  0x03     0x00  0x03  0x03  0x03  0x03  0x00
-     0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x03  0x03  0x03  0x03  0x03
-     0x00  0x00  0x00  0x00  0x00  0x00     0x03  0x03  0x03  0x03  0x03  0x03
+    1930×10072 SnpArray:
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x02  0x03  0x02  0x02  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x00  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x00  0x00  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x00  0x00  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x03  0x02  0x02  0x02  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x00  0x00  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x00  0x03  0x00  0x00
+     0x02  0x02  0x03  0x02  0x02  0x02     0x00  0x03  0x03  0x00  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x00  0x03  0x00  0x00  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x03  0x02  0x02  0x02  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03  …  0x03  0x03  0x00  0x03  0x00  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x00  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x00  0x00  0x03  0x03  0x03
+        ⋮                             ⋮  ⋱                             ⋮      
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x00  0x03  0x03  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x00  0x00  0x00
+     0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x00  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x00  0x03  0x00  0x00  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x00  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x00  0x03
+     0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x03  0x03  0x00  0x03  0x03
+     0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x00  0x03  0x03  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x00  0x00  0x03  0x00  0x03
+     0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x00  0x03  0x03  0x03
+     0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x00  0x00  0x03  0x03  0x03
+     0x00  0x00  0x00  0x00  0x03  0x00     0x03  0x03  0x00  0x03  0x00  0x03
 
 
 
 
 ```julia
-;ls -l ../data/mouse.filtered.bed ../data/mouse.filtered.fam ../data/mouse.filtered.bim
+readdir(glob"mouse.filtered.*", datapath)
 ```
 
-    -rw-r--r--  1 huazhou  staff  1660543 Feb 13 19:46 ../data/mouse.filtered.bed
-    -rw-r--r--  1 huazhou  staff   167081 Feb 13 19:46 ../data/mouse.filtered.bim
-    -rw-r--r--  1 huazhou  staff    53798 Feb 13 19:46 ../data/mouse.filtered.fam
+
+
+
+    3-element Array{String,1}:
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.filtered.bed"
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.filtered.bim"
+     "/Users/huazhou/.julia/dev/SnpArrays/data/mouse.filtered.fam"
+
 
 
 
 ```julia
 # clean up
-rm(SnpArrays.datadir("mouse.filtered.bed"))
-rm(SnpArrays.datadir("mouse.filtered.fam"))
-rm(SnpArrays.datadir("mouse.filtered.bim"))
+rm(SnpArrays.datadir("mouse.filtered.bed"), force=true)
+rm(SnpArrays.datadir("mouse.filtered.fam"), force=true)
+rm(SnpArrays.datadir("mouse.filtered.bim"), force=true)
 ```
 
 # SnpBitMatrix
@@ -1694,7 +1706,7 @@ norm(EURbm * v2 -  A * v2)
 
 
 
-    6.871429734380031e-11
+    6.484489785912384e-11
 
 
 
@@ -1706,7 +1718,7 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    1.317834840487359e-11
+    8.354707200357845e-12
 
 
 
@@ -1719,7 +1731,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $EURbm, $v2));
 ```
 
-      81.315 ms (0 allocations: 0 bytes)
+      83.763 ms (0 allocations: 0 bytes)
 
 
 
@@ -1727,7 +1739,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $A, $v2));
 ```
 
-      9.023 ms (0 allocations: 0 bytes)
+      7.727 ms (0 allocations: 0 bytes)
 
 
 
@@ -1735,7 +1747,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($EURbm), $v1));
 ```
 
-      76.417 ms (1 allocation: 16 bytes)
+      78.741 ms (1 allocation: 16 bytes)
 
 
 
@@ -1743,7 +1755,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($A), $v1));
 ```
 
-      6.780 ms (0 allocations: 0 bytes)
+      6.715 ms (0 allocations: 0 bytes)
 
 
 In another test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 folder faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
@@ -1792,7 +1804,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    1.844206789270813e-13
+    3.692455572052395e-14
 
 
 
@@ -1804,7 +1816,7 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    5.6506957808775897e-14
+    1.460805819955132e-13
 
 
 
@@ -1833,7 +1845,7 @@ EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
     │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
     │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
     │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
-    ...,
+    …,
     person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
     │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
@@ -1844,7 +1856,7 @@ EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    ...,
+    …,
     src: /Users/huazhou/.julia/dev/SnpArrays/src/../data/EUR_subset
     )
 
@@ -1873,7 +1885,7 @@ SnpArrays.filter(EUR_data; des="tmp.filter.chr.17", f_snp = x -> x[:chromosome]=
     │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
     │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
     │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
-    ...,
+    …,
     person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
     │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
@@ -1884,7 +1896,7 @@ SnpArrays.filter(EUR_data; des="tmp.filter.chr.17", f_snp = x -> x[:chromosome]=
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    ...,
+    …,
     src: tmp.filter.chr.17
     )
 
@@ -1909,7 +1921,7 @@ SnpArrays.filter(SnpArrays.datadir("EUR_subset"); des="tmp.filter.chr.17", f_snp
     │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
     │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
     │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
-    ...,
+    …,
     person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
     │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
@@ -1920,7 +1932,7 @@ SnpArrays.filter(SnpArrays.datadir("EUR_subset"); des="tmp.filter.chr.17", f_snp
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    ...,
+    …,
     src: tmp.filter.chr.17
     )
 
@@ -1945,7 +1957,7 @@ SnpArrays.filter(EUR_data; des="tmp.filter.sex.male", f_person = x -> x[:sex] ==
     │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
     │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
     │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
-    ...,
+    …,
     person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
     │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
@@ -1956,7 +1968,7 @@ SnpArrays.filter(EUR_data; des="tmp.filter.sex.male", f_person = x -> x[:sex] ==
     │ 4   │ 10        │ HG00108   │ 0         │ 0         │ 1         │ 1         │
     │ 5   │ 11        │ HG00109   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 14        │ HG00112   │ 0         │ 0         │ 1         │ 1         │
-    ...,
+    …,
     src: tmp.filter.sex.male
     )
 
@@ -1983,7 +1995,7 @@ SnpArrays.filter(EUR_data; des="tmp.filter.chr.17.sex.male", f_person = x -> x[:
     │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
     │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
     │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
-    ...,
+    …,
     person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
     │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
@@ -1994,7 +2006,7 @@ SnpArrays.filter(EUR_data; des="tmp.filter.chr.17.sex.male", f_person = x -> x[:
     │ 4   │ 10        │ HG00108   │ 0         │ 0         │ 1         │ 1         │
     │ 5   │ 11        │ HG00109   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 14        │ HG00112   │ 0         │ 0         │ 1         │ 1         │
-    ...,
+    …,
     src: tmp.filter.chr.17.sex.male
     )
 
@@ -2043,7 +2055,7 @@ piece = splitted["17"]
     │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
     │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
     │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
-    ...,
+    …,
     person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
     │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
@@ -2054,7 +2066,7 @@ piece = splitted["17"]
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    ...,
+    …,
     src: tmp.split.chr.17
     )
 
@@ -2102,7 +2114,7 @@ merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included
     │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
     │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
     │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
-    ...,
+    …,
     person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
     │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
@@ -2113,7 +2125,7 @@ merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    ...,
+    …,
     src: tmp.merged
     )
 
@@ -2140,7 +2152,7 @@ merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
     │ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G            │ A            │
     │ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G            │ A            │
     │ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G            │ T            │
-    ...,
+    …,
     person_info: 
     │ Row │ fid       │ iid       │ father    │ mother    │ sex       │ phenotype │
     │     │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │ Abstract… │
@@ -2151,7 +2163,7 @@ merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
     │ 4   │ 4         │ HG00100   │ 0         │ 0         │ 2         │ 1         │
     │ 5   │ 5         │ HG00101   │ 0         │ 0         │ 1         │ 1         │
     │ 6   │ 6         │ HG00102   │ 0         │ 0         │ 2         │ 1         │
-    ...,
+    …,
     src: tmp.merged.2
     )
 
@@ -2161,16 +2173,16 @@ merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
 ```julia
 # clean up
 for ft in ["bim", "fam", "bed"]
-    isfile("tmp.filter.chr.17." * ft) && rm("tmp.filter.chr.17." * ft)
-    isfile("tmp.filter.sex.male." * ft) && rm("tmp.filter.sex.male." * ft)
-    isfile("tmp.filter.chr.17.sex.male." * ft) && rm("tmp.filter.chr.17.sex.male." * ft)
+    rm("tmp.filter.chr.17." * ft, force=true)
+    rm("tmp.filter.sex.male." * ft, force=true)
+    rm("tmp.filter.chr.17.sex.male." * ft, force=true)
     for k in keys(splitted)
-        isfile("tmp.split.chr.$(k)." * ft) && rm("tmp.split.chr.$(k)." * ft)
+        rm("tmp.split.chr.$(k)." * ft, force=true)
     end
     for k in keys(splitted_sex)
-        isfile("tmp.split.sex.$(k)." * ft) && rm("tmp.split.sex.$(k)." * ft)
+        rm("tmp.split.sex.$(k)." * ft, force=true)
     end
-    isfile("tmp.merged." * ft) && rm("tmp.merged." * ft)
-    isfile("tmp.merged.2." * ft) && rm("tmp.merged.2." * ft)
+    rm("tmp.merged." * ft, force=true)
+    rm("tmp.merged.2." * ft, force=true)
 end
 ```

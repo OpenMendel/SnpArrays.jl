@@ -1,48 +1,90 @@
 """
-    SnpArrays.filter(s[, min_success_rate_per_row, min_success_rate_per_col, maxiters])
+    SnpArrays.filter(s)
 
-Filter a SnpArray by genotyping success rate.
+Filter a SnpArray according to genotyping success rate, minor allele frequencies, 
+and/or Hardy-Weinberg test.
 
 # Input
-- `s`: a SnpArray.
-- `min_success_rate_per_row`: threshold for SNP genotyping success rate.
-- `min_success_rate_per_col`: threshold for person genotyping success rate.
-- `maxiters`: maximum number of filtering iterations.
+- `s`: a SnpArray or Plink file name without the bim, fam, bed suffix.
+
+# Keyword argument
+- `min_success_rate_per_row`: Threshold for SNP genotyping success rate. Default 0.98. 
+- `min_success_rate_per_col`: Threshold for person genotyping success rate. Default 0.98. 
+- `min_maf`: Minimum minor allele frequency. Default 0.01.
+- `min_hwe_pval`: Minimum p-value for Hardy-Weinberg test. Default 0 (not filter HWE).
+- `maxiters`: Maximum number of filtering iterations. Default is 5.
 
 # Output
-- `rmask`: BitVector indicating remaining rows.
-- `cmask`: BitVector indicating remaining cols.
+- `rmask`: BitVector indicating rows after filtering.
+- `cmask`: BitVector indicating columns after filtering.
 """
 function filter(
-    s::SnpArray, 
+    s::SnpArray;
     min_success_rate_per_row::Real = 0.98,
     min_success_rate_per_col::Real = 0.98,
+    min_maf::Real = 0.01,
+    min_hwe_pval::Real = 0,
     maxiters::Integer = 5)
     m, n = size(s)
-    rc, cc = zeros(Int, m), zeros(Int, n)
+    # row-wise counts of missing genotypes
+    rmissings = zeros(Int, m)
+    # columnwise counts: n00, missing, n01, n11
+    cc = zeros(Int, 4)
     rmask, cmask = trues(m), trues(n)
-    rmiss, cmiss = 1 - min_success_rate_per_row, 1 - min_success_rate_per_col
+    rmissrate, cmissrate = 1 - min_success_rate_per_row, 1 - min_success_rate_per_col
     for iter in 1:maxiters
-        fill!(rc, 0)
-        fill!(cc, 0)
+        # number of remaining rows and cols
+        rows, cols = count(rmask), count(cmask)
+        # maximum allowed missing genotypes each row and col
+        rmisses, cmisses = rmissrate * cols, cmissrate * rows
+        fill!(rmissings, 0)
         @inbounds for j in 1:n
             cmask[j] || continue
+            # accumulate row and column counts
+            fill!(cc, 0)
             for i in 1:m
-                rmask[i] && s[i, j] == 0x01 && (rc[i] += 1; cc[j] += 1)
+                rmask[i] || continue
+                sij = s[i, j]
+                cc[sij + 1] += 1
+                sij == 0x01 && (rmissings[i] += 1)
+            end
+            # if too many missing genotypes, filter out
+            if cc[2] > cmisses
+                cmask[j] = false; continue
+            end
+            # if maf too low, filter out
+            maf = (cc[3] + 2cc[4]) / 2(cc[1] + cc[3] + cc[4])
+            maf = maf ≤ 0.5 ? maf : 1 - maf
+            if maf < min_maf
+                cmask[j] = false; continue
+            end
+            # if HWE p-value too low, filter out
+            if min_hwe_pval > 0 && hwe(cc[1], cc[3], cc[4]) < min_hwe_pval
+                cmask[j] = false; continue
             end
         end
-        rows, cols = count(rmask), count(cmask)
-        @inbounds for j in 1:n
-            cmask[j] = cmask[j] && cc[j] < cmiss * rows
-        end
+        # filter rows/samples
         @inbounds for i in 1:m
-            rmask[i] = rmask[i] && rc[i] < rmiss * cols
+            rmask[i] = rmask[i] && rmissings[i] < rmisses
         end
+        # if no change in filter results, done
         count(cmask) == cols && count(rmask) == rows && break
         iter == maxiters && @warn("success rate not satisfied; consider increase maxiters")
     end
     rmask, cmask
 end
+
+# function filter(src::AbstractString; des::AbstractString = src * ".filtered", kwargs...)
+#     dirname = splitdir(src)[1]
+#     srcbedfile = readdir(glob"src.bed", dirname)[1]
+#     srcfamfile = readdir(glob"src.fam", dirname)[1]
+#     srcm = makestream(srcfamfile) do stream
+#         countlines(stream)
+#     end
+#     s = SnpArray(srcbedfile, srcm)
+#     rowmask, colmask = SnpArrays.filter(s; kwargs...)
+#     SnpArrays.filter(src, rowmask, colmask; des=des)
+# end
 
 """
     SnpArrays.filter(src, rowinds, colinds; des = src * ".filtered")
@@ -63,10 +105,26 @@ function filter(
     rowinds::AbstractVector{<:Integer},
     colinds::AbstractVector{<:Integer};
     des::AbstractString = src * ".filtered")
+    # source bed, fam, bim file names
+    dirname, filename = splitdir(src)
+    srcbedfile = glob(filename * ".bed", dirname)[1]
+    srcbimfile = glob(filename * ".bim", dirname)[1]
+    srcfamfile = glob(filename * ".fam", dirname)[1]
     # check source plink files
-    isfile(src * ".bed") || throw(ArgumentError("$src.bed file not found"))
-    isfile(src * ".bim") || throw(ArgumentError("$src.bim file not found"))
-    isfile(src * ".fam") || throw(ArgumentError("$src.fam file not found"))
+    isfile(srcbedfile) || throw(ArgumentError("$src.bed file not found"))
+    isfile(srcbimfile) || throw(ArgumentError("$src.bim file not found"))
+    isfile(srcfamfile) || throw(ArgumentError("$src.fam file not found"))
+    # destination bed, fam, bim file names
+    desbedfile = replace(srcbedfile, src => des)
+    desbimfile = replace(srcbimfile, src => des)
+    desfamfile = replace(srcfamfile, src => des)
+    # numbers of samples and SNPs in src
+    srcm = makestream(srcfamfile) do stream
+        countlines(stream)
+    end
+    srcn = makestream(srcbimfile) do stream
+        countlines(stream)
+    end
     # create row and column masks
     if eltype(rowinds) == Bool
         rmask = rowinds
@@ -80,28 +138,135 @@ function filter(
         cmask = falses(countlines(src * ".bim"))
         cmask[colinds] .= true
     end
-    m, n = count(rmask), count(cmask)
-    bfsrc = SnpArray(src * ".bed")
+    desm, desn = count(rmask), count(cmask)
     # write filtered bed file
-    open(des * ".bed", "w+") do io
+    bfsrc = SnpArray(srcbedfile)
+    makestream(desbedfile, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
-        write(io, Matrix{UInt8}(undef, (m + 3) >> 2, n))
+        write(io, Matrix{UInt8}(undef, (desm + 3) >> 2, desn))
     end
-    bfdes = SnpArray(des * ".bed", m, "r+")
+    bfdes  = SnpArray(desbedfile, desm, "r+")
     bfdes .= @view bfsrc[rmask, cmask]
     # write filtered fam file
-    open(des * ".fam", "w") do io
-        for (i, line) in enumerate(eachline(src * ".fam"))
+    makestream(desfamfile, "w") do io
+        for (i, line) in enumerate(eachline(srcfamfile))
             rmask[i] && println(io, line)
         end
     end
     # write filtered bim file
-    open(des * ".bim", "w") do io
-        for (j, line) in enumerate(eachline(src * ".bim"))
+    makestream(desbimfile, "w") do io
+        for (j, line) in enumerate(eachline(srcbimfile))
             cmask[j] && println(io, line)
         end
     end
     # output SnpArray
     bfdes
+end
+
+"""
+    hwe(n00, n01, n11)
+
+Hardy-Weinberg equilibrium test. `n00`, `n01`, `n11` are counts of homozygotes 
+and heterozygoes respectively. Output is the p-value of type Float64.
+"""
+function hwe(n00::Integer, n01::Integer, n11::Integer)
+    n = n00 + n01 + n11
+    n == 0 && return 1.0
+    p0 = (n01 + 2n00) / 2n
+    (p0 ≤ 0.0 || p0 ≥ 1.0) && return 1.0
+    p1 = 1 - p0
+    # Pearson's Chi-squared test
+    e00 = n * p0 * p0
+    e01 = 2n * p0 * p1
+    e11 = n * p1 * p1
+    ts = (n00 - e00)^2 / e00 + (n01 - e01)^2 / e01 + (n11 - e11)^2 / e11
+    pval = ccdf(Chi(1), ts)
+    # TODO Fisher exact test
+    return pval
+end
+
+
+"""
+    indexin_sorted(v, w)
+
+Same as `indexin_general(v, w)` but assumes `v` and `w` are sorted.
+"""
+function indexin_sorted(v::Union{AbstractArray, Tuple}, w)
+    viter, witer = keys(v), eachindex(w)
+    vind, wmask = eltype(viter)[], falses(length(w))
+    vy, wy = iterate(viter), iterate(witer)
+    if vy === nothing || wy === nothing
+        return vinds
+    end
+    viteri, i = vy
+    witerj, j = wy
+    @inbounds begin
+        vi, wj = v[viteri], w[witerj]
+        while true
+            if isless(vi, wj)
+                # advance vi
+                vy = iterate(viter, i)
+                if vy === nothing
+                    break
+                end
+                viteri, i = vy
+                vi        = v[viteri]
+            elseif isless(wj, vi)
+                # advance wj
+                wy = iterate(witer, j)
+                if wy === nothing
+                    break
+                end
+                witerj, j = wy
+                wj        = w[witerj]
+            else
+                push!(vind, viteri)
+                wmask[witerj] = true
+                # advance vi
+                vy = iterate(viter, i)
+                if vy === nothing
+                    break
+                end
+                viteri, i = vy
+                vi        = v[viteri]
+                # advance wj
+                wy = iterate(witer, j)
+                if wy === nothing
+                    break
+                end
+                witerj, j = wy
+                wj        = w[witerj]
+            end
+        end
+    end
+    return vind, wmask
+end
+
+
+"""
+    indexin_general(v, w)
+
+Returns an index vector `vind` and `wmask` such that `v[vind]` is the subset 
+of `v` that appear in `w` and `wmask` is a bitvector such that `v[vind] .== w[wmask]`. 
+Repeated matches in `v` will be ignored. Only the first match is kept.
+
+# Examples
+```jldoctest
+julia> a = ['b', 'c', 'd'];
+
+julia> b = ['a', 'b', 'c'];
+
+julia> SnpArrays.indexin_general(a, b)
+([1, 2], Bool[false, true, true])
+```
+"""
+function indexin_general(v::Union{AbstractArray, Tuple}, w)
+    if issorted(v) && issorted(w)
+        return indexin_sorted(v, w)
+    else
+        Iv, Iw = sortperm(v), sortperm(w)
+        vind, wmask = indexin_sorted(v[Iv], w[Iw])
+        return Iv[vind], invpermute!(wmask, Iw)
+    end
 end
