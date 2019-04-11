@@ -267,6 +267,11 @@ function indexin_general(v::Union{AbstractArray, Tuple}, w)
     else
         Iv, Iw = sortperm(v), sortperm(w)
         vind, wmask = indexin_sorted(v[Iv], w[Iw])
-        return Iv[vind], invpermute!(wmask, Iw)
+        invpermute!(wmask, Iw)
+        if v[Iv[vind]] == w[wmask]
+            return Iv[vind], wmask
+        else
+            return sort!(Iv[vind]), wmask
+        end
     end
 end
