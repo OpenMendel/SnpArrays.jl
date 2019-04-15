@@ -197,7 +197,7 @@ function indexin_sorted(v::Union{AbstractArray, Tuple}, w)
     vind, wmask = eltype(viter)[], falses(length(w))
     vy, wy = iterate(viter), iterate(witer)
     if vy === nothing || wy === nothing
-        return vinds
+        return vind
     end
     viteri, i = vy
     witerj, j = wy
