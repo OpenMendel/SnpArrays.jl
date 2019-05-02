@@ -28,25 +28,28 @@ function filter(
     m, n = size(s)
     # row-wise counts of missing genotypes
     rmissings = zeros(Int, m)
+    # create temporary missings to add to rmissings if chromosome is counted (not filtered)
+    temprmissings = zeros(Int, m)
     # columnwise counts: n00, missing, n01, n11
     cc = zeros(Int, 4)
     rmask, cmask = trues(m), trues(n)
     rmissrate, cmissrate = 1 - min_success_rate_per_row, 1 - min_success_rate_per_col
     for iter in 1:maxiters
-        # number of remaining rows and cols
-        rows, cols = count(rmask), count(cmask)
+        # number of remaining rows
+        rows = count(rmask)
         # maximum allowed missing genotypes each row and col
-        rmisses, cmisses = rmissrate * cols, cmissrate * rows
+        cmisses = cmissrate * rows
         fill!(rmissings, 0)
         @inbounds for j in 1:n
             cmask[j] || continue
             # accumulate row and column counts
             fill!(cc, 0)
+            fill!(temprmissings, 0)
             for i in 1:m
                 rmask[i] || continue
                 sij = s[i, j]
                 cc[sij + 1] += 1
-                sij == 0x01 && (rmissings[i] += 1)
+                sij == 0x01 && (temprmissings[i] += 1)
             end
             # if too many missing genotypes, filter out
             if cc[2] > cmisses
@@ -62,7 +65,13 @@ function filter(
             if min_hwe_pval > 0 && hwe(cc[1], cc[3], cc[4]) < min_hwe_pval
                 cmask[j] = false; continue
             end
+            # if snp passes all filters, then count the row missings
+            rmissings += temprmissings
         end
+        # number of remaining cols 
+        cols = count(cmask)
+        # maximum allowed missing genotypes each row 
+        rmisses = rmissrate * cols
         # filter rows/samples
         @inbounds for i in 1:m
             rmask[i] = rmask[i] && rmissings[i] < rmisses
