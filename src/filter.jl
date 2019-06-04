@@ -284,3 +284,103 @@ function indexin_general(v::Union{AbstractArray, Tuple}, w)
         end
     end
 end
+
+"""
+    SnpArrays.filter(srcbedfile, srcbimfile, srcfamfile, rowinds, colinds; des = src * ".filtered")
+
+Filter Plink files  with .gz format or differently named bim and bed files according to row indices 
+`rowinds` and column indices `colinds` and write to a new set of Plink files `des`.
+
+# Input
+- `srcbedfile`: bed file name with suffix such as .bed or .bed.gz.
+- `srcbimfile`: bed file name with suffix such as .bim or .bim.gz.
+- `srcfamfile`: bed file name with suffix such as .fam or .fam.gz.
+- `rowinds`: row indices.
+- `colinds`: column indices.
+
+# Keyword arguments
+- `des`: output Plink file name; default is `src * ".filtered"`.
+"""
+function filter(
+    srcbedfile::AbstractString,
+    srcbimfile::AbstractString,
+    srcfamfile::AbstractString, 
+    rowinds::AbstractVector{<:Integer},
+    colinds::AbstractVector{<:Integer};
+    des::Union{Nothing, AbstractString} = nothing)
+    srcbed = split(srcbedfile, ".bed")[1]
+    srcbim = split(srcbimfile, ".bim")[1]
+    srcfam = split(srcfamfile, ".fam")[1]
+    # check source plink files
+    isfile(srcbedfile) || throw(ArgumentError("$srcbedfile file not found"))
+    isfile(srcbimfile) || throw(ArgumentError("$srcbimfile file not found"))
+    isfile(srcfamfile) || throw(ArgumentError("$srcfamfile file not found"))
+    # destination bed, fam, bim file names
+    if des == nothing
+        desbedfile = srcbed * ".filtered.bed"
+        desbimfile = srcbim * ".filtered.bim"
+        desfamfile = srcfam * ".filtered.fam"
+    else
+        desbedfile = des * ".bed"
+        desbimfile = des * ".bim"
+        desfamfile = des * ".fam"
+    end
+    # numbers of samples and SNPs in src
+    srcm = makestream(srcfamfile) do stream
+        countlines(stream)
+    end
+    srcn = makestream(srcbimfile) do stream
+        countlines(stream)
+    end
+    # create row and column masks
+    if eltype(rowinds) == Bool
+        rmask = rowinds
+    else
+        rmask = falses(countlines(srcfamfile))
+        rmask[rowinds] .= true
+    end
+    if eltype(colinds) == Bool
+        cmask = colinds
+    else
+        cmask = falses(countlines(srcbimfile))
+        cmask[colinds] .= true
+    end
+    desm, desn = count(rmask), count(cmask)
+    # write filtered bed file
+    bfsrc = SnpArray(srcbedfile, srcm)
+    makestream(desbedfile, "w+") do io
+        write(io, 0x1b6c)
+        write(io, 0x01)
+        write(io, Matrix{UInt8}(undef, (desm + 3) >> 2, desn))
+    end
+    bfdes  = SnpArray(desbedfile, desm, "r+")
+    bfdes .= @view bfsrc[rmask, cmask]
+    # write filtered fam file
+    makestream(desfamfile, "w") do io
+        if endswith(srcfamfile, ".gz")
+            gzio = GzipDecompressorStream(open(srcfamfile, "r"))
+            for (i, line) in enumerate(eachline(gzio))
+                rmask[i] && println(io, line)
+            end
+        else
+            for (i, line) in enumerate(eachline(srcfamfile))
+                rmask[i] && println(io, line)
+            end
+        end
+    end
+    # write filtered bim file
+    makestream(desbimfile, "w") do io
+        if endswith(srcbimfile, ".gz")
+            gzio = GzipDecompressorStream(open(srcbimfile, "r"))
+            for (j, line) in enumerate(eachline(gzio))
+                cmask[j] && println(io, line)
+            end
+        else
+            for (j, line) in enumerate(eachline(srcbimfile))
+                cmask[j] && println(io, line)
+            end
+        end
+    end
+    # output SnpArray
+    bfdes
+end
