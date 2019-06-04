@@ -183,6 +183,19 @@ rm("tmp.fam", force=true)
 rowmask, colmask =  SnpArrays.filter(mouse, min_success_rate_per_row=0.99, 
     min_success_rate_per_col=0.99, min_maf=0.01, min_hwe_pval=1e-8)
 @test (count(rowmask), count(colmask)) == (1911, 9510)
+compress_plink(SnpArrays.datadir("mouse"), "gz")
+SnpArrays.filter(SnpArrays.datadir("mouse"), 1:5, 1:3; des="tmp")
+tmpbf = SnpArray("tmp.bed")
+@test size(tmpbf) == (5, 3)
+@test isfile("tmp.bed")
+@test isfile("tmp.fam")
+@test isfile("tmp.bim")
+rm(SnpArrays.datadir("tmp.bed.gz"), force=true)
+rm(SnpArrays.datadir("tmp.fam.gz"), force=true)
+rm(SnpArrays.datadir("tmp.bim.gz"), force=true)
+Sys.iswindows() || rm("tmp.bed", force=true)
+rm("tmp.bim", force=true)
+rm("tmp.fam", force=true)
 end
 
 @testset "lin. alg." begin
