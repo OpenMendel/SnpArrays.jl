@@ -336,13 +336,13 @@ function filter(
     if eltype(rowinds) == Bool
         rmask = rowinds
     else
-        rmask = falses(countlines(srcfamfile))
+        rmask = falses(srcm)
         rmask[rowinds] .= true
     end
     if eltype(colinds) == Bool
         cmask = colinds
     else
-        cmask = falses(countlines(srcbimfile))
+        cmask = falses(srcn)
         cmask[colinds] .= true
     end
     desm, desn = count(rmask), count(cmask)
