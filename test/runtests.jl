@@ -174,7 +174,7 @@ rowmask, colmask =  SnpArrays.filter(mouse, min_success_rate_per_row=0.99,
     min_success_rate_per_col=0.99)
 SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask; des="tmp")
 tmpbf = SnpArray("tmp.bed")
-@test size(tmpbf) == (1907, 9997)
+@test size(tmpbf) == (1912, 9997)
 @test all(missingrate(tmpbf, 1) .≤ 0.01)
 @test all(missingrate(tmpbf, 2) .≤ 0.01)
 Sys.iswindows() || rm("tmp.bed", force=true)
@@ -182,7 +182,21 @@ rm("tmp.bim", force=true)
 rm("tmp.fam", force=true)
 rowmask, colmask =  SnpArrays.filter(mouse, min_success_rate_per_row=0.99, 
     min_success_rate_per_col=0.99, min_maf=0.01, min_hwe_pval=1e-8)
-@test (count(rowmask), count(colmask)) == (1907, 6292)
+@test (count(rowmask), count(colmask)) == (1911, 9510)
+compress_plink(SnpArrays.datadir("mouse"), "gz")
+SnpArrays.filter(SnpArrays.datadir("mouse.bed.gz"), SnpArrays.datadir("mouse.bim.gz"),
+SnpArrays.datadir("mouse.fam.gz"), 1:5, 1:3; des="tmp")
+tmpbf = SnpArray("tmp.bed")
+@test size(tmpbf) == (5, 3)
+@test isfile("tmp.bed")
+@test isfile("tmp.fam")
+@test isfile("tmp.bim")
+rm(SnpArrays.datadir("mouse.bed.gz"), force=true)
+rm(SnpArrays.datadir("mouse.fam.gz"), force=true)
+rm(SnpArrays.datadir("mouse.bim.gz"), force=true)
+Sys.iswindows() || rm("tmp.bed", force=true)
+rm("tmp.bim", force=true)
+rm("tmp.fam", force=true)
 end
 
 @testset "lin. alg." begin

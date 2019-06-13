@@ -28,25 +28,28 @@ function filter(
     m, n = size(s)
     # row-wise counts of missing genotypes
     rmissings = zeros(Int, m)
+    # create temporary missings to add to rmissings if chromosome is counted (not filtered)
+    temprmissings = zeros(Int, m)
     # columnwise counts: n00, missing, n01, n11
     cc = zeros(Int, 4)
     rmask, cmask = trues(m), trues(n)
     rmissrate, cmissrate = 1 - min_success_rate_per_row, 1 - min_success_rate_per_col
     for iter in 1:maxiters
-        # number of remaining rows and cols
-        rows, cols = count(rmask), count(cmask)
+        # number of remaining rows
+        rows = count(rmask)
         # maximum allowed missing genotypes each row and col
-        rmisses, cmisses = rmissrate * cols, cmissrate * rows
+        cmisses = cmissrate * rows
         fill!(rmissings, 0)
         @inbounds for j in 1:n
             cmask[j] || continue
             # accumulate row and column counts
             fill!(cc, 0)
+            fill!(temprmissings, 0)
             for i in 1:m
                 rmask[i] || continue
                 sij = s[i, j]
                 cc[sij + 1] += 1
-                sij == 0x01 && (rmissings[i] += 1)
+                sij == 0x01 && (temprmissings[i] += 1)
             end
             # if too many missing genotypes, filter out
             if cc[2] > cmisses
@@ -62,7 +65,13 @@ function filter(
             if min_hwe_pval > 0 && hwe(cc[1], cc[3], cc[4]) < min_hwe_pval
                 cmask[j] = false; continue
             end
+            # if snp passes all filters, then count the row missings
+            rmissings += temprmissings
         end
+        # number of remaining cols 
+        cols = count(cmask)
+        # maximum allowed missing genotypes each row 
+        rmisses = rmissrate * cols
         # filter rows/samples
         @inbounds for i in 1:m
             rmask[i] = rmask[i] && rmissings[i] < rmisses
@@ -181,7 +190,7 @@ function hwe(n00::Integer, n01::Integer, n11::Integer)
     e01 = 2n * p0 * p1
     e11 = n * p1 * p1
     ts = (n00 - e00)^2 / e00 + (n01 - e01)^2 / e01 + (n11 - e11)^2 / e11
-    pval = ccdf(Chi(1), ts)
+    pval = ccdf(Chisq(1), ts)
     # TODO Fisher exact test
     return pval
 end
@@ -197,7 +206,7 @@ function indexin_sorted(v::Union{AbstractArray, Tuple}, w)
     vind, wmask = eltype(viter)[], falses(length(w))
     vy, wy = iterate(viter), iterate(witer)
     if vy === nothing || wy === nothing
-        return vinds
+        return vind
     end
     viteri, i = vy
     witerj, j = wy
@@ -267,6 +276,111 @@ function indexin_general(v::Union{AbstractArray, Tuple}, w)
     else
         Iv, Iw = sortperm(v), sortperm(w)
         vind, wmask = indexin_sorted(v[Iv], w[Iw])
-        return Iv[vind], invpermute!(wmask, Iw)
+        invpermute!(wmask, Iw)
+        if v[Iv[vind]] == w[wmask]
+            return Iv[vind], wmask
+        else
+            return sort!(Iv[vind]), wmask
+        end
     end
+end
+
+"""
+    SnpArrays.filter(srcbedfile, srcbimfile, srcfamfile, rowinds, colinds; des = src * ".filtered")
+
+Filter Plink files  with .gz format or differently named bim and bed files according to row indices 
+`rowinds` and column indices `colinds` and write to a new set of Plink files `des`.
+
+# Input
+- `srcbedfile`: bed file name with suffix such as .bed or .bed.gz.
+- `srcbimfile`: bed file name with suffix such as .bim or .bim.gz.
+- `srcfamfile`: bed file name with suffix such as .fam or .fam.gz.
+- `rowinds`: row indices.
+- `colinds`: column indices.
+
+# Keyword arguments
+- `des`: output Plink file name; default is `src * ".filtered"`.
+"""
+function filter(
+    srcbedfile::AbstractString,
+    srcbimfile::AbstractString,
+    srcfamfile::AbstractString, 
+    rowinds::AbstractVector{<:Integer},
+    colinds::AbstractVector{<:Integer};
+    des::Union{Nothing, AbstractString} = nothing)
+    srcbed = split(srcbedfile, ".bed")[1]
+    srcbim = split(srcbimfile, ".bim")[1]
+    srcfam = split(srcfamfile, ".fam")[1]
+    # check source plink files
+    isfile(srcbedfile) || throw(ArgumentError("$srcbedfile file not found"))
+    isfile(srcbimfile) || throw(ArgumentError("$srcbimfile file not found"))
+    isfile(srcfamfile) || throw(ArgumentError("$srcfamfile file not found"))
+    # destination bed, fam, bim file names
+    if des == nothing
+        desbedfile = srcbed * ".filtered.bed"
+        desbimfile = srcbim * ".filtered.bim"
+        desfamfile = srcfam * ".filtered.fam"
+    else
+        desbedfile = des * ".bed"
+        desbimfile = des * ".bim"
+        desfamfile = des * ".fam"
+    end
+    # numbers of samples and SNPs in src
+    srcm = makestream(srcfamfile) do stream
+        countlines(stream)
+    end
+    srcn = makestream(srcbimfile) do stream
+        countlines(stream)
+    end
+    # create row and column masks
+    if eltype(rowinds) == Bool
+        rmask = rowinds
+    else
+        rmask = falses(srcm)
+        rmask[rowinds] .= true
+    end
+    if eltype(colinds) == Bool
+        cmask = colinds
+    else
+        cmask = falses(srcn)
+        cmask[colinds] .= true
+    end
+    desm, desn = count(rmask), count(cmask)
+    # write filtered bed file
+    bfsrc = SnpArray(srcbedfile, srcm)
+    makestream(desbedfile, "w+") do io
+        write(io, 0x1b6c)
+        write(io, 0x01)
+        write(io, Matrix{UInt8}(undef, (desm + 3) >> 2, desn))
+    end
+    bfdes  = SnpArray(desbedfile, desm, "r+")
+    bfdes .= @view bfsrc[rmask, cmask]
+    # write filtered fam file
+    makestream(desfamfile, "w") do io
+        if endswith(srcfamfile, ".gz")
+            gzio = GzipDecompressorStream(open(srcfamfile, "r"))
+            for (i, line) in enumerate(eachline(gzio))
+                rmask[i] && println(io, line)
+            end
+        else
+            for (i, line) in enumerate(eachline(srcfamfile))
+                rmask[i] && println(io, line)
+            end
+        end
+    end
+    # write filtered bim file
+    makestream(desbimfile, "w") do io
+        if endswith(srcbimfile, ".gz")
+            gzio = GzipDecompressorStream(open(srcbimfile, "r"))
+            for (j, line) in enumerate(eachline(gzio))
+                cmask[j] && println(io, line)
+            end
+        else
+            for (j, line) in enumerate(eachline(srcbimfile))
+                cmask[j] && println(io, line)
+            end
+        end
+    end
+    # output SnpArray
+    bfdes
 end
