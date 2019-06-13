@@ -106,25 +106,148 @@ split_plink(src::AbstractString, key::Symbol = :chromosome; prefix = s.src * str
 
 
 """
+    vcat(A...;des="tmp_vcat_" * string(vcat_counter))
+
+Concatenate SnpData along dimension 1.
+"""
+vcat_counter = 1
+function Base.vcat(A::SnpData...; des="tmp_vcat_" * string(vcat_counter))
+    global vcat_counter
+    if des == "tmp_vcat_" * string(vcat_counter)
+        vcat_counter = vcat_counter + 1
+    end
+    
+    # vcat person_info
+    person_info = vcat([x.person_info for x in A]...)
+    
+    # get snp_info
+    @assert allequal([x.snp_info for x in A]) "snp_info are different"
+    snp_info = A[1].snp_info
+    
+    # vcat snparray
+    snparray = vcat([x.snparray for x in A]...; des=des)
+
+    people, snps = size(person_info,1), size(snp_info, 1)
+
+    bimfile = des * ".bim"
+    famfile = des * ".fam"
+
+    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
+    writedlm(famfile, hcat([person_info[k] 
+                                for k in PERSON_INFO_KEYS]...))
+
+    SnpData(people, snps, snparray, snp_info, person_info, des)
+end
+
+
+"""
+    hcat(A...;des="tmp_hcat_" * string(hcat_counter))
+
+Concatenate SnpData along dimension 2.
+"""
+hcat_counter = 1
+function Base.hcat(A::SnpData...; des="tmp_hcat_" * string(hcat_counter))
+    global hcat_counter
+    if des == "tmp_hcat_" * string(hcat_counter)
+        hcat_counter = hcat_counter + 1
+    end
+
+    # get person_info
+    @assert allequal([x.person_info for x in A]) "person_info are different"
+    person_info = A[1].person_info
+
+    # vcat snp_info
+    snp_info = vcat([x.snp_info for x in A]...)
+
+    # hcat snparray
+    snparray = hcat([x.snparray for x in A]...; des=des)
+    
+    people, snps = size(person_info, 1), size(snp_info, 1)
+
+    bimfile = des * ".bim"
+    famfile = des * ".fam"
+
+    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
+    writedlm(famfile, hcat([person_info[k] 
+                                for k in PERSON_INFO_KEYS]...))
+
+    SnpData(people, snps, snparray, snp_info, person_info, des)
+end
+
+"""
+   hvcat(rows::Tuple{Vararg{Int}}, values...; des="tmp_hvcat_" * string(hvcat_counter))
+
+Horizontal and vertical concatenation in one call. 
+"""
+hvcat_counter = 1
+function Base.hvcat(rows::Tuple{Vararg{Int}}, A::SnpData...; des="tmp_hvcat" * string(hvcat_counter))
+    global hvcat_counter
+    if des == "tmp_hvcat_" * string(hvcat_counter)
+        hvcat_counter = hvcat_counter + 1
+    end
+
+    num_block_rows = length(rows)
+    
+
+    # collect person_info
+    a = 1
+
+    person_info = A[1].person_info
+
+    for i = 2:num_block_rows
+        person_info = vcat(person_info, A[a].person_info)
+        a += rows[i]
+    end    
+    # collect snp_info
+    snp_info = vcat([x.snp_info for x in A[1:rows[1]]]...)
+
+    # hvcat snparray
+    snparray = hvcat(rows, [x.snparray for x in A]...; des=des)
+
+    people, snps = size(person_info, 1), size(snp_info, 1)
+
+    bimfile = des * ".bim"
+    famfile = des * ".fam"
+
+    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
+    writedlm(famfile, hcat([person_info[k] 
+                                for k in PERSON_INFO_KEYS]...))
+
+    SnpData(people, snps, snparray, snp_info, person_info, des)
+end
+
+"""
     merge_plink(d)
     merge_plink(des, d)
 
 Merge the SnpData of the splitted plink files. 
 Returns: merged SnpData. If `des` is given, it is written on that destination.
 """
+@inline function isless_chromosome(x::AbstractString, y::AbstractString)
+    x_int = try parse(Int32, x) 
+    catch 
+        typemax(Int32)
+    end
+    y_int = try parse(Int32, y)
+    catch
+        typemax(Int32)
+    end
+    x_int == y_int ? x < y : x_int < y_int
+end
+
 function merge_plink(d::Dict{AbstractString, SnpData})
-    ks = sort(collect(keys(d)))
+    ks = sort(collect(keys(d)), lt=isless_chromosome)
    
     # get person_info
     person_info = d[ks[1]].person_info
     
     # vcat snp_info
-    snp_info = vcat([d[k].snp_info for k in ks]...)
+    snp_info = Base.vcat([d[k].snp_info for k in ks]...)
     
     # hcat snparray
-    data = hcat([d[k].snparray.data for k in ks]...)
+    data = Base.hcat([d[k].snparray.data for k in ks]...)
     rowcounts = d[ks[1]].snparray.rowcounts
-    columncounts = hcat([d[k].snparray.columncounts for k in ks]...)
+    columncounts = Base.hcat([d[k].snparray.columncounts for k in ks]...)
     snparray = SnpArray(data, rowcounts, columncounts, size(data)[1])
 
     people, snps = size(person_info,1), size(snp_info, 1)
@@ -151,6 +274,7 @@ function merge_plink(prefix::AbstractString; des::AbstractString = prefix * ".me
     end
     merge_plink(des, d)
 end
+
 
 """
     write_plink(filename, snpdata)

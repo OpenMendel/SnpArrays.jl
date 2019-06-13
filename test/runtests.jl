@@ -393,3 +393,35 @@ end
         @test all(a[aind] .== b[bmask])
     end
 end
+
+@testset "concat" begin
+s = SnpArrays.filter(SnpArrays.datadir("mouse"), 1:2, 1:3; des="mouse.tmp.filtered")
+sd = SnpData("mouse.tmp.filtered")
+sd_hcat = hcat(sd, sd, sd; des="mouse.hcat")
+sd_vcat = vcat(sd, sd, sd; des="mouse.vcat")
+sd_hvcat = hvcat((2, 2), sd, sd, sd, sd; des="mouse.hvcat")
+
+ref = [[0x02 0x02 0x02];
+[0x02 0x02 0x03]]
+
+@test all(sd_hcat.snparray .== [ref ref ref])
+@test all(sd_vcat.snparray .== [ref; ref; ref])
+@test all(sd_hvcat.snparray .== [ref ref; ref ref])
+
+@test sd_hcat.people == 2
+@test sd_hcat.snps == 9
+
+@test sd_vcat.people == 6
+@test sd_vcat.snps == 3
+
+@test sd_hvcat.people == 4
+@test sd_hvcat.snps == 6
+
+for ft in ["bim", "fam", "bed"]
+    ft == "bed" && Sys.iswindows() && continue
+    rm("mouse.tmp.filtered." * ft, force=true)
+    rm("mouse.hcat." * ft, force=true)
+    rm("mouse.vcat." * ft, force=true)
+    rm("mouse.hvcat." * ft, force=true)
+end
+end
