@@ -3,7 +3,7 @@ __precompile__()
 module SnpArrays
 
 using CodecZlib, CodecXz, CodecBzip2, CodecZstd, Distributions, TranscodingStreams
-using Glob, LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
+using Glob, LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase, Requires
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
 import DataFrames: DataFrame, rename!, eachrow
 import DelimitedFiles: readdlm, writedlm
@@ -30,5 +30,9 @@ include("grm.jl")
 include("linalg.jl")
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
+
+function __init__()
+    @require OpenCL="08131aa3-fb12-5dee-8b74-c09406e224a2" include("gpu.jl")
+end
 
 end # module
