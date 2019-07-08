@@ -11,8 +11,8 @@ m,n  = size(EUR)
 
 X_bm = SnpBitMatrix{Float64}(X; model=ADDITIVE_MODEL, center=true, scale=true);
 y = randn(m)
-z = randn(n)
-z_bm = randn(n)
+z = Vector{Float64}(undef, n)
+z_bm = Vector{Float64}(undef, n)
 y32 = convert(Array{Float32}, y)
 z32 = convert(Array{Float32}, z)
 
