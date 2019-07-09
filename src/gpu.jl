@@ -1,4 +1,4 @@
-using OpenCL
+using .OpenCL
 export SnpVariables, SnpCLVariables
 
 const Float = Union{Float64, Float32}
