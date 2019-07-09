@@ -1,6 +1,25 @@
 using OpenCL
 using SnpArrays
-using LinearAlgebra, BenchmarkTools
+using LinearAlgebra, BenchmarkTools, Printf
+
+# platform an device information
+platform = first(cl.platforms())
+@printf("Platform name:    %s\n",  platform[:name])
+@printf("Platform profile: %s\n",  platform[:profile])
+@printf("Platform vendor:  %s\n",  platform[:vendor])
+@printf("Platform version: %s\n",  platform[:version])
+
+println()
+device = last(cl.devices(:gpu))
+@printf("Device name: %s\n", device[:name])
+@printf("Device type: %s\n", device[:device_type])
+@printf("Device mem: %i MB\n",           device[:global_mem_size] / 1024^2)
+@printf("Device max mem alloc: %i MB\n", device[:max_mem_alloc_size] / 1024^2)
+@printf("Device max clock freq: %i MHZ\n",  device[:max_clock_frequency])
+@printf("Device max compute units: %i\n",   device[:max_compute_units])
+@printf("Device max work group size: %i\n", device[:max_work_group_size])
+@printf("Device max work item size: %s\n",  device[:max_work_item_size]) 
+
 
 # setting up
 const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"));
