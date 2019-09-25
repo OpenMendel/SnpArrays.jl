@@ -66,7 +66,7 @@ end
 Filter `s` according to `f_person` and `f_snp`. The resultiing plink files are saved at `des.[bed|bim|fam]`.
 """
 @inline _trueftn(x) = true
-function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString = s.src * ".filtered")
+function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString=split(s.srcbed, ".bed")[1] * ".filtered")
     snps = sum(colinds)
     people = sum(rowinds)
     snparray = SnpArrays.filter(s.srcbed, s.srcbim, s.srcfam, rowinds, colinds; des=des)
