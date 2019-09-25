@@ -28,6 +28,7 @@ include("cat.jl")
 include("snpdata.jl")
 include("grm.jl")
 include("linalg.jl")
+include("reorder.jl")
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 

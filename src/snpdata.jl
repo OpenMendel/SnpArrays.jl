@@ -38,6 +38,8 @@ function SnpData(plink_file::AbstractString, args...; famnm::AbstractString=plin
     SnpData(people, snps, snparray, snp_info, person_info, plink_file*".bed", bimnm, famnm)
 end
 
+Base.size(x::SnpData) = Base.size(x.snparray)
+
 """
     show(io::IO, x::SnpData)
 
@@ -106,42 +108,6 @@ function split_plink(s::SnpData, key::Symbol = :chromosome; prefix = split(s.src
     end
 end
 split_plink(src::AbstractString, key::Symbol = :chromosome; prefix = src * string(key)) = split_plink(SnpData(src), key; prefix = prefix)
-
-
-"""
-    vcat(A...;des="tmp_vcat_" * string(vcat_counter))
-
-Concatenate SnpData along dimension 1.
-"""
-vcat_counter = 1
-function Base.vcat(A::SnpData...; des="tmp_vcat_" * string(vcat_counter))
-    global vcat_counter
-    if des == "tmp_vcat_" * string(vcat_counter)
-        vcat_counter = vcat_counter + 1
-    end
-    
-    # vcat person_info
-    person_info = vcat([x.person_info for x in A]...)
-    
-    # get snp_info
-    @assert allequal([x.snp_info for x in A]) "snp_info are different"
-    snp_info = A[1].snp_info
-    
-    # vcat snparray
-    snparray = vcat([x.snparray for x in A]...; des=des)
-
-    people, snps = size(person_info,1), size(snp_info, 1)
-
-    bimfile = des * ".bim"
-    famfile = des * ".fam"
-
-    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
-    writedlm(famfile, hcat([person_info[k] 
-                                for k in PERSON_INFO_KEYS]...))
-
-    SnpData(people, snps, snparray, snp_info, person_info, des)
-end
-
 
 """
     vcat(A...;des="tmp_vcat_" * string(vcat_counter))

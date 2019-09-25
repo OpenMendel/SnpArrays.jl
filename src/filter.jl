@@ -26,7 +26,7 @@ function filter(
     min_maf::Real = 0.01,
     min_hwe_pval::Real = 0,
     maxiters::Integer = 5,
-    verbose::false)
+    verbose::Bool=false)
     m, n = size(s)
     # row-wise counts of missing genotypes
     rmissings = zeros(Int, m)
