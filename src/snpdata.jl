@@ -140,7 +140,7 @@ function Base.vcat(A::SnpData...; des="tmp_vcat_" * string(vcat_counter))
     writedlm(famfile, hcat([person_info[k] 
                                 for k in PERSON_INFO_KEYS]...))
 
-    SnpData(people, snps, snparray, snp_info, person_info, des)
+    SnpData(people, snps, snparray, snp_info, person_info, des * ".bed", bimfile, famfile)
 end
 
 
@@ -175,7 +175,7 @@ function Base.hcat(A::SnpData...; des="tmp_hcat_" * string(hcat_counter))
     writedlm(famfile, hcat([person_info[k] 
                                 for k in PERSON_INFO_KEYS]...))
 
-    SnpData(people, snps, snparray, snp_info, person_info, des)
+    SnpData(people, snps, snparray, snp_info, person_info, des * ".bed", bimfile, famfile)
 end
 
 """
@@ -217,7 +217,7 @@ function Base.hvcat(rows::Tuple{Vararg{Int}}, A::SnpData...; des="tmp_hvcat" * s
     writedlm(famfile, hcat([person_info[k] 
                                 for k in PERSON_INFO_KEYS]...))
 
-    SnpData(people, snps, snparray, snp_info, person_info, des)
+    SnpData(people, snps, snparray, snp_info, person_info, des * ".bed", bimfile, famfile)
 end
 
 """
@@ -255,7 +255,7 @@ function merge_plink(d::Dict{AbstractString, SnpData})
     snparray = SnpArray(data, rowcounts, columncounts, size(data)[1])
 
     people, snps = size(person_info,1), size(snp_info, 1)
-    SnpData(people, snps, snparray, snp_info, person_info, "")
+    SnpData(people, snps, snparray, snp_info, person_info, "", "", "")
 end
 
 merge_plink(des::AbstractString, d::Dict{AbstractString, SnpData}) = write_plink(des, merge_plink(d))
