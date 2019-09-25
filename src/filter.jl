@@ -13,6 +13,7 @@ and/or Hardy-Weinberg test.
 - `min_maf`: Minimum minor allele frequency. Default 0.01.
 - `min_hwe_pval`: Minimum p-value for Hardy-Weinberg test. Default 0 (not filter HWE).
 - `maxiters`: Maximum number of filtering iterations. Default is 5.
+- `verbose`: Show progress.
 
 # Output
 - `rmask`: BitVector indicating rows after filtering.
@@ -24,7 +25,8 @@ function filter(
     min_success_rate_per_col::Real = 0.98,
     min_maf::Real = 0.01,
     min_hwe_pval::Real = 0,
-    maxiters::Integer = 5)
+    maxiters::Integer = 5,
+    verbose::false)
     m, n = size(s)
     # row-wise counts of missing genotypes
     rmissings = zeros(Int, m)
@@ -35,12 +37,14 @@ function filter(
     rmask, cmask = trues(m), trues(n)
     rmissrate, cmissrate = 1 - min_success_rate_per_row, 1 - min_success_rate_per_col
     for iter in 1:maxiters
+        verbose && @info ("iteration $iter")
         # number of remaining rows
         rows = count(rmask)
         # maximum allowed missing genotypes each row and col
         cmisses = cmissrate * rows
         fill!(rmissings, 0)
         @inbounds for j in 1:n
+            verbose && j % 1000 == 0 && @info "filtering: $j-th of $n SNPs"
             cmask[j] || continue
             # accumulate row and column counts
             fill!(cc, 0)
