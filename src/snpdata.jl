@@ -3,7 +3,7 @@ const PERSON_INFO_KEYS = [:fid, :iid, :father, :mother, :sex, :phenotype]
 
 """
     SnpData
-    SnpData(plknm; famnm::AbstractString=plinknm*".fam", bimnm::AbstractString=plinknm*".bim" )
+    SnpData(plknm)
 
 Type to store SNP and person information along with the SnpArray.
 """
@@ -13,29 +13,29 @@ struct SnpData
     snparray::SnpArray
     snp_info::DataFrame  
     person_info::DataFrame 
-    srcbed::AbstractString
-    srcbim::AbstractString
-    srcfam::AbstractString
+    src::AbstractString
 end
 
-function SnpData(plink_file::AbstractString, args...; famnm::AbstractString=plink_file*".fam", bimnm::AbstractString=plink_file*".bim", kwargs...)
+function SnpData(plink_file::AbstractString)
     
     # load snp info
-    snp_info = open(bimnm) do io
+    plink_bim_file = string(plink_file, ".bim")
+    snp_info = open(plink_bim_file) do io
         categorical!(CSV.read(io,  delim='\t', header=SNP_INFO_KEYS, 
         types=[String, String, Float64, Int, String, String]), [:allele1, :allele2])
     end
     
     # load person info
-    person_info = convert(DataFrame, readdlm(famnm, AbstractString))
+    plink_fam_file = string(plink_file, ".fam")
+    person_info = convert(DataFrame, readdlm(plink_fam_file, AbstractString))
     rename!(person_info, f => t for (f, t) = zip(names(person_info),
                 PERSON_INFO_KEYS))
 
     # load snp array 
-    snparray = SnpArray(string(plink_file, ".bed"), args...; famnm=famnm, kwargs...)
+    snparray = SnpArray(string(plink_file, ".bed"))
     people, snps = size(snparray)
     
-    SnpData(people, snps, snparray, snp_info, person_info, plink_file*".bed", bimnm, famnm)
+    SnpData(people, snps, snparray, snp_info, person_info, plink_file)
 end
 
 """
@@ -50,7 +50,7 @@ function Base.show(io::IO, x::SnpData)
                 x.snps > 6 ? "…," : ",",
                 "person_info: \n$((join(split(string(first(x.person_info, 6)), "\n")[2:end], "\n")))",
                 x.people > 6 ? "…," : ",",
-                "srcbed: $(x.srcbed)\nsrcbim: $(x.srcbim)\nsrcfam: $(x.srcfam)"], 
+                "src: $(x.src)"], 
                 "\n") *
         "\n)")
 end
@@ -67,21 +67,18 @@ Filter `s` according to `f_person` and `f_snp`. The resultiing plink files are s
 function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString = s.src * ".filtered")
     snps = sum(colinds)
     people = sum(rowinds)
-    snparray = SnpArrays.filter(s.srcbed, s.srcbim, s.srcfam, rowinds, colinds; des=des)
+    snparray = SnpArrays.filter(s.src, rowinds, colinds; des=des)
     snp_info = s.snp_info[colinds, :]
     person_info = s.person_info[rowinds, :]
-    SnpData(people, snps, snparray, snp_info, person_info, 
-            des * ".bed", des * ".bim", des * ".fam")
+    SnpData(people, snps, snparray, snp_info, person_info, des)
 end
-
-function filter(s::SnpData; des::AbstractString = split(s.srcbed, ".bed")[1] * ".filtered", f_person::Function = _trueftn, f_snp::Function = _trueftn)
+function filter(s::SnpData; des::AbstractString = s.src * ".filtered", f_person::Function = _trueftn, f_snp::Function = _trueftn)
     f_person == _trueftn && f_snp == _trueftn && @warn "No nontrivial function provided. Just copying."
     colinds = collect(f_snp(r)::Bool for r in eachrow(s.snp_info)) 
     rowinds = collect(f_person(r)::Bool for r in eachrow(s.person_info))
     SnpArrays.filter(s::SnpData, rowinds::Vector{Bool}, colinds::Vector{Bool}; des = des::AbstractString)
 end
-
-filter(s::AbstractString; des::AbstractString = split(s.srcbed, ".bed")[1] * ".filtered", 
+filter(s::AbstractString; des::AbstractString = s.src * ".filtered", 
     f_person::Function = _trueftn, f_snp::Function = _trueftn) = SnpArrays.filter(SnpData(s); des = des, f_person = f_person, f_snp = f_snp)
 
 
@@ -90,7 +87,7 @@ filter(s::AbstractString; des::AbstractString = split(s.srcbed, ".bed")[1] * ".f
 
 Split data `s` according to chromosome, sex, or phenotype. Returns a dictionary of splitted data.
 """
-function split_plink(s::SnpData, key::Symbol = :chromosome; prefix = split(s.srcbed, ".bed")[1] * string(key))
+function split_plink(s::SnpData, key::Symbol = :chromosome; prefix = s.src * string(key))
     key in [:chromosome, :sex, :phenotype] || throw(ArgumentError("key should be one of :chromosome, :sex, or :phenotype"))
     r = Dict{AbstractString, SnpData}()
     if key == :chromosome
@@ -105,42 +102,7 @@ function split_plink(s::SnpData, key::Symbol = :chromosome; prefix = split(s.src
         r
     end
 end
-split_plink(src::AbstractString, key::Symbol = :chromosome; prefix = src * string(key)) = split_plink(SnpData(src), key; prefix = prefix)
-
-
-"""
-    vcat(A...;des="tmp_vcat_" * string(vcat_counter))
-
-Concatenate SnpData along dimension 1.
-"""
-vcat_counter = 1
-function Base.vcat(A::SnpData...; des="tmp_vcat_" * string(vcat_counter))
-    global vcat_counter
-    if des == "tmp_vcat_" * string(vcat_counter)
-        vcat_counter = vcat_counter + 1
-    end
-    
-    # vcat person_info
-    person_info = vcat([x.person_info for x in A]...)
-    
-    # get snp_info
-    @assert allequal([x.snp_info for x in A]) "snp_info are different"
-    snp_info = A[1].snp_info
-    
-    # vcat snparray
-    snparray = vcat([x.snparray for x in A]...; des=des)
-
-    people, snps = size(person_info,1), size(snp_info, 1)
-
-    bimfile = des * ".bim"
-    famfile = des * ".fam"
-
-    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
-    writedlm(famfile, hcat([person_info[k] 
-                                for k in PERSON_INFO_KEYS]...))
-
-    SnpData(people, snps, snparray, snp_info, person_info, des)
-end
+split_plink(src::AbstractString, key::Symbol = :chromosome; prefix = s.src * string(key)) = split_plink(SnpData(src), key; prefix = prefix)
 
 
 """
@@ -343,5 +305,5 @@ function write_plink(filename::AbstractString, snpdata::SnpData)
         write(io, 0x01)
         write(io, snpdata.snparray.data)
     end
-    SnpData(snpdata.people, snpdata.snps, snpdata.snparray, snpdata.snp_info, snpdata.person_info, bimfile, bedfile, famfile)
+    SnpData(snpdata.people, snpdata.snps, snpdata.snparray, snpdata.snp_info, snpdata.person_info, filename)
 end
