@@ -67,11 +67,24 @@ Filter `s` according to `f_person` and `f_snp`. The resultiing plink files are s
 """
 @inline _trueftn(x) = true
 function filter(s::SnpData, rowinds::AbstractVector{<:Integer}, colinds::AbstractVector{<:Integer}; des::AbstractString=split(s.srcbed, ".bed")[1] * ".filtered")
-    snps = sum(colinds)
-    people = sum(rowinds)
-    snparray = SnpArrays.filter(s.srcbed, s.srcbim, s.srcfam, rowinds, colinds; des=des)
-    snp_info = s.snp_info[colinds, :]
-    person_info = s.person_info[rowinds, :]
+    if eltype(rowinds) == Bool
+        rmask = rowinds
+    else
+        rmask = falses(size(s.snparray, 1))
+        rmask[rowinds] .= true
+    end
+    if eltype(colinds) == Bool
+        cmask = colinds
+    else
+        cmask = falses(size(s.snparray, 2))
+        cmask[colinds] .= true
+    end
+
+    snps = count(cmask)
+    people = count(rmask)
+    snparray = SnpArrays.filter(s.srcbed, s.srcbim, s.srcfam, rmask, cmask; des=des)
+    snp_info = s.snp_info[cmask, :]
+    person_info = s.person_info[rmask, :]
     SnpData(people, snps, snparray, snp_info, person_info, 
             des * ".bed", des * ".bim", des * ".fam")
 end
@@ -136,8 +149,8 @@ function Base.vcat(A::SnpData...; des="tmp_vcat_" * string(vcat_counter))
     bimfile = des * ".bim"
     famfile = des * ".fam"
 
-    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
-    writedlm(famfile, hcat([person_info[k] 
+    writedlm(bimfile, hcat([snp_info[!, k] for k in SNP_INFO_KEYS]...))
+    writedlm(famfile, hcat([person_info[!, k] 
                                 for k in PERSON_INFO_KEYS]...))
 
     SnpData(people, snps, snparray, snp_info, person_info, des * ".bed", bimfile, famfile)
@@ -171,8 +184,8 @@ function Base.hcat(A::SnpData...; des="tmp_hcat_" * string(hcat_counter))
     bimfile = des * ".bim"
     famfile = des * ".fam"
 
-    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
-    writedlm(famfile, hcat([person_info[k] 
+    writedlm(bimfile, hcat([snp_info[!, k] for k in SNP_INFO_KEYS]...))
+    writedlm(famfile, hcat([person_info[!, k] 
                                 for k in PERSON_INFO_KEYS]...))
 
     SnpData(people, snps, snparray, snp_info, person_info, des * ".bed", bimfile, famfile)
@@ -213,8 +226,8 @@ function Base.hvcat(rows::Tuple{Vararg{Int}}, A::SnpData...; des="tmp_hvcat" * s
     bimfile = des * ".bim"
     famfile = des * ".fam"
 
-    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
-    writedlm(famfile, hcat([person_info[k] 
+    writedlm(bimfile, hcat([snp_info[!, k] for k in SNP_INFO_KEYS]...))
+    writedlm(famfile, hcat([person_info[!, k] 
                                 for k in PERSON_INFO_KEYS]...))
 
     SnpData(people, snps, snparray, snp_info, person_info, des * ".bed", bimfile, famfile)
@@ -296,11 +309,11 @@ function write_plink(filename::AbstractString, snpdata::SnpData)
     
     # write bim file
     snp_info = snpdata.snp_info
-    writedlm(bimfile, hcat([snp_info[k] for k in SNP_INFO_KEYS]...))
+    writedlm(bimfile, hcat([snp_info[!, k] for k in SNP_INFO_KEYS]...))
     
     # write fam file
     person_info = snpdata.person_info
-    writedlm(famfile, hcat([person_info[k] 
+    writedlm(famfile, hcat([person_info[!, k] 
                                 for k in PERSON_INFO_KEYS]...))
     
     # write bed file
