@@ -425,3 +425,28 @@ for ft in ["bim", "fam", "bed"]
     rm("mouse.hvcat." * ft, force=true)
 end
 end
+
+@testset "reorder" begin
+mouse_prefix = SnpArrays.datadir("mouse")
+run(`cp $(mouse_prefix * ".bed") mouse_testreorder.bed`)
+run(`cp $(mouse_prefix * ".bim") mouse_testreorder.bim`)
+run(`cp $(mouse_prefix * ".fam") mouse_testreorder.fam`)
+
+mouse_data = SnpData(mouse_prefix)
+mouse_toreorder = SnpData("mouse_testreorder", "r+")
+m, n = size(mouse_toreorder.snparray)
+using Random
+ind = randperm(m);
+SnpArrays.reorder!(mouse_toreorder, ind)
+
+# reread the file
+mouse_toreorder_read = SnpData("mouse_testreorder"; famnm="mouse_testreorder.reordered.fam")
+@test all(mouse_data.snparray[ind, :] .== mouse_toreorder_read.snparray[:, :])
+@test all(mouse_data.person_info[ind, 1] .== mouse_toreorder_read.person_info[:, 1])
+
+# cleanup
+rm("mouse_testreorder.bed", force=true)
+rm("mouse_testreorder.bim", force=true)
+rm("mouse_testreorder.fam", force=true)
+rm("mouse_testreorder.reordered.fam", force=true)
+end

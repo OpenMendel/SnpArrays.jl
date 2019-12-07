@@ -109,12 +109,12 @@ function split_plink(s::SnpData, key::Symbol = :chromosome; prefix = split(s.src
     key in [:chromosome, :sex, :phenotype] || throw(ArgumentError("key should be one of :chromosome, :sex, or :phenotype"))
     r = Dict{AbstractString, SnpData}()
     if key == :chromosome
-        for chr in unique(s.snp_info[key])
+        for chr in unique(s.snp_info[!, key])
             r[chr] = SnpArrays.filter(s; des = prefix * chr, f_snp = x -> (x[key] == chr))
         end
         r
     else
-        for val in unique(s.person_info[key])
+        for val in unique(s.person_info[!, key])
             r[val] = SnpArrays.filter(s; des = prefix * string(val), f_person = x -> (x[key] == val))
         end
         r
@@ -285,8 +285,8 @@ function merge_plink(prefix::AbstractString; des::AbstractString = prefix * ".me
     d = Dict{AbstractString, SnpData}()
     for fn in matching_srcs
         chrsnpdata = SnpData(fn)
-        chr = chrsnpdata.snp_info[:chromosome][1]
-        @assert all(chr .== chrsnpdata.snp_info[:chromosome]) "Not all chrs are the same in $fn.bim."
+        chr = chrsnpdata.snp_info[!, :chromosome][1]
+        @assert all(chr .== chrsnpdata.snp_info[!, :chromosome]) "Not all chrs are the same in $fn.bim."
         d[chr] = chrsnpdata
     end
     merge_plink(des, d)
