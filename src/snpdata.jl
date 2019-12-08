@@ -28,8 +28,8 @@ function SnpData(plink_file::AbstractString, args...; famnm::AbstractString=plin
     
     # load person info
     person_info = convert(DataFrame, readdlm(famnm, AbstractString))
-    rename!(person_info, f => t for (f, t) = zip(names(person_info),
-                PERSON_INFO_KEYS))
+    rename!(person_info, collect(f => t for (f, t) = zip(names(person_info),
+                    PERSON_INFO_KEYS)))
 
     # load snp array 
     snparray = SnpArray(string(plink_file, ".bed"), args...; famnm=famnm, kwargs...)
@@ -260,7 +260,6 @@ function merge_plink(d::Dict{AbstractString, SnpData})
     
     # vcat snp_info
     snp_info = Base.vcat([d[k].snp_info for k in ks]...)
-    
     # hcat snparray
     data = Base.hcat([d[k].snparray.data for k in ks]...)
     rowcounts = d[ks[1]].snparray.rowcounts
@@ -287,7 +286,7 @@ function merge_plink(prefix::AbstractString; des::AbstractString = prefix * ".me
         chrsnpdata = SnpData(fn)
         chr = chrsnpdata.snp_info[!, :chromosome][1]
         @assert all(chr .== chrsnpdata.snp_info[!, :chromosome]) "Not all chrs are the same in $fn.bim."
-        d[chr] = chrsnpdata
+        d[String(chr)] = chrsnpdata
     end
     merge_plink(des, d)
 end
