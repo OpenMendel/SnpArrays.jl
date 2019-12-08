@@ -259,11 +259,11 @@ function merge_plink(d::Dict{AbstractString, SnpData})
     person_info = d[ks[1]].person_info
     
     # vcat snp_info
-    snp_info = Base.vcat([d[k].snp_info for k in ks]...)
+    @time snp_info = Base.vcat([d[k].snp_info for k in ks]...)
     # hcat snparray
-    data = Base.hcat([d[k].snparray.data for k in ks]...)
+    @time data = Base.hcat([d[k].snparray.data for k in ks]...)
     rowcounts = d[ks[1]].snparray.rowcounts
-    columncounts = Base.hcat([d[k].snparray.columncounts for k in ks]...)
+    @time columncounts = Base.hcat([d[k].snparray.columncounts for k in ks]...)
     snparray = SnpArray(data, rowcounts, columncounts, size(data)[1])
 
     people, snps = size(person_info,1), size(snp_info, 1)
@@ -282,7 +282,7 @@ function merge_plink(prefix::AbstractString; des::AbstractString = prefix * ".me
     l = glob(prefix * "*.bed")
     matching_srcs = map(x -> splitext(x)[1], l)
     d = Dict{AbstractString, SnpData}()
-    for fn in matching_srcs
+    @time for fn in matching_srcs
         chrsnpdata = SnpData(fn)
         chr = chrsnpdata.snp_info[!, :chromosome][1]
         @assert all(chr .== chrsnpdata.snp_info[!, :chromosome]) "Not all chrs are the same in $fn.bim."

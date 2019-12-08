@@ -262,6 +262,9 @@ end
 
 @testset "split-merge-readwrite" begin
 EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
+# a small subset of EUR_data
+SnpArrays.filter(EUR_data, collect(1:10), collect(1:20000); des="EUR_subset.small")
+EUR_small = SnpData("EUR_subset.small")
 
 # filter
 chr17 = SnpArrays.filter(SnpArrays.datadir("EUR_subset"); des="tmp.filter.chr17", f_snp = x -> String(x[:chromosome]) == "17")
@@ -283,16 +286,16 @@ for ft in ["bim", "fam", "bed"]
 end
 
 # split
-splitted = SnpArrays.split_plink(SnpArrays.datadir("EUR_subset"); prefix="tmp.split.chr.")
+splitted = SnpArrays.split_plink("EUR_subset.small"; prefix="tmp.split.chr.")
 piece = splitted["17"]
-@test piece.people == 379
+@test piece.people == 10
 @test piece.snps == 11041
-@test size(piece.person_info) == (379, 6)
+@test size(piece.person_info) == (10, 6)
 @test size(piece.snp_info) == (11041, 6)
-@test size(piece.snparray) == (379, 11041)
+@test size(piece.snparray) == (10, 11041)
 @test size(piece.snparray.columncounts) == (4, 11041)
-@test piece.snparray.m == 379
-@test size(piece.snparray.data) == (95, 11041)
+@test piece.snparray.m == 10
+
 splitted_bysex = SnpArrays.split_plink(EUR_data, :sex; prefix="tmp.split.sex.")
 @test splitted_bysex["1"].people == 178
 @test splitted_bysex["2"].people == 201
@@ -317,15 +320,19 @@ splitted_bysex = SnpArrays.split_plink(EUR_data, :sex; prefix="tmp.split.sex.")
 
 # merge from splitted files
 @time merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp2.merged")
-@test EUR_data.people == merged_from_splitted_files.people
-@test EUR_data.snps == merged_from_splitted_files.snps
-@test EUR_data.person_info == merged_from_splitted_files.person_info
-@test EUR_data.snp_info == merged_from_splitted_files.snp_info
+@test EUR_small.people == merged_from_splitted_files.people
+@test EUR_small.snps == merged_from_splitted_files.snps
+@test EUR_small.person_info == merged_from_splitted_files.person_info
+@test EUR_small.snp_info == merged_from_splitted_files.snp_info
 
 # cleanup
 rm("tmp2.merged.bim", force=true)
 rm("tmp2.merged.fam", force=true)
 Sys.iswindows() || rm("tmp2.merged.bed", force=true)
+
+rm("EUR_subset.small.bim", force=true)
+rm("EUR_subset.small.fam", force=true)
+Sys.iswindows() || rm("EUR_subset.small.bed", force=true)
 
 for k in keys(splitted)
     for ft in ["bim", "fam", "bed"]
