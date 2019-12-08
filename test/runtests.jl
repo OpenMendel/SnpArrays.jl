@@ -298,34 +298,34 @@ splitted_bysex = SnpArrays.split_plink(EUR_data, :sex; prefix="tmp.split.sex.")
 @test splitted_bysex["2"].people == 201
 
 # merge
-@time merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
-@test EUR_data.people == merged.people
-@test EUR_data.snps == merged.snps
-@test EUR_data.person_info == merged.person_info
-@test EUR_data.snp_info == merged.snp_info # note: the ordering of merged data might be different on other dataset b/c sorted order of chromosomes
+#@time merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
+#@test EUR_data.people == merged.people
+#@test EUR_data.snps == merged.snps
+#@test EUR_data.person_info == merged.person_info
+#@test EUR_data.snp_info == merged.snp_info # note: the ordering of merged data might be different on other dataset b/c sorted order of chromosomes
 
-output = SnpData("tmp.merged")
-@test EUR_data.people == output.people
-@test EUR_data.snps == output.snps
-@test EUR_data.person_info == output.person_info
-@test EUR_data.snp_info == output.snp_info
+#output = SnpData("tmp.merged")
+#@test EUR_data.people == output.people
+#@test EUR_data.snps == output.snps
+#@test EUR_data.person_info == output.person_info
+#@test EUR_data.snp_info == output.snp_info
 
 # cleanup
-rm("tmp.merged.bim", force=true)
-rm("tmp.merged.fam", force=true)
-Sys.iswindows() || rm("tmp.merged.bed", force=true)
+#rm("tmp.merged.bim", force=true)
+#rm("tmp.merged.fam", force=true)
+#Sys.iswindows() || rm("tmp.merged.bed", force=true)
 
 # merge from splitted files
-#merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp2.merged")
-#@test EUR_data.people == merged_from_splitted_files.people
-#@test EUR_data.snps == merged_from_splitted_files.snps
-#@test EUR_data.person_info == merged_from_splitted_files.person_info
-#@test EUR_data.snp_info == merged_from_splitted_files.snp_info
+@time merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp2.merged")
+@test EUR_data.people == merged_from_splitted_files.people
+@test EUR_data.snps == merged_from_splitted_files.snps
+@test EUR_data.person_info == merged_from_splitted_files.person_info
+@test EUR_data.snp_info == merged_from_splitted_files.snp_info
 
 # cleanup
-#rm("tmp2.merged.bim", force=true)
-#rm("tmp2.merged.fam", force=true)
-#Sys.iswindows() || rm("tmp2.merged.bed", force=true)
+rm("tmp2.merged.bim", force=true)
+rm("tmp2.merged.fam", force=true)
+Sys.iswindows() || rm("tmp2.merged.bed", force=true)
 
 for k in keys(splitted)
     for ft in ["bim", "fam", "bed"]
