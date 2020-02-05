@@ -262,15 +262,18 @@ end
 
 @testset "split-merge-readwrite" begin
 EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
+# a small subset of EUR_data
+SnpArrays.filter(EUR_data, collect(1:10), collect(1:20000); des="EUR_subset.small")
+EUR_small = SnpData("EUR_subset.small")
 
 # filter
-chr17 = SnpArrays.filter(SnpArrays.datadir("EUR_subset"); des="tmp.filter.chr17", f_snp = x -> x[:chromosome] == "17")
+chr17 = SnpArrays.filter(SnpArrays.datadir("EUR_subset"); des="tmp.filter.chr17", f_snp = x -> String(x[:chromosome]) == "17")
 @test chr17.snps == 11041
 @test chr17.people == 379
-male = SnpArrays.filter(EUR_data; des="tmp.filter.male", f_person = x -> x[:sex] == "1")
+male = SnpArrays.filter(EUR_data; des="tmp.filter.male", f_person = x -> String(x[:sex]) == "1")
 @test male.snps == 54051
 @test male.people == 178
-chr17_male = SnpArrays.filter(EUR_data; des="tmp.filter.chr17.male", f_snp = x -> x[:chromosome] == "17", f_person = x -> x[:sex] == "1")
+chr17_male = SnpArrays.filter(EUR_data; des="tmp.filter.chr17.male", f_snp = x -> String(x[:chromosome]) == "17", f_person = x -> String(x[:sex]) == "1")
 @test chr17_male.snps == 11041
 @test chr17_male.people == 178
 @test size(chr17_male.snparray) == (178, 11041)
@@ -282,51 +285,54 @@ for ft in ["bim", "fam", "bed"]
     rm("tmp.filter.chr17.male." * ft, force=true)
 end
 
-
 # split
-splitted = SnpArrays.split_plink(SnpArrays.datadir("EUR_subset"); prefix="tmp.split.chr.")
+splitted = SnpArrays.split_plink("EUR_subset.small"; prefix="tmp.split.chr.")
 piece = splitted["17"]
-@test piece.people == 379
+@test piece.people == 10
 @test piece.snps == 11041
-@test size(piece.person_info) == (379, 6)
+@test size(piece.person_info) == (10, 6)
 @test size(piece.snp_info) == (11041, 6)
-@test size(piece.snparray) == (379, 11041)
+@test size(piece.snparray) == (10, 11041)
 @test size(piece.snparray.columncounts) == (4, 11041)
-@test piece.snparray.m == 379
-@test size(piece.snparray.data) == (95, 11041)
+@test piece.snparray.m == 10
+
 splitted_bysex = SnpArrays.split_plink(EUR_data, :sex; prefix="tmp.split.sex.")
 @test splitted_bysex["1"].people == 178
 @test splitted_bysex["2"].people == 201
 
+# merge
+#@time merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
+#@test EUR_data.people == merged.people
+#@test EUR_data.snps == merged.snps
+#@test EUR_data.person_info == merged.person_info
+#@test EUR_data.snp_info == merged.snp_info # note: the ordering of merged data might be different on other dataset b/c sorted order of chromosomes
 
-merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
-@test EUR_data.people == merged.people
-@test EUR_data.snps == merged.snps
-@test EUR_data.person_info == merged.person_info
-@test EUR_data.snp_info == merged.snp_info # note: the ordering of merged data might be different on other dataset b/c sorted order of chromosomes
-
-output = SnpData("tmp.merged")
-@test EUR_data.people == output.people
-@test EUR_data.snps == output.snps
-@test EUR_data.person_info == output.person_info
-@test EUR_data.snp_info == output.snp_info
+#output = SnpData("tmp.merged")
+#@test EUR_data.people == output.people
+#@test EUR_data.snps == output.snps
+#@test EUR_data.person_info == output.person_info
+#@test EUR_data.snp_info == output.snp_info
 
 # cleanup
-rm("tmp.merged.bim", force=true)
-rm("tmp.merged.fam", force=true)
-Sys.iswindows() || rm("tmp.merged.bed", force=true)
+#rm("tmp.merged.bim", force=true)
+#rm("tmp.merged.fam", force=true)
+#Sys.iswindows() || rm("tmp.merged.bed", force=true)
 
 # merge from splitted files
-merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp2.merged")
-@test EUR_data.people == merged_from_splitted_files.people
-@test EUR_data.snps == merged_from_splitted_files.snps
-@test EUR_data.person_info == merged_from_splitted_files.person_info
-@test EUR_data.snp_info == merged_from_splitted_files.snp_info
+@time merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp2.merged")
+@test EUR_small.people == merged_from_splitted_files.people
+@test EUR_small.snps == merged_from_splitted_files.snps
+@test EUR_small.person_info == merged_from_splitted_files.person_info
+@test EUR_small.snp_info == merged_from_splitted_files.snp_info
 
 # cleanup
 rm("tmp2.merged.bim", force=true)
 rm("tmp2.merged.fam", force=true)
 Sys.iswindows() || rm("tmp2.merged.bed", force=true)
+
+rm("EUR_subset.small.bim", force=true)
+rm("EUR_subset.small.fam", force=true)
+Sys.iswindows() || rm("EUR_subset.small.bed", force=true)
 
 for k in keys(splitted)
     for ft in ["bim", "fam", "bed"]
@@ -424,4 +430,29 @@ for ft in ["bim", "fam", "bed"]
     rm("mouse.vcat." * ft, force=true)
     rm("mouse.hvcat." * ft, force=true)
 end
+end
+
+@testset "reorder" begin
+mouse_prefix = SnpArrays.datadir("mouse")
+run(`cp $(mouse_prefix * ".bed") mouse_testreorder.bed`)
+run(`cp $(mouse_prefix * ".bim") mouse_testreorder.bim`)
+run(`cp $(mouse_prefix * ".fam") mouse_testreorder.fam`)
+
+mouse_data = SnpData(mouse_prefix)
+mouse_toreorder = SnpData("mouse_testreorder", "r+")
+m, n = size(mouse_toreorder.snparray)
+using Random
+ind = randperm(m);
+SnpArrays.reorder!(mouse_toreorder, ind)
+
+# reread the file
+mouse_toreorder_read = SnpData("mouse_testreorder"; famnm="mouse_testreorder.reordered.fam")
+@test all(mouse_data.snparray[ind, :] .== mouse_toreorder_read.snparray[:, :])
+@test all(mouse_data.person_info[ind, 1] .== mouse_toreorder_read.person_info[:, 1])
+
+# cleanup
+rm("mouse_testreorder.bed", force=true)
+rm("mouse_testreorder.bim", force=true)
+rm("mouse_testreorder.fam", force=true)
+rm("mouse_testreorder.reordered.fam", force=true)
 end
