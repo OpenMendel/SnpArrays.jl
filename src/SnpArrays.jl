@@ -2,7 +2,7 @@ __precompile__()
 
 module SnpArrays
 
-using CodecZlib, CodecXz, CodecBzip2, CodecZstd, Distributions, TranscodingStreams
+using CodecZlib, CodecXz, CodecBzip2, CodecZstd,  TranscodingStreams
 using Glob, LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
 import DataFrames: DataFrame, rename!, eachrow
@@ -12,6 +12,7 @@ import CSV # for CSV.read, to avoid clash with Base.read
 import LinearAlgebra: mul!
 import Statistics: mean, std, var
 import StatsBase: counts
+import SpecialFunctions: gamma_inc
 export AbstractSnpArray, SnpArray, SnpBitMatrix, SnpData
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
 export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var

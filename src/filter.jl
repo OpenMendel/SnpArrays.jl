@@ -177,12 +177,14 @@ function filter(
     bfdes
 end
 
+@inline ccdf_chisq_1(x) = gamma_inc(1/2, x/2, 0)[2]
 """
     hwe(n00, n01, n11)
 
 Hardy-Weinberg equilibrium test. `n00`, `n01`, `n11` are counts of homozygotes 
 and heterozygoes respectively. Output is the p-value of type Float64.
 """
+
 function hwe(n00::Integer, n01::Integer, n11::Integer)
     n = n00 + n01 + n11
     n == 0 && return 1.0
@@ -194,7 +196,9 @@ function hwe(n00::Integer, n01::Integer, n11::Integer)
     e01 = 2n * p0 * p1
     e11 = n * p1 * p1
     ts = (n00 - e00)^2 / e00 + (n01 - e01)^2 / e01 + (n11 - e11)^2 / e11
-    pval = ccdf(Chisq(1), ts)
+    #pval = ccdf(Chisq(1), ts)
+    pval = ccdf_chisq_1(ts)
+
     # TODO Fisher exact test
     return pval
 end
