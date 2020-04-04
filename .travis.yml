@@ -8,9 +8,6 @@ julia:
   - 1.0
   - 1.4
   - nightly
-matrix:
-  allow_failures:
-    - julia: nightly
 notifications:
   email: false
 git:
@@ -20,6 +17,8 @@ after_script:
   - julia -e 'using Pkg, SnpArrays; cd(joinpath(dirname(pathof(SnpArrays)), "..")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder()); Coveralls.submit(process_folder())'
 
 jobs:
+  allow_failures:
+    - julia: nightly    
   include:
     - stage: "Documentation"
       julia: 1.0
