@@ -19,6 +19,7 @@ after_script:
 jobs:
   allow_failures:
     - julia: nightly    
+    - os: windows
   include:
     - stage: "Documentation"
       julia: 1.0
