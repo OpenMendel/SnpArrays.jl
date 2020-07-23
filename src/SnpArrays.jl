@@ -13,6 +13,7 @@ import LinearAlgebra: mul!
 import Statistics: mean, std, var
 import StatsBase: counts
 import SpecialFunctions: gamma_inc
+import LoopVectorization: @avx
 export AbstractSnpArray, SnpArray, SnpBitMatrix, SnpData
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
 export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
@@ -29,6 +30,7 @@ include("cat.jl")
 include("snpdata.jl")
 include("grm.jl")
 include("linalg.jl")
+include("linalg_bitmatrix.jl")
 include("reorder.jl")
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
