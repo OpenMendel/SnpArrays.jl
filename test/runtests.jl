@@ -256,8 +256,8 @@ EURsubfm = convert(Matrix{Float64}, EURsub, model=ADDITIVE_MODEL, center=true, s
 v1 = randn(size(EURsub, 1))
 v2 = randn(size(EURsub, 2))
 
-@test all(EURsubbm * v2 .≈ EURsubfm * v2)
-@test all(EURsubbm' * v1 .≈ EURsubfm' * v1)
+@test isapprox(EURsubbm * v2, EURsubfm * v2)
+@test isapprox(EURsubbm' * v1, EURsubfm' * v1)
 end
 
 @testset "split-merge-readwrite" begin

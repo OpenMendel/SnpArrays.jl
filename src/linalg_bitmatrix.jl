@@ -92,7 +92,7 @@ function mul!(c::Vector{T}, A::BitMatrix, b::Vector{T}) where T
     end
 end
 
-function mul!(c::Vector{T}, A::Transpose{Bool,BitArray{2}}, b::Vector{T}) where T
+function mul!(c::Vector{T}, A::Union{Transpose{Bool,BitArray{2}}, Adjoint{Bool, BitArray{2}}}, b::Vector{T}) where T
     tA = transpose(A)
     fill!(c, zero(eltype(c)))
     @avx for i in 1:size(tA, 2)
