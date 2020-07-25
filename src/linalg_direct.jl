@@ -79,6 +79,7 @@ function mul!(
     out::AbstractVector{T}, 
     sla::SnpLinAlg{T}, 
     v::AbstractVector{T}) where T <: AbstractFloat
+    @assert length(out) == size(sla, 1) && length(v) == size(sla, 2)
     if sla.scale
         sla.storagev2 .= sla.σinv .* v
         w = sla.storagev2
@@ -120,6 +121,7 @@ function mul!(
     out::AbstractVector{T}, 
     st::Union{Transpose{T, SnpLinAlg{T}}, Adjoint{T, SnpLinAlg{T}}},
     v::AbstractVector{T}) where T <: AbstractFloat
+    @assert length(out) == size(st, 1) && length(v) == size(st, 2)
     sla = st.parent
     s = sla.s
     fill!(out, zero(eltype(out)))

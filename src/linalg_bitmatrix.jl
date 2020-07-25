@@ -106,6 +106,7 @@ function mul!(
     out::AbstractVector{T}, 
     s::SnpBitMatrix{T}, 
     v::AbstractVector{T}) where T <: AbstractFloat
+    @assert length(out) == size(s, 1) && length(v) == size(s, 2)
     if s.scale
         s.storagev2 .= s.σinv .* v
         w = s.storagev2
@@ -131,6 +132,7 @@ function mul!(
     st::Union{Transpose{T, SnpBitMatrix{T}}, Adjoint{T, SnpBitMatrix{T}}},
     v::AbstractVector{T}) where T <: AbstractFloat
     s = st.parent
+    @assert length(out) == size(st, 1) && length(v) == size(st, 2)
     if s.model == ADDITIVE_MODEL
         mul!(out, transpose(s.B1), v)
         mul!(s.storagev2, transpose(s.B2), v)
