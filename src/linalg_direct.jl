@@ -15,11 +15,9 @@ function SnpLinAlg{T}(
     center::Bool = false,
     scale::Bool = false) where T <: AbstractFloat
     if model == ADDITIVE_MODEL
-        # B1 = s .≥ 0x02
-        # B2 = s .≥ 0x03
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=ADDITIVE_MODEL)
+            μ[:] = mean(s; dims=1, model=ADDITIVE_MODEL)
         else
             μ = T[]
         end
@@ -33,11 +31,9 @@ function SnpLinAlg{T}(
             σinv = T[]
         end
     elseif model == DOMINANT_MODEL
-        # B1 = s .≥ 0x02
-        # B2 = falses(0, 0)
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=DOMINANT_MODEL)
+            μ[:] = mean(s; dims=1, model=DOMINANT_MODEL)
         else
             μ = T[]
         end
@@ -51,11 +47,9 @@ function SnpLinAlg{T}(
             σinv = T[]
         end
     elseif model == RECESSIVE_MODEL
-        # B1 = s .== 0x03
-        # B2 = falses(0, 0)
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=RECESSIVE_MODEL)
+            μ[:] = mean(s; dims=1, model=RECESSIVE_MODEL)
         else
             μ = T[]
         end
@@ -76,31 +70,47 @@ function SnpLinAlg{T}(
     SnpLinAlg{T}(s, model, center, scale, μ, σinv, storagev1, storagev2)
 end
 
-# Base.size(bm::SnpBitMatrix) = size(bm.B1)
-# Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
+Base.size(sla::SnpLinAlg) = size(sla.s)
+Base.size(sla::SnpLinAlg, k::Integer) = size(sla.s, k)
 
 eltype(bm::SnpLinAlg) = eltype(bm.μ)
-# issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B2) && issymmetric(bm.B1) 
 
 function mul!(
     out::AbstractVector{T}, 
-    s::SnpLinAlg{T}, 
+    sla::SnpLinAlg{T}, 
     v::AbstractVector{T}) where T <: AbstractFloat
-    if s.scale
-        s.storagev2 .= s.σinv .* v
-        w = s.storagev2
+    if sla.scale
+        sla.storagev2 .= sla.σinv .* v
+        w = sla.storagev2
     else
         w = v
     end
-    if s.model == ADDITIVE_MODEL
-        #mul!(out, s.B1, w)
-        #mul!(s.storagev1, s.B2, w)
-        out .+= s.storagev1
+    fill!(out, zero(eltype(out)))
+    s = sla.s
+    if sla.model == ADDITIVE_MODEL
+        @avx for j ∈ eachindex(v)
+            for i ∈ eachindex(out)
+                Aij = s[i, j]
+                out[i] += (((Aij >= 2) + (Aij >= 3))) * w[j]
+            end
+        end
+    elseif sla.model == DOMINANT_MODEL
+        @avx for j ∈ eachindex(v)
+            for i ∈ eachindex(out)
+                Aij = s[i, j]
+                out[i] += (Aij >= 2) * w[j]
+            end
+        end
     else
-        mul!(out, s.B1, w)
+        @avx for j ∈ eachindex(v)
+            for i ∈ eachindex(out)
+                sij = s[i, j]
+                out[i] += (sij >= 3) * w[j]
+            end
+        end
     end   
-    if s.center
-        return out .-= dot(s.μ, w)
+    if sla.center
+        return out .-= dot(sla.μ, w)
     else
         return out
     end
@@ -110,19 +120,42 @@ function mul!(
     out::AbstractVector{T}, 
     st::Union{Transpose{T, SnpLinAlg{T}}, Adjoint{T, SnpLinAlg{T}}},
     v::AbstractVector{T}) where T <: AbstractFloat
-    s = st.parent
-    if s.model == ADDITIVE_MODEL
-        #mul!(out, transpose(s.B1), v)
-        #mul!(s.storagev2, transpose(s.B2), v)
-        out .+= s.storagev2
+    sla = st.parent
+    s = sla.s
+    fill!(out, zero(eltype(out)))
+    if sla.model == ADDITIVE_MODEL
+        @avx for i ∈ eachindex(out)
+            outi = zero(eltype(out))
+            for j ∈ eachindex(v)
+                stji = s[j, i]
+                outi += (((stji >= 2) + (stji >= 3))) * v[j]
+            end
+            out[i] = outi
+        end
+    elseif sla.model == DOMINANT_MODEL
+        @avx for i ∈ eachindex(out)
+            outi = zero(eltype(out))
+            for j ∈ eachindex(v)
+                stji = s[j, i]
+                outi += (stji >= 2) * v[j]
+            end
+            out[i] = outi
+        end
     else
-        mul!(out, transpose(s.B1), v)
+        @avx for i ∈ eachindex(out)
+            outi = zero(eltype(out))
+            for j ∈ eachindex(v)
+                stji = s[j, i]
+                outi += (stji >= 3) * v[j]
+            end
+            out[i] = outi
+        end
     end   
-    if s.center
-        out .-= sum(v) .* s.μ
+    if sla.center
+        out .-= sum(v) .* sla.μ
     end
-    if s.scale
-        return out .*= s.σinv
+    if sla.scale
+        return out .*= sla.σinv
     else
         return out
     end

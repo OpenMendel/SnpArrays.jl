@@ -20,7 +20,7 @@ function SnpBitMatrix{T}(
         B2 = s .≥ 0x03
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=ADDITIVE_MODEL)
+            μ[:] = mean(s; dims=1, model=ADDITIVE_MODEL)
         else
             μ = T[]
         end
@@ -38,7 +38,7 @@ function SnpBitMatrix{T}(
         B2 = falses(0, 0)
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=DOMINANT_MODEL)
+            μ[:] = mean(s; dims=1, model=DOMINANT_MODEL)
         else
             μ = T[]
         end
@@ -56,7 +56,7 @@ function SnpBitMatrix{T}(
         B2 = falses(0, 0)
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=RECESSIVE_MODEL)
+            μ[:] = mean(s; dims=1, model=RECESSIVE_MODEL)
         else
             μ = T[]
         end
