@@ -27,9 +27,10 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 
 [compat]
+julia = "1.4"
 SpecialFunctions = ">=0.8.0"
 StatsBase = ">=0.11.0"
-Julia = "1.4"
+
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
