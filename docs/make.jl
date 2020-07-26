@@ -7,7 +7,8 @@ makedocs(
     clean = true,
     debug = true,
     pages = [
-        "index.md"
+        "index.md",
+        "linalg.md"
     ]
 )
 
