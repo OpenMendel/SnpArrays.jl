@@ -75,6 +75,84 @@ Base.size(sla::SnpLinAlg, k::Integer) = size(sla.s, k)
 
 eltype(bm::SnpLinAlg) = eltype(bm.μ)
 
+function _snparray_ax_additive!(out, s::Matrix{UInt8}, v)
+    packedstride = size(s, 1)
+    @avx for j ∈ eachindex(v)
+        for i ∈ eachindex(out)
+            k = 2 * ((i-1) & 3)
+            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
+            Aij = (block >> k) & 3
+            out[i] += ((Aij >= 2) + (Aij >= 3)) * v[j]
+        end
+    end
+    out
+end
+
+function _snparray_ax_dominant!(out, s::Matrix{UInt8}, v)
+    packedstride = size(s, 1)
+    @avx for j ∈ eachindex(v)
+        for i ∈ eachindex(out)
+            k = 2 * ((i-1) & 3)
+            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
+            Aij = (block >> k) & 3
+            out[i] += (Aij >= 2) * v[j]
+        end
+    end
+    out
+end
+
+function _snparray_ax_recessive!(out, s::Matrix{UInt8}, v)
+    packedstride = size(s, 1)
+    @avx for j ∈ eachindex(v)
+        for i ∈ eachindex(out)
+            k = 2 * ((i-1) & 3)
+            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
+            Aij = (block >> k) & 3
+            out[i] += (Aij >= 3) * v[j]
+        end
+    end
+    out
+end
+
+function _snparray_atx_additive!(out, s::Matrix{UInt8}, v)
+    packedstride = size(s, 1)
+    @avx for i ∈ eachindex(out)
+        for j ∈ eachindex(v)
+            k = 2 * ((j-1) & 3)
+            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
+            Aij = (block >> k) & 3
+            out[i] += ((Aij >= 2) + (Aij >= 3)) * v[j]
+        end
+    end
+    out
+end
+
+function _snparray_atx_dominant!(out, s::Matrix{UInt8}, v)
+    packedstride = size(s, 1)
+    @avx for i ∈ eachindex(out)
+        for j ∈ eachindex(v)
+            k = 2 * ((j-1) & 3)
+            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
+            Aij = (block >> k) & 3
+            out[i] += (Aij >= 2) * v[j]
+        end
+    end
+    out
+end
+
+function _snparray_atx_recessive!(out, s::Matrix{UInt8}, v)
+    packedstride = size(s, 1)
+    @avx for i ∈ eachindex(out)
+        for j ∈ eachindex(v)
+            k = 2 * ((j-1) & 3)
+            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
+            Aij = (block >> k) & 3
+            out[i] += (Aij >= 3) * v[j]
+        end
+    end
+    out
+end
+
 function mul!(
     out::AbstractVector{T}, 
     sla::SnpLinAlg{T}, 
@@ -89,26 +167,11 @@ function mul!(
     fill!(out, zero(eltype(out)))
     s = sla.s
     if sla.model == ADDITIVE_MODEL
-        @avx for j ∈ eachindex(v)
-            for i ∈ eachindex(out)
-                Aij = s[i, j]
-                out[i] += (((Aij >= 2) + (Aij >= 3))) * w[j]
-            end
-        end
+        _snparray_ax_additive!(out, s.data, w)
     elseif sla.model == DOMINANT_MODEL
-        @avx for j ∈ eachindex(v)
-            for i ∈ eachindex(out)
-                Aij = s[i, j]
-                out[i] += (Aij >= 2) * w[j]
-            end
-        end
+        _snparray_ax_dominant!(out, s.data, w)
     else
-        @avx for j ∈ eachindex(v)
-            for i ∈ eachindex(out)
-                sij = s[i, j]
-                out[i] += (sij >= 3) * w[j]
-            end
-        end
+        _snparray_ax_recessive!(out, s.data, w)
     end   
     if sla.center
         return out .-= dot(sla.μ, w)
@@ -126,32 +189,11 @@ function mul!(
     s = sla.s
     fill!(out, zero(eltype(out)))
     if sla.model == ADDITIVE_MODEL
-        @avx for i ∈ eachindex(out)
-            outi = zero(eltype(out))
-            for j ∈ eachindex(v)
-                stji = s[j, i]
-                outi += (((stji >= 2) + (stji >= 3))) * v[j]
-            end
-            out[i] = outi
-        end
+        _snparray_atx_additive!(out, s.data, v)
     elseif sla.model == DOMINANT_MODEL
-        @avx for i ∈ eachindex(out)
-            outi = zero(eltype(out))
-            for j ∈ eachindex(v)
-                stji = s[j, i]
-                outi += (stji >= 2) * v[j]
-            end
-            out[i] = outi
-        end
+        _snparray_atx_dominant!(out, s.data, v)
     else
-        @avx for i ∈ eachindex(out)
-            outi = zero(eltype(out))
-            for j ∈ eachindex(v)
-                stji = s[j, i]
-                outi += (stji >= 3) * v[j]
-            end
-            out[i] = outi
-        end
+        _snparray_atx_recessive!(out, s.data, v)
     end   
     if sla.center
         out .-= sum(v) .* sla.μ

@@ -70,13 +70,10 @@ readdir(glob"mouse.*", datapath)
 
 
 
-    6-element Array{String,1}:
+    3-element Array{String,1}:
      "/home/kose/.julia/dev/SnpArrays/data/mouse.bed"
      "/home/kose/.julia/dev/SnpArrays/data/mouse.bim"
      "/home/kose/.julia/dev/SnpArrays/data/mouse.fam"
-     "/home/kose/.julia/dev/SnpArrays/data/mouse.test.hcat.bed"
-     "/home/kose/.julia/dev/SnpArrays/data/mouse.test.hvcat.bed"
-     "/home/kose/.julia/dev/SnpArrays/data/mouse.test.vcat.bed"
 
 
 
@@ -170,7 +167,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      93.859 μs (64 allocations: 390.03 KiB)
+      92.154 μs (64 allocations: 390.03 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -434,10 +431,10 @@ tmpbf = SnpArray(undef, 5, 3)
 
     5×3 SnpArray:
      0x00  0x02  0x00
-     0x00  0x00  0x01
-     0x03  0x03  0x03
-     0x01  0x01  0x00
-     0x03  0x00  0x03
+     0x00  0x00  0x02
+     0x00  0x02  0x01
+     0x03  0x01  0x02
+     0x02  0x01  0x03
 
 
 
@@ -453,10 +450,10 @@ tmpbf = SnpArray("tmp.bed", tmpbf)
 
     5×3 SnpArray:
      0x00  0x02  0x00
-     0x00  0x00  0x01
-     0x03  0x03  0x03
-     0x01  0x01  0x00
-     0x03  0x00  0x03
+     0x00  0x00  0x02
+     0x00  0x02  0x01
+     0x03  0x01  0x02
+     0x02  0x01  0x03
 
 
 
@@ -471,10 +468,10 @@ tmpbf
 
     5×3 SnpArray:
      0x02  0x02  0x00
-     0x00  0x00  0x01
-     0x03  0x03  0x03
-     0x01  0x01  0x00
-     0x03  0x00  0x03
+     0x00  0x00  0x02
+     0x00  0x02  0x01
+     0x03  0x01  0x02
+     0x02  0x01  0x03
 
 
 
@@ -783,7 +780,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      3.670 μs (0 allocations: 0 bytes)
+      3.569 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -833,7 +830,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      7.415 μs (0 allocations: 0 bytes)
+      7.551 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -882,7 +879,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      7.015 μs (0 allocations: 0 bytes)
+      6.976 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -898,7 +895,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      50.405 ms (10150 allocations: 475.78 KiB)
+      50.523 ms (10150 allocations: 475.78 KiB)
 
 
 Copy whole SnpArray
@@ -909,7 +906,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      63.859 ms (0 allocations: 0 bytes)
+      63.891 ms (0 allocations: 0 bytes)
 
 
 ## Summaries
@@ -944,7 +941,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      6.041 ns (0 allocations: 0 bytes)
+      6.046 ns (0 allocations: 0 bytes)
 
 
 ### Minor allele frequencies
@@ -1079,7 +1076,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      15.498 μs (2 allocations: 79.39 KiB)
+      15.520 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1249,7 +1246,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      43.687 ms (19274 allocations: 1.80 MiB)
+      43.666 ms (19274 allocations: 1.80 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1333,7 +1330,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      499.639 ms (25 allocations: 28.95 MiB)
+      510.037 ms (25 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1381,7 +1378,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      318.386 ms (26 allocations: 14.60 MiB)
+      316.482 ms (26 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1505,7 +1502,7 @@ count(rowmask), count(colmask)
 @btime(SnpArrays.filter($mouse, min_success_rate_per_row=0.999, min_success_rate_per_col=0.999));
 ```
 
-      151.694 ms (11460 allocations: 171.28 MiB)
+      152.333 ms (11460 allocations: 171.28 MiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -1697,22 +1694,11 @@ readdir(glob"tmp_*", ".")
 
 
 
-    15-element Array{String,1}:
-     "./tmp_hcat_1.bed"
-     "./tmp_hcat_1.bim"
-     "./tmp_hcat_1.fam"
+    4-element Array{String,1}:
      "./tmp_hcat_arr_1.bed"
-     "./tmp_hvcat1.bed"
-     "./tmp_hvcat1.bim"
-     "./tmp_hvcat1.fam"
      "./tmp_hvcat_arr_1.bed"
-     "./tmp_vcat_1.bed"
-     "./tmp_vcat_1.bim"
-     "./tmp_vcat_1.fam"
      "./tmp_vcat_arr_1.bed"
      "./tmp_vcat_arr_2.bed"
-     "./tmp_vcat_arr_3.bed"
-     "./tmp_vcat_arr_4.bed"
 
 
 
@@ -1883,7 +1869,7 @@ norm(EURbm * v2 -  A * v2)
 
 
 
-    6.729024295676686e-11
+    2.372839928004684e-10
 
 
 
@@ -1895,7 +1881,7 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    5.9742425663560414e-12
+    3.904095195696357e-12
 
 
 
@@ -1908,7 +1894,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $EURbm, $v2));
 ```
 
-      8.655 ms (0 allocations: 0 bytes)
+      8.615 ms (0 allocations: 0 bytes)
 
 
 
@@ -1916,7 +1902,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $A, $v2));
 ```
 
-      7.769 ms (0 allocations: 0 bytes)
+      6.554 ms (0 allocations: 0 bytes)
 
 
 
@@ -1924,7 +1910,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($EURbm), $v1));
 ```
 
-      6.565 ms (1 allocation: 16 bytes)
+      6.449 ms (1 allocation: 16 bytes)
 
 
 
@@ -1932,7 +1918,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($A), $v1));
 ```
 
-      2.955 ms (0 allocations: 0 bytes)
+      2.716 ms (0 allocations: 0 bytes)
 
 
 In another test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 folder faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
@@ -1981,7 +1967,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    7.353538967413897e-14
+    7.79085510313428e-14
 
 
 
@@ -1993,7 +1979,7 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    1.3075674944530023e-14
+    2.1896019179297473e-14
 
 
 
@@ -2017,7 +2003,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime mul!($out1, $EURla, $v2);
 ```
 
-      56.437 ms (0 allocations: 0 bytes)
+      19.732 ms (0 allocations: 0 bytes)
 
 
 
@@ -2025,10 +2011,10 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime mul!($out2, transpose($EURla), $v1);
 ```
 
-      55.725 ms (1 allocation: 16 bytes)
+      13.436 ms (1 allocation: 16 bytes)
 
 
-However, this is much slower than SnpBitMatrix. With a 100 times larger data, it was about 5 times slower than SnpBitMatrix.
+However, this is much slower than SnpBitMatrix. With a 100 times larger data, it was about twice slower than SnpBitMatrix. See linear algebra page for more information.
 
 ### CuSnpArray
 
@@ -2061,7 +2047,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
     └ @ Core :-1
 
 
-      18.810 ms (193 allocations: 6.11 KiB)
+      18.225 ms (193 allocations: 6.11 KiB)
 
 
 
@@ -2069,10 +2055,10 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
 @btime mul!($out2_d, transpose($EURcu), $v1_d);
 ```
 
-      486.464 μs (400 allocations: 13.34 KiB)
+      558.576 μs (400 allocations: 13.34 KiB)
 
 
-The operations are parallelized along the output dimension, hence the GPU was not fully utilized in the first case. With 100-time larger data, 30 to 50-fold speedup were observed for both cases with Nvidia Titan V.
+The operations are parallelized along the output dimension, hence the GPU was not fully utilized in the first case. With 100-time larger data, 30 to 50-fold speedup were observed for both cases with Nvidia Titan V. See linear algebra page for more information.
 
 Let's check correctness of the result.
 
@@ -2084,7 +2070,7 @@ norm(collect(EURcu' * v1_d) -  EURbm' * v1)
 
 
 
-    2.4764076423646187e-11
+    1.7479255832365494e-11
 
 
 
@@ -2612,9 +2598,9 @@ We can merge the splitted dictionary back into one SnpData using `merge_plink`.
 merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
 ```
 
-      0.066660 seconds (117.18 k allocations: 7.904 MiB)
-      0.054178 seconds (133.64 k allocations: 11.951 MiB)
-      0.050596 seconds (134.18 k allocations: 8.737 MiB)
+      0.067435 seconds (117.19 k allocations: 8.027 MiB)
+      0.049139 seconds (125.97 k allocations: 11.520 MiB)
+      0.050432 seconds (134.18 k allocations: 8.737 MiB)
 
 
 
@@ -2657,10 +2643,10 @@ You can also merge the plink formatted files based on their common prefix.
 merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
 ```
 
-      0.144906 seconds (783.54 k allocations: 36.317 MiB)
-      0.567382 seconds (1.19 M allocations: 61.136 MiB)
-      0.003839 seconds (8 allocations: 4.897 MiB)
-      0.001226 seconds (8 allocations: 1.650 MiB)
+      0.145899 seconds (783.53 k allocations: 36.251 MiB)
+      0.567665 seconds (1.19 M allocations: 61.155 MiB)
+      0.004051 seconds (8 allocations: 4.897 MiB)
+      0.000418 seconds (8 allocations: 1.650 MiB)
 
 
 
@@ -2762,12 +2748,12 @@ mouse_toreorder
     │ Row │ fid      │ iid        │ father       │ mother       │ sex      │ phenotype │
     │     │ Abstrac… │ AbstractS… │ AbstractStr… │ AbstractStr… │ Abstrac… │ Abstract… │
     ├─────┼──────────┼────────────┼──────────────┼──────────────┼──────────┼───────────┤
-    │ 1   │ 1_35     │ A066785804 │ B4.5:E2.4(6) │ B4.5:A5.4(2) │ 1        │ -9        │
-    │ 2   │ 1_4      │ A063119082 │ B5.3:E1.2(5) │ B5.3:A2.2(5) │ 1        │ -9        │
-    │ 3   │ 1_58     │ A063336815 │ B1.5:E1.4(4) │ B1.5:A1.4(5) │ 1        │ -9        │
-    │ 4   │ 1_5      │ A067043528 │ F5.3:E2.2(6) │ F5.3:A3.2(5) │ 2        │ -9        │
-    │ 5   │ 1_3      │ A053620586 │ H2.3:C5.2(3) │ H2.3:G2.2(3) │ 1        │ -9        │
-    │ 6   │ 1_2      │ A048286571 │ G4.3:B5.2(3) │ G4.3:F2.2(3) │ 2        │ -9        │
+    │ 1   │ 1_5      │ A048067529 │ A1.2:D4.1(4) │ A1.2:H5.1(4) │ 1        │ -9        │
+    │ 2   │ 1_3      │ A067281559 │ E5.4:H3.3(6) │ E5.4:D3.3(6) │ 1        │ -9        │
+    │ 3   │ 1_22     │ A063361558 │ E1.5:H1.4(4) │ E1.5:D3.4(2) │ 2        │ -9        │
+    │ 4   │ 1_3      │ A067086264 │ A4.4:D3.3(4) │ A4.4:H2.3(3) │ 2        │ -9        │
+    │ 5   │ 1_46     │ A067259573 │ H4.5:C5.4(3) │ H4.5:G4.4(3) │ 1        │ -9        │
+    │ 6   │ 1_2      │ A084127035 │ H5.4:C5.3(7) │ H5.4:G5.3(5) │ 1        │ -9        │
     …,
     srcbed: mouse_reorder.bed
     srcbim: mouse_reorder.bim

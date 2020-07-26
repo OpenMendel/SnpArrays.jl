@@ -79,7 +79,7 @@ end
 Base.size(s::CuSnpArray) = s.m, size(s.data, 2)
 eltype(s::CuSnpArray) = eltype(s.μ)
 
-function snparray_ax_additive!(out, s, v)
+function _snparray_cuda_ax_additive!(out, s, v)
     packedstride = size(s, 1)
     index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride_x = blockDim().x * gridDim().x
@@ -95,7 +95,7 @@ function snparray_ax_additive!(out, s, v)
     end
 end
 
-function snparray_ax_dominant!(out, s, v)
+function _snparray_cuda_ax_dominant!(out, s, v)
     packedstride = size(s, 1)
     index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride_x = blockDim().x * gridDim().x
@@ -111,7 +111,7 @@ function snparray_ax_dominant!(out, s, v)
     end
 end
 
-function snparray_ax_recessive!(out, s, v)
+function _snparray_cuda_ax_recessive!(out, s, v)
     packedstride = size(s, 1)
     index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride_x = blockDim().x * gridDim().x
@@ -127,7 +127,7 @@ function snparray_ax_recessive!(out, s, v)
     end
 end
 
-function snparray_atx_additive!(out, s, v)
+function _snparray_cuda_atx_additive!(out, s, v)
     packedstride = size(s, 1)
     index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride_x = blockDim().x * gridDim().x
@@ -143,7 +143,7 @@ function snparray_atx_additive!(out, s, v)
     end
 end
 
-function snparray_atx_dominant!(out, s, v)
+function _snparray_cuda_atx_dominant!(out, s, v)
     packedstride = size(s, 1)
     index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride_x = blockDim().x * gridDim().x
@@ -159,7 +159,7 @@ function snparray_atx_dominant!(out, s, v)
     end
 end
 
-function snparray_atx_recessive!(out, s, v)
+function _snparray_cuda_atx_recessive!(out, s, v)
     packedstride = size(s, 1)
     index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride_x = blockDim().x * gridDim().x
@@ -189,11 +189,11 @@ function mul!(
     numblocks = ceil(Int, length(out)/256)
     CUDA.@sync begin
         if s.model == ADDITIVE_MODEL
-            @cuda threads=256 blocks=numblocks snparray_ax_additive!(out, s.data, w)
+            @cuda threads=256 blocks=numblocks _snparray_cuda_ax_additive!(out, s.data, w)
         elseif s.model == DOMINANT_MODEL
-            @cuda threads=256 blocks=numblocks snparray_ax_dominant!(out, s.data, w) 
+            @cuda threads=256 blocks=numblocks _snparray_cuda_ax_dominant!(out, s.data, w) 
         else
-            @cuda threads=256 blocks=numblocks snparray_ax_recessive!(out, s.data, w) 
+            @cuda threads=256 blocks=numblocks _snparray_cuda_ax_recessive!(out, s.data, w) 
         end  
     end         
 
@@ -213,11 +213,11 @@ function mul!(
     numblocks = ceil(Int, length(out)/256)
     CUDA.@sync begin
         if s.model == ADDITIVE_MODEL
-            @cuda threads=256 blocks=numblocks snparray_atx_additive!(out, s.data, v)
+            @cuda threads=256 blocks=numblocks _snparray_cuda_atx_additive!(out, s.data, v)
         elseif s.model == DOMINANT_MODEL
-            @cuda threads=256 blocks=numblocks snparray_atx_dominant!(out, s.data, v) 
+            @cuda threads=256 blocks=numblocks _snparray_cuda_atx_dominant!(out, s.data, v) 
         else
-            @cuda threads=256 blocks=numblocks snparray_atx_recessive!(out, s.data, v) 
+            @cuda threads=256 blocks=numblocks _snparray_cuda_atx_recessive!(out, s.data, v) 
         end
     end
 
