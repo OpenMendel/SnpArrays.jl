@@ -199,7 +199,7 @@ rm("tmp.bim", force=true)
 rm("tmp.fam", force=true)
 end
 
-@testset "lin. alg." begin
+@testset "lin. alg. bitmatrix" begin
 reltol = 5e-4
 for t in [Float32, Float64]
     v1 = randn(t, size(EUR, 1))
@@ -233,6 +233,79 @@ for t in [Float32, Float64]
 end
 end
 
+@testset "lin. alg. direct" begin
+reltol = 5e-4
+for t in [Float32, Float64]
+    v1 = randn(t, size(EUR, 1))
+    v2 = randn(t, size(EUR, 2))
+    for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL]
+        @test norm(SnpLinAlg{t}(EUR, model=model) * v2 -
+            convert(Matrix{t}, EUR, model=model) * v2) / 
+            norm(convert(Matrix{t}, EUR, model=model) * v2) < reltol
+        @test norm(SnpLinAlg{t}(EUR, center=true, model=model) * v2 - 
+            convert(Matrix{t}, EUR, center=true, model=model) * v2) /
+            norm(convert(Matrix{t}, EUR, center=true, model=model) * v2) < reltol
+        @test norm(SnpLinAlg{t}(EUR, scale=true, model=model) * v2 - 
+            convert(Matrix{t}, EUR, scale=true, model=model) * v2) /
+            norm(convert(Matrix{t}, EUR, scale=true, model=model) * v2) < reltol
+        @test norm(SnpLinAlg{t}(EUR, center=true, scale=true, model=model) * v2 - 
+            convert(Matrix{t}, EUR, center=true, scale=true, model=model) * v2) /
+            norm(convert(Matrix{t}, EUR, center=true, scale=true, model=model) * v2) < reltol
+        @test norm(transpose(SnpLinAlg{t}(EUR, model=model)) * v1 - 
+            transpose(convert(Matrix{t}, EUR, model=model)) * v1) /
+            norm(transpose(convert(Matrix{t}, EUR, model=model)) * v1) < reltol
+        @test norm(transpose(SnpLinAlg{t}(EUR, center=true, model=model)) * v1 - 
+            transpose(convert(Matrix{t}, EUR, center=true, model=model)) * v1) /
+            norm(transpose(convert(Matrix{t}, EUR, center=true, model=model)) * v1) < reltol
+        @test norm(transpose(SnpLinAlg{t}(EUR, scale=true, model=model)) * v1 - 
+            transpose(convert(Matrix{t}, EUR, scale=true, model=model)) * v1) /
+            norm(transpose(convert(Matrix{t}, EUR, scale=true, model=model)) * v1) < reltol
+        @test norm(transpose(SnpLinAlg{t}(EUR, center=true, scale=true, model=model)) * v1 - 
+            transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model)) * v1) /
+            norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model)) * v1) < reltol
+    end
+end
+end
+
+if get(ENV,"JULIA_SNPARRAYS_TEST_CUDA","") == "true"
+    using CUDA, Adapt
+    @testset "lin. alg. cuda" begin
+    reltol = 5e-4
+    for t in [Float32, Float64]
+        v1 = randn(t, size(EUR, 1))
+        v2 = randn(t, size(EUR, 2))
+        v1_d = adapt(CuVector{t}, v1)
+        v2_d = adapt(CuVector{t}, v2)
+        for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL]
+            @test norm(collect(CuSnpArray{t}(EUR, model=model) * v2_d) -
+                convert(Matrix{t}, EUR, model=model) * v2) / 
+                norm(convert(Matrix{t}, EUR, model=model) * v2) < reltol
+            @test norm(collect(CuSnpArray{t}(EUR, center=true, model=model) * v2_d) - 
+                convert(Matrix{t}, EUR, center=true, model=model) * v2) /
+                norm(convert(Matrix{t}, EUR, center=true, model=model) * v2) < reltol
+            @test norm(collect(CuSnpArray{t}(EUR, scale=true, model=model) * v2_d) - 
+                convert(Matrix{t}, EUR, scale=true, model=model) * v2) /
+                norm(convert(Matrix{t}, EUR, scale=true, model=model) * v2) < reltol
+            @test norm(collect(CuSnpArray{t}(EUR, center=true, scale=true, model=model) * v2_d) - 
+                convert(Matrix{t}, EUR, center=true, scale=true, model=model) * v2) /
+                norm(convert(Matrix{t}, EUR, center=true, scale=true, model=model) * v2) < reltol
+            @test norm(collect(transpose(CuSnpArray{t}(EUR, model=model)) * v1_d) - 
+                transpose(convert(Matrix{t}, EUR, model=model)) * v1) /
+                norm(transpose(convert(Matrix{t}, EUR, model=model)) * v1) < reltol
+            @test norm(collect(transpose(CuSnpArray{t}(EUR, center=true, model=model)) * v1_d) - 
+                transpose(convert(Matrix{t}, EUR, center=true, model=model)) * v1) /
+                norm(transpose(convert(Matrix{t}, EUR, center=true, model=model)) * v1) < reltol
+            @test norm(collect(transpose(CuSnpArray{t}(EUR, scale=true, model=model)) * v1_d) - 
+                transpose(convert(Matrix{t}, EUR, scale=true, model=model)) * v1) /
+                norm(transpose(convert(Matrix{t}, EUR, scale=true, model=model)) * v1) < reltol
+            @test norm(collect(transpose(CuSnpArray{t}(EUR, center=true, scale=true, model=model)) * v1_d) - 
+                transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model)) * v1) /
+                norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model)) * v1) < reltol
+        end
+    end
+    end  
+end
+
 @testset "subarrays" begin
 @test all(@view(EUR[1:2:10, 1:2:10]) .==
 [[0x03 0x03 0x02 0x02 0x03];
@@ -256,8 +329,8 @@ EURsubfm = convert(Matrix{Float64}, EURsub, model=ADDITIVE_MODEL, center=true, s
 v1 = randn(size(EURsub, 1))
 v2 = randn(size(EURsub, 2))
 
-@test all(EURsubbm * v2 .≈ EURsubfm * v2)
-@test all(EURsubbm' * v1 .≈ EURsubfm' * v1)
+@test isapprox(EURsubbm * v2, EURsubfm * v2)
+@test isapprox(EURsubbm' * v1, EURsubfm' * v1)
 end
 
 @testset "split-merge-readwrite" begin

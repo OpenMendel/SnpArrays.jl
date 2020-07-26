@@ -20,7 +20,7 @@ function SnpBitMatrix{T}(
         B2 = s .≥ 0x03
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=ADDITIVE_MODEL)
+            μ[:] = mean(s; dims=1, model=ADDITIVE_MODEL)
         else
             μ = T[]
         end
@@ -38,7 +38,7 @@ function SnpBitMatrix{T}(
         B2 = falses(0, 0)
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=DOMINANT_MODEL)
+            μ[:] = mean(s; dims=1, model=DOMINANT_MODEL)
         else
             μ = T[]
         end
@@ -56,7 +56,7 @@ function SnpBitMatrix{T}(
         B2 = falses(0, 0)
         if center || scale
             μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s, dims=1, model=RECESSIVE_MODEL)
+            μ[:] = mean(s; dims=1, model=RECESSIVE_MODEL)
         else
             μ = T[]
         end
@@ -83,10 +83,30 @@ Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
 eltype(bm::SnpBitMatrix) = eltype(bm.μ)
 issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B2) && issymmetric(bm.B1)
 
+function mul!(c::Vector{T}, A::BitMatrix, b::Vector{T}) where T
+    fill!(c, zero(eltype(c)))
+    @avx for j in 1:size(A, 2)
+        for i in 1:size(A, 1)
+            c[i] += A[i, j] * b[j]
+        end
+    end
+end
+
+function mul!(c::Vector{T}, A::Union{Transpose{Bool,BitArray{2}}, Adjoint{Bool, BitArray{2}}}, b::Vector{T}) where T
+    tA = transpose(A)
+    fill!(c, zero(eltype(c)))
+    @avx for i in 1:size(tA, 2)
+        for j in 1:size(tA, 1)
+            c[i] += tA[j, i] * b[j]
+        end
+    end
+end
+
 function mul!(
     out::AbstractVector{T}, 
     s::SnpBitMatrix{T}, 
     v::AbstractVector{T}) where T <: AbstractFloat
+    @assert length(out) == size(s, 1) && length(v) == size(s, 2)
     if s.scale
         s.storagev2 .= s.σinv .* v
         w = s.storagev2
@@ -112,6 +132,7 @@ function mul!(
     st::Union{Transpose{T, SnpBitMatrix{T}}, Adjoint{T, SnpBitMatrix{T}}},
     v::AbstractVector{T}) where T <: AbstractFloat
     s = st.parent
+    @assert length(out) == size(st, 1) && length(v) == size(st, 2)
     if s.model == ADDITIVE_MODEL
         mul!(out, transpose(s.B1), v)
         mul!(s.storagev2, transpose(s.B2), v)
@@ -128,18 +149,3 @@ function mul!(
         return out
     end
 end
-
-# function mulfast!(
-#     out::AbstractVector{T},
-#     A::BitMatrix,
-#     v::AbstractVector{T}
-#     ) where T <: AbstractFloat
-#     fill!(out, 0)
-#     @inbounds for j in 1:size(A, 2)
-#         vj = v[j]
-#         @simd for i in 1:size(A, 1)
-#             A[i, j] && (out[i] += vj)
-#         end
-#     end
-#     out
-# end
