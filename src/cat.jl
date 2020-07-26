@@ -74,9 +74,7 @@ function Base.hcat(A::SnpArray...; des="tmp_hcat_arr_" * string(arr_hcat_counter
     end
     des_arr = SnpArray(desbedfile, des_rows, "r+")
 
-    for i in 1:length(A)
-        des_arr[:, (cum_cols[i] + 1) : cum_cols[i + 1]] .= @view A[i][:, :]
-    end
+    des_arr.data .= hcat([s.data for s in A]...)
     des_arr
 end
 
