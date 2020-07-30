@@ -14,6 +14,7 @@ import LinearAlgebra: mul!
 import Statistics: mean, std, var
 import StatsBase: counts
 import SpecialFunctions: gamma_inc
+import VectorizationBase: gesp
 export AbstractSnpArray, SnpArray, SnpBitMatrix, SnpLinAlg, SnpData
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
 export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
