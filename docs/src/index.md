@@ -96,15 +96,15 @@ readdir(glob"EUR_subset.*", datapath)
 
 Data from recent studies, which have samples from tens of thousands of individuals at over a million SNP positions, would be in the tens or even hundreds of Gb range.
 
-# SnpArray
+## SnpArray
 
 `SnpArray` is the fundamental type for dealing with genotype data in Plink bed file. Each row of `SnpArray` is a sample and each column a SNP.
 
-## Constructor
+### Constructor
 
 There are various ways to initialize a SnpArray.
 
-### Intitialize from Plink file set
+#### Intitialize from Plink file set
 
 SnpArray can be initialized from the Plink bed file. The corresponding `.fam` needs to be present, which is used to determine the number of individuals.
 
@@ -167,7 +167,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      92.154 μs (64 allocations: 390.03 KiB)
+      87.555 μs (64 allocations: 390.03 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -196,7 +196,7 @@ To possibly change genoytpes in a bed file, open with write permission
 mouse = SnpArray(SnpArrays.datadir("mouse.bed"), "w")
 ```
 
-### Initialize from only bed file
+#### Initialize from only bed file
 
 If only the bed file is present, user is required to supply the number of individuals in the second argument.
 
@@ -238,7 +238,7 @@ SnpArray(SnpArrays.datadir("mouse.bed"), 1940)
 
 
 
-### Initialize from compressed Plink files
+#### Initialize from compressed Plink files
 
 SnpArray can be initialized from Plink files in compressed formats: `gz`, `zlib`, `zz`, `xz`, `zst`, or `bz2`. For a complete list type
 ```julia
@@ -354,7 +354,7 @@ rm(SnpArrays.datadir("mouse.fam.gz"), force=true)
 rm(SnpArrays.datadir("mouse.bim.gz"), force=true)
 ```
 
-### Initialize and create bed file
+#### Initialize and create bed file
 
 Initialize 5 rows and 3 columns with all (A1, A1) genotype (0x00) and memory-map to a bed file `tmp.bed`
 
@@ -430,11 +430,11 @@ tmpbf = SnpArray(undef, 5, 3)
 
 
     5×3 SnpArray:
-     0x00  0x02  0x00
-     0x00  0x00  0x02
-     0x00  0x02  0x01
-     0x03  0x01  0x02
-     0x02  0x01  0x03
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
@@ -449,11 +449,11 @@ tmpbf = SnpArray("tmp.bed", tmpbf)
 
 
     5×3 SnpArray:
-     0x00  0x02  0x00
-     0x00  0x00  0x02
-     0x00  0x02  0x01
-     0x03  0x01  0x02
-     0x02  0x01  0x03
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
@@ -467,11 +467,11 @@ tmpbf
 
 
     5×3 SnpArray:
-     0x02  0x02  0x00
-     0x00  0x00  0x02
-     0x00  0x02  0x01
-     0x03  0x01  0x02
-     0x02  0x01  0x03
+     0x02  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
+     0x00  0x00  0x00
 
 
 
@@ -780,7 +780,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      3.569 μs (0 allocations: 0 bytes)
+      3.719 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -830,7 +830,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      7.551 μs (0 allocations: 0 bytes)
+      7.138 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -879,7 +879,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      6.976 μs (0 allocations: 0 bytes)
+      6.860 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -895,7 +895,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      50.523 ms (10150 allocations: 475.78 KiB)
+      50.433 ms (10150 allocations: 475.78 KiB)
 
 
 Copy whole SnpArray
@@ -906,7 +906,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      63.891 ms (0 allocations: 0 bytes)
+      64.308 ms (0 allocations: 0 bytes)
 
 
 ## Summaries
@@ -941,7 +941,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      6.046 ns (0 allocations: 0 bytes)
+      6.047 ns (0 allocations: 0 bytes)
 
 
 ### Minor allele frequencies
@@ -1076,7 +1076,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      15.520 μs (2 allocations: 79.39 KiB)
+      17.328 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1246,7 +1246,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      43.666 ms (19274 allocations: 1.80 MiB)
+      43.661 ms (19274 allocations: 1.80 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1330,7 +1330,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      510.037 ms (25 allocations: 28.95 MiB)
+      502.287 ms (25 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1378,7 +1378,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      316.482 ms (26 allocations: 14.60 MiB)
+      315.064 ms (26 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1502,7 +1502,7 @@ count(rowmask), count(colmask)
 @btime(SnpArrays.filter($mouse, min_success_rate_per_row=0.999, min_success_rate_per_col=0.999));
 ```
 
-      152.333 ms (11460 allocations: 171.28 MiB)
+      150.800 ms (11460 allocations: 171.28 MiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -1510,7 +1510,7 @@ One may use the `rowmask` and `colmask` to filter and save filtering result as P
 SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
 ```
 
-## Filter Plink files
+### Filter Plink files
 
 Filter a set of Plink files according to row indices and column indices. By result, filtered Plink files are saved as `srcname.filtered.bed`, `srcname.filtered.fam`, and `srcname.filtered.bim`, where `srcname` is the source Plink file name. You can also specify destimation file name using keyword `des`.
 
@@ -1602,7 +1602,7 @@ rm(SnpArrays.datadir("mouse.filtered.fam"), force=true)
 rm(SnpArrays.datadir("mouse.filtered.bim"), force=true)
 ```
 
-## Concatenating `SnpArray`s
+### Concatenating `SnpArray`s
 
 Concatenation of `SnpArray`s is implemented in `hcat`, `vcat`, and `hvcat` functions. By default, the resulting `.bed` file is saved as a file beginning with `tmp_` in the working directory. You can specify destination using keyword `des`. 
 
@@ -1694,11 +1694,14 @@ readdir(glob"tmp_*", ".")
 
 
 
-    4-element Array{String,1}:
+    7-element Array{String,1}:
      "./tmp_hcat_arr_1.bed"
      "./tmp_hvcat_arr_1.bed"
      "./tmp_vcat_arr_1.bed"
      "./tmp_vcat_arr_2.bed"
+     "./tmp_vcat_arr_3.bed"
+     "./tmp_vcat_arr_4.bed"
+     "./tmp_vcat_arr_5.bed"
 
 
 
@@ -1767,14 +1770,14 @@ rm(SnpArrays.datadir("mouse.test.vcat.bed"), force=true)
 rm(SnpArrays.datadir("mouse.test.hvcat.bed"), force=true)
 ```
 
-# SnpBitMatrix
+## SnpBitMatrix
 
 In some applications we want to perform linear algebra using SnpArray directly without expanding it to numeric matrix. This is achieved by the `SnpBitMatrix` type. The implementation assumes:
 
 1. the SnpArray does not have missing genotypes, and
 2. the matrix corresponding to SnpArray is the matrix of A2 allele counts.
 
-## Constructor
+### Constructor
 
 First let's load a data set without missing genotypes.
 
@@ -1839,7 +1842,7 @@ Base.summarysize(EUR), Base.summarysize(EURbm)
 
 
 
-## Linear algebra
+### Linear algebra
 
 A SnpBitMatrix acts similar to a regular matrix and responds to `size`, `eltype`, and SnpBitMatrix-vector multiplications.
 
@@ -1869,7 +1872,7 @@ norm(EURbm * v2 -  A * v2)
 
 
 
-    2.372839928004684e-10
+    2.837775572500693e-11
 
 
 
@@ -1881,7 +1884,7 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    3.904095195696357e-12
+    5.399567080480323e-12
 
 
 
@@ -1894,7 +1897,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $EURbm, $v2));
 ```
 
-      8.615 ms (0 allocations: 0 bytes)
+      8.495 ms (0 allocations: 0 bytes)
 
 
 
@@ -1902,7 +1905,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out1, $A, $v2));
 ```
 
-      6.554 ms (0 allocations: 0 bytes)
+      7.844 ms (0 allocations: 0 bytes)
 
 
 
@@ -1910,7 +1913,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($EURbm), $v1));
 ```
 
-      6.449 ms (1 allocation: 16 bytes)
+      6.612 ms (1 allocation: 16 bytes)
 
 
 
@@ -1918,7 +1921,7 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime(mul!($out2, $transpose($A), $v1));
 ```
 
-      2.716 ms (0 allocations: 0 bytes)
+      3.011 ms (0 allocations: 0 bytes)
 
 
 In another test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 folder faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
@@ -1967,7 +1970,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    7.79085510313428e-14
+    8.987658251177042e-14
 
 
 
@@ -1979,15 +1982,15 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    2.1896019179297473e-14
+    1.6136185547316357e-14
 
 
 
-## Two alternatives: SnpLinAlg and CuSnpArray
+### Two alternatives: SnpLinAlg and CuSnpArray
 
 Basically, creating SnpBitMatrix doubles the memory usage. If it becomes an issue,  direct linear algebra operations from a SnpArray is possible. 
 
-### SnpLinAlg
+#### SnpLinAlg
 
 
 ```julia
@@ -2003,20 +2006,19 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
 @btime mul!($out1, $EURla, $v2);
 ```
 
-      19.732 ms (0 allocations: 0 bytes)
-
+      6.880 ms (264 allocations: 14.03 KiB)
 
 
 ```julia
 @btime mul!($out2, transpose($EURla), $v1);
 ```
 
-      13.436 ms (1 allocation: 16 bytes)
+      9.760 ms (3 allocations: 128 bytes)
 
 
-However, this is much slower than SnpBitMatrix. With a 100 times larger data, it was about twice slower than SnpBitMatrix. See linear algebra page for more information.
+Computing $Ax$ is faster in SnpLinAlg, and computing $A^T x$ is faster in SnpBitMatrix. Note that SnpLinAlg does not allocate additional memory. See Linear Algebra page for more information.
 
-### CuSnpArray
+#### CuSnpArray
 
 On machines with Nvidia GPU, matrix-vector multiplications can be performed on it via CuSnpArray. The input vectors should be CuVectors. 
 
@@ -2047,7 +2049,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
     └ @ Core :-1
 
 
-      18.225 ms (193 allocations: 6.11 KiB)
+      18.361 ms (253 allocations: 7.69 KiB)
 
 
 
@@ -2055,7 +2057,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
 @btime mul!($out2_d, transpose($EURcu), $v1_d);
 ```
 
-      558.576 μs (400 allocations: 13.34 KiB)
+      626.435 μs (465 allocations: 15.00 KiB)
 
 
 The operations are parallelized along the output dimension, hence the GPU was not fully utilized in the first case. With 100-time larger data, 30 to 50-fold speedup were observed for both cases with Nvidia Titan V. See linear algebra page for more information.
@@ -2070,15 +2072,15 @@ norm(collect(EURcu' * v1_d) -  EURbm' * v1)
 
 
 
-    1.7479255832365494e-11
+    4.38122146476498e-11
 
 
 
-# SnpData
+## SnpData
 
 We can create a `SnpData`, which has a `SnpArray` with information on SNP and subject appended.
 
-## Constructor
+### Constructor
 
 
 ```julia
@@ -2118,7 +2120,7 @@ EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
 
 
 
-## Filter
+### Filter
 
 We can filter SnpData by functions `f_person` and `f_snp`. `f_person` applies to the field `person_info` and selects persons (rows) for which `f_person` is `true`.`f_snp` applies to the field `snp_info` and selects snps (columns) for which `f_snp` is `true`. The first argument can be either a `SnpData` or an `AbstractString`.
 
@@ -2276,7 +2278,7 @@ SnpArrays.filter(EUR_data; des="tmp.filter.chr.17.sex.male", f_person = x -> x[:
 
 
 
-## Split
+### Split
 
 We can split `SnpData` by SNP's choromosomes or each person's sex or phenotype using `split_plink`. Again, the first argument can be an `SnpData` or an `AbstractString`.
 
@@ -2357,7 +2359,7 @@ splitted_sex = SnpArrays.split_plink(EUR_data, :sex; prefix="tmp.split.sex.")
 
 
 
-## Concatenation
+### Concatenation
 
 `hcat`, `vcat`, and `hvcat` are also implemented for `SnpData`. All of `.bed`, `.bim`, `.fam` files are created. Simple concatenation expression can be used (with the side effect of creation of temporary plink files). One may also set the desitination using the keyword argument `des`. 
 
@@ -2589,7 +2591,7 @@ hvcat((2,2), piece, piece, piece, piece; des="tmp.hvcat")
 
 
 
-## Merge
+### Merge
 
 We can merge the splitted dictionary back into one SnpData using `merge_plink`.
 
@@ -2598,9 +2600,9 @@ We can merge the splitted dictionary back into one SnpData using `merge_plink`.
 merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
 ```
 
-      0.067435 seconds (117.19 k allocations: 8.027 MiB)
-      0.049139 seconds (125.97 k allocations: 11.520 MiB)
-      0.050432 seconds (134.18 k allocations: 8.737 MiB)
+      0.066388 seconds (117.18 k allocations: 7.904 MiB)
+      0.049178 seconds (125.97 k allocations: 11.520 MiB)
+      0.051638 seconds (134.18 k allocations: 8.737 MiB)
 
 
 
@@ -2643,10 +2645,10 @@ You can also merge the plink formatted files based on their common prefix.
 merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
 ```
 
-      0.145899 seconds (783.53 k allocations: 36.251 MiB)
-      0.567665 seconds (1.19 M allocations: 61.155 MiB)
-      0.004051 seconds (8 allocations: 4.897 MiB)
-      0.000418 seconds (8 allocations: 1.650 MiB)
+      0.143816 seconds (783.53 k allocations: 36.258 MiB)
+      0.575327 seconds (1.19 M allocations: 61.140 MiB)
+      0.003704 seconds (8 allocations: 4.897 MiB)
+      0.000827 seconds (8 allocations: 1.650 MiB)
 
 
 
@@ -2682,7 +2684,7 @@ merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
 
 
 
-## Reorder
+### Reorder
 
 Order of subjects can be changed using the function `reorder!`.
 
@@ -2697,7 +2699,7 @@ run(`cp $(mouse_prefix * ".fam") mouse_reorder.fam`)
 
 
 
-    Process(`[4mcp[24m [4m/home/kose/.julia/dev/SnpArrays/src/../data/mouse.fam[24m [4mmouse_reorder.fam[24m`, ProcessExited(0))
+    Process(`[4mcp[24m [4m/home/kose/.julia/dev/SnpArrays/src/../data/mouse.fam[24m [4mmouse_reorder.fam[24m`, ProcessExited(0))
 
 
 
@@ -2748,12 +2750,12 @@ mouse_toreorder
     │ Row │ fid      │ iid        │ father       │ mother       │ sex      │ phenotype │
     │     │ Abstrac… │ AbstractS… │ AbstractStr… │ AbstractStr… │ Abstrac… │ Abstract… │
     ├─────┼──────────┼────────────┼──────────────┼──────────────┼──────────┼───────────┤
-    │ 1   │ 1_5      │ A048067529 │ A1.2:D4.1(4) │ A1.2:H5.1(4) │ 1        │ -9        │
-    │ 2   │ 1_3      │ A067281559 │ E5.4:H3.3(6) │ E5.4:D3.3(6) │ 1        │ -9        │
-    │ 3   │ 1_22     │ A063361558 │ E1.5:H1.4(4) │ E1.5:D3.4(2) │ 2        │ -9        │
-    │ 4   │ 1_3      │ A067086264 │ A4.4:D3.3(4) │ A4.4:H2.3(3) │ 2        │ -9        │
-    │ 5   │ 1_46     │ A067259573 │ H4.5:C5.4(3) │ H4.5:G4.4(3) │ 1        │ -9        │
-    │ 6   │ 1_2      │ A084127035 │ H5.4:C5.3(7) │ H5.4:G5.3(5) │ 1        │ -9        │
+    │ 1   │ 1_5      │ A053629514 │ F5.3:E2.2(6) │ F5.3:A3.2(5) │ 1        │ -9        │
+    │ 2   │ 1_18     │ A067077564 │ G1.5:B5.4(5) │ G1.5:F5.4(5) │ 1        │ -9        │
+    │ 3   │ 1_2      │ A048029086 │ G1.3:B1.2(3) │ G1.3:F3.2(3) │ 2        │ -9        │
+    │ 4   │ 1_1      │ A048097274 │ H4.2:C5.1(4) │ H4.2:G1.1(7) │ 1        │ -9        │
+    │ 5   │ 1_15     │ A063796366 │ H2.5:C3.4(3) │ H2.5:G4.4(2) │ 2        │ -9        │
+    │ 6   │ 1_45     │ A084280094 │ 6.6:F1.5(6)  │ 6.6:G1.5(1)  │ 1        │ -9        │
     …,
     srcbed: mouse_reorder.bed
     srcbim: mouse_reorder.bim

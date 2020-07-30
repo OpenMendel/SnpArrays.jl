@@ -75,82 +75,162 @@ Base.size(sla::SnpLinAlg, k::Integer) = size(sla.s, k)
 
 eltype(bm::SnpLinAlg) = eltype(bm.μ)
 
-function _snparray_ax_additive!(out, s::Matrix{UInt8}, v)
-    packedstride = size(s, 1)
-    @avx for j ∈ eachindex(v)
-        for i ∈ eachindex(out)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            out[i] += ((Aij >= 2) + (Aij >= 3)) * v[j]
+
+function _snparray_ax_additive_rem!(out, s, v)
+    maxp = length(out)
+    @avx for j in eachindex(v)
+        block = s[1, j]
+        for p in 1:maxp
+            Aij = (block >> (2*(p-1))) & 3
+            out[p] += ((Aij >= 2) + (Aij == 3)) * v[j]
         end
+    end
+end
+function _snparray_ax_additive!(out, s, v, rows, cols)
+    #fill!(out, zero(Float64))
+    k = rows >> 2
+    rem = rows & 3
+    
+    @avx for j ∈ 1:cols
+        for l in 1:k
+            block = s[l, j]
+            
+            for p in 1:4
+                Aij = (block >> (2 *(p-1))) & 3
+                out[4*(l-1)+p] += ((Aij >= 2) + (Aij == 3)) * v[j]
+            end
+
+        end
+    end
+    if rem != 0
+        _snparray_ax_additive_rem!(@view(out[4k+1:end]), @view(s[k+1:k+1, :]), v)
     end
     out
 end
 
-function _snparray_ax_dominant!(out, s::Matrix{UInt8}, v)
-    packedstride = size(s, 1)
-    @avx for j ∈ eachindex(v)
-        for i ∈ eachindex(out)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            out[i] += (Aij >= 2) * v[j]
+function _snparray_ax_additive!(out, s, v)
+    _snparray_ax_additive!(out, s, v, length(out), length(v))
+end
+
+function _snparray_ax_dominant_rem!(out, s, v)
+    maxp = length(out)
+    @avx for j in eachindex(v)
+        block = s[1, j]
+        for p in 1:maxp
+            Aij = (block >> (2*(p-1))) & 3
+            out[p] += (Aij >= 2) * v[j]
         end
+    end
+end
+function _snparray_ax_dominant!(out, s, v, rows, cols)
+    #fill!(out, zero(Float64))
+    k = rows >> 2
+    rem = rows & 3
+    
+    @avx for j ∈ 1:cols
+        for l in 1:k
+            block = s[l, j]
+            
+            for p in 1:4
+                Aij = (block >> (2 *(p-1))) & 3
+                out[4*(l-1)+p] += (Aij >= 2) * v[j]
+            end
+
+        end
+    end
+    if rem != 0
+        _snparray_ax_dominant_rem!(@view(out[4k+1:end]), @view(s[k+1:k+1, :]), v)
     end
     out
 end
 
-function _snparray_ax_recessive!(out, s::Matrix{UInt8}, v)
-    packedstride = size(s, 1)
-    @avx for j ∈ eachindex(v)
-        for i ∈ eachindex(out)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            out[i] += (Aij >= 3) * v[j]
+function _snparray_ax_dominant!(out, s, v)
+    _snparray_ax_dominant!(out, s, v, length(out), length(v))
+end
+
+function _snparray_ax_recessive_rem!(out, s, v)
+    maxp = length(out)
+    @avx for j in eachindex(v)
+        block = s[1, j]
+        for p in 1:maxp
+            Aij = (block >> (2*(p-1))) & 3
+            out[p] += (Aij == 3) * v[j]
         end
+    end
+end
+function _snparray_ax_recessive!(out, s, v, rows, cols)
+    #fill!(out, zero(Float64))
+    k = rows >> 2
+    rem = rows & 3
+    
+    @avx for j ∈ 1:cols
+        for l in 1:k
+            block = s[l, j]
+            
+            for p in 1:4
+                Aij = (block >> (2 *(p-1))) & 3
+                out[4*(l-1)+p] += (Aij == 3) * v[j]
+            end
+
+        end
+    end
+    if rem != 0
+        _snparray_ax_recessive_rem!(@view(out[4k+1:end]), @view(s[k+1:k+1, :]), v)
     end
     out
 end
 
-function _snparray_atx_additive!(out, s::Matrix{UInt8}, v)
-    packedstride = size(s, 1)
-    @avx for i ∈ eachindex(out)
-        for j ∈ eachindex(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            out[i] += ((Aij >= 2) + (Aij >= 3)) * v[j]
-        end
-    end
-    out
+function _snparray_ax_recessive!(out, s, v)
+    _snparray_ax_recessive!(out, s, v, length(out), length(v))
 end
 
-function _snparray_atx_dominant!(out, s::Matrix{UInt8}, v)
-    packedstride = size(s, 1)
-    @avx for i ∈ eachindex(out)
-        for j ∈ eachindex(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            out[i] += (Aij >= 2) * v[j]
-        end
-    end
-    out
-end
+function _snparray_ax_tile!(c, A, b, model)
+    vstep = 1024
+    hstep = 1024
+    vstep_log2 = 10
+    hstep_log2 = 10
 
-function _snparray_atx_recessive!(out, s::Matrix{UInt8}, v)
-    packedstride = size(s, 1)
-    @avx for i ∈ eachindex(out)
-        for j ∈ eachindex(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            out[i] += (Aij >= 3) * v[j]
+    if model == ADDITIVE_MODEL
+        _ftn! = _snparray_ax_additive!
+    elseif model == DOMINANT_MODEL
+        _ftn! = _snparray_ax_dominant!
+    else
+        _ftn! = _snparray_ax_recessive!
+    end
+    
+    fill!(c, zero(UInt8))
+
+    M = length(c) >> 2
+    N = size(A, 2)
+    Miter = M >>> vstep_log2 # fast div(M, 512)
+    Mrem = M & (vstep-1) # fast rem(M, 512)
+    Niter = N >>> hstep_log2
+    Nrem = N & (hstep-1)
+    GC.@preserve c A b for n in 0:Niter-1
+        for m in 0:Miter-1
+            _ftn!(
+                gesp(stridedpointer(c), ((4 * vstep)*m,)),
+                gesp(stridedpointer(A), (vstep*m, hstep*n)),
+                gesp(stridedpointer(b), (hstep*n,)),
+                vstep << 2,
+                hstep
+            )
+        end
+        if Mrem != 0
+            _ftn!(@view(c[(4*vstep)*Miter+1:end]), 
+                @view(A[vstep*(Miter)+1:end, hstep*n+1:hstep*(n+1)]),
+                @view(b[hstep*n+1:hstep*(n+1)]),
+                length(c) - 4*vstep*Miter,
+                hstep
+            )
         end
     end
-    out
+    if Nrem != 0
+        _ftn!(c, @view(A[:, (hstep*Niter+1):end]), @view(b[hstep*Niter+1:end]),
+            length(c), Nrem
+        )
+    end
+
 end
 
 function mul!(
@@ -166,18 +246,134 @@ function mul!(
     end
     fill!(out, zero(eltype(out)))
     s = sla.s
-    if sla.model == ADDITIVE_MODEL
-        _snparray_ax_additive!(out, s.data, w)
-    elseif sla.model == DOMINANT_MODEL
-        _snparray_ax_dominant!(out, s.data, w)
-    else
-        _snparray_ax_recessive!(out, s.data, w)
-    end   
+
+    _snparray_ax_tile!(out, s.data, w, sla.model)
+    # if sla.model == ADDITIVE_MODEL
+    #     _snparray_ax_additive!(out, s.data, w)
+    # elseif sla.model == DOMINANT_MODEL
+    #     _snparray_ax_dominant!(out, s.data, w)
+    # else
+    #     _snparray_ax_recessive!(out, s.data, w)
+    # end   
+
     if sla.center
         return out .-= dot(sla.μ, w)
     else
         return out
     end
+end
+
+
+function _snparray_atx_additive_rem!(out, s, v)
+    maxp = length(v)
+    @avx for i in eachindex(out)
+        block = s[1, i]
+        for p in 1:maxp
+            Aij = (block >> (2*(p-1))) & 3
+            out[i] += ((Aij >= 2) + (Aij == 3)) * v[p]
+        end
+    end
+end
+
+function _snparray_atx_additive!(out, s, v, rows, cols)
+    #fill!(out, zero(Float64))
+    k = rows >> 2
+    rem = rows & 3
+    
+    @avx for i ∈ 1:cols
+        for l in 1:k
+            block = s[l, i]
+            
+            for p in 1:4
+                Aij = (block >> (2 *(p-1))) & 3
+                out[i] += ((Aij >= 2) + (Aij == 3)) * v[4*(l-1)+p]
+            end
+
+        end
+    end
+    if rem != 0
+        _snparray_atx_additive_rem!(out, @view(s[k+1:k+1, :]), @view(v[4k+1:end]))
+    end
+    out
+end
+
+function _snparray_atx_additive!(out, s, v)
+    _snparray_atx_additive!(out, s, v, length(v), length(out))
+end
+
+function _snparray_atx_dominant_rem!(out, s, v)
+    maxp = length(v)
+    @avx for i in eachindex(out)
+        block = s[1, i]
+        for p in 1:maxp
+            Aij = (block >> (2*(p-1))) & 3
+            out[i] += (Aij >= 2) * v[p]
+        end
+    end
+end
+
+function _snparray_atx_dominant!(out, s, v, rows, cols)
+    #fill!(out, zero(Float64))
+    k = rows >> 2
+    rem = rows & 3
+    
+    @avx for i ∈ 1:cols
+        for l in 1:k
+            block = s[l, i]
+            
+            for p in 1:4
+                Aij = (block >> (2 *(p-1))) & 3
+                out[i] += (Aij >= 2) * v[4*(l-1)+p]
+            end
+
+        end
+    end
+    if rem != 0
+        _snparray_atx_dominant_rem!(out, @view(s[k+1:k+1, :]), @view(v[4k+1:end]))
+    end
+    out
+end
+
+function _snparray_atx_dominant!(out, s, v)
+    _snparray_atx_dominant!(out, s, v, length(v), length(out))
+end
+
+function _snparray_atx_recessive_rem!(out, s, v)
+    maxp = length(v)
+    @avx for i in eachindex(out)
+        block = s[1, i]
+        for p in 1:maxp
+            Aij = (block >> (2*(p-1))) & 3
+            out[i] += (Aij == 3) * v[p]
+        end
+    end
+end
+
+function _snparray_atx_recessive!(out, s, v, rows, cols)
+    #fill!(out, zero(Float64))
+    k = rows >> 2
+    rem = rows & 3
+    
+    @avx for i ∈ 1:cols
+        for l in 1:k
+            block = s[l, i]
+            
+            for p in 1:4
+                Aij = (block >> (2 *(p-1))) & 3
+                out[i] += (Aij == 3) * v[4*(l-1)+p]
+            end
+
+        end
+
+    end
+    if rem != 0
+        _snparray_atx_recessive_rem!(out, @view(s[k+1:k+1, :]), @view(v[4k+1:end]))
+    end
+    out
+end
+
+function _snparray_atx_recessive!(out, s, v)
+    _snparray_atx_recessive!(out, s, v, length(v), length(out))
 end
 
 function mul!(

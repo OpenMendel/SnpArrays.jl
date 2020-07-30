@@ -180,6 +180,7 @@ function mul!(
     s::CuSnpArray{T}, 
     v::CuVector{T}) where T <: AbstractFloat
     @assert length(out) == size(s, 1) && length(v) == size(s, 2)
+    fill!(out, zero(T))
     if s.scale
         s.storagev2 .= s.σinv .* v
         w = s.storagev2
@@ -209,6 +210,7 @@ function mul!(
     st::Union{Transpose{T, CuSnpArray{T}}, Adjoint{T, CuSnpArray{T}}},
     v::CuVector{T}) where T <: AbstractFloat
     @assert length(out) == size(st, 1) && length(v) == size(st, 2)
+    fill!(out, zero(T))
     s = st.parent
     numblocks = ceil(Int, length(out)/256)
     CUDA.@sync begin
