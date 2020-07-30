@@ -2009,7 +2009,6 @@ out2 = Vector{Float64}(undef, size(EUR, 2))
       6.880 ms (264 allocations: 14.03 KiB)
 
 
-
 ```julia
 @btime mul!($out2, transpose($EURla), $v1);
 ```

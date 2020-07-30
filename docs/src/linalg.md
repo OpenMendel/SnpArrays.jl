@@ -37,11 +37,13 @@ const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"));
 Let's try with EUR data repeated 100 and 101 times: 37900 by 54051 and 38279 by 54051, respectively.
 
 
+
 ```julia
 EUR_10 = [EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR]
 EUR_100 = [EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10];
 EUR_101 = [EUR_100; EUR];
 ```
+
 
 We create instnaces of SnpLinAlg, SnpBitmatrix and CuSnpArray:
 

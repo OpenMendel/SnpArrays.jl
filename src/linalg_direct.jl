@@ -75,6 +75,7 @@ Base.size(sla::SnpLinAlg, k::Integer) = size(sla.s, k)
 
 eltype(bm::SnpLinAlg) = eltype(bm.μ)
 
+
 function _snparray_ax_additive_rem!(out, s, v)
     maxp = length(out)
     @avx for j in eachindex(v)
@@ -229,6 +230,7 @@ function _snparray_ax_tile!(c, A, b, model)
             length(c), Nrem
         )
     end
+
 end
 
 function mul!(
@@ -244,6 +246,7 @@ function mul!(
     end
     fill!(out, zero(eltype(out)))
     s = sla.s
+
     _snparray_ax_tile!(out, s.data, w, sla.model)
     # if sla.model == ADDITIVE_MODEL
     #     _snparray_ax_additive!(out, s.data, w)
@@ -252,6 +255,7 @@ function mul!(
     # else
     #     _snparray_ax_recessive!(out, s.data, w)
     # end   
+
     if sla.center
         return out .-= dot(sla.μ, w)
     else
@@ -360,6 +364,7 @@ function _snparray_atx_recessive!(out, s, v, rows, cols)
             end
 
         end
+
     end
     if rem != 0
         _snparray_atx_recessive_rem!(out, @view(s[k+1:k+1, :]), @view(v[4k+1:end]))
