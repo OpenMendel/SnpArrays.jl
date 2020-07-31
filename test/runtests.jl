@@ -265,6 +265,38 @@ for t in [Float32, Float64]
             norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model)) * v1) < reltol
     end
 end
+
+for t in [Float32, Float64]
+    v1 = randn(t, size(EUR, 1))
+    v2 = randn(t, size(EUR, 2))
+    for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL]
+        @test norm(SnpLinAlg{t}(EUR, model=model, impute=false) * v2 -
+            convert(Matrix{t}, EUR, model=model, impute=false) * v2) / 
+            norm(convert(Matrix{t}, EUR, model=model, impute=false) * v2) < reltol
+        @test norm(SnpLinAlg{t}(EUR, center=true, model=model, impute=false) * v2 - 
+            convert(Matrix{t}, EUR, center=true, model=model, impute=false) * v2) /
+            norm(convert(Matrix{t}, EUR, center=true, model=model, impute=false) * v2) < reltol
+        @test norm(SnpLinAlg{t}(EUR, scale=true, model=model, impute=false) * v2 - 
+            convert(Matrix{t}, EUR, scale=true, model=model, impute=false) * v2) /
+            norm(convert(Matrix{t}, EUR, scale=true, model=model, impute=false) * v2) < reltol
+        @test norm(SnpLinAlg{t}(EUR, center=true, scale=true, model=model, impute=false) * v2 - 
+            convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=false) * v2) /
+            norm(convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=false) * v2) < reltol
+        @test norm(transpose(SnpLinAlg{t}(EUR, model=model, impute=false)) * v1 - 
+            transpose(convert(Matrix{t}, EUR, model=model, impute=false)) * v1) /
+            norm(transpose(convert(Matrix{t}, EUR, model=model, impute=false)) * v1) < reltol
+        @test norm(transpose(SnpLinAlg{t}(EUR, center=true, model=model, impute=false)) * v1 - 
+            transpose(convert(Matrix{t}, EUR, center=true, model=model, impute=false)) * v1) /
+            norm(transpose(convert(Matrix{t}, EUR, center=true, model=model, impute=false)) * v1) < reltol
+        @test norm(transpose(SnpLinAlg{t}(EUR, scale=true, model=model, impute=false)) * v1 - 
+            transpose(convert(Matrix{t}, EUR, scale=true, model=model, impute=false)) * v1) /
+            norm(transpose(convert(Matrix{t}, EUR, scale=true, model=model, impute=false)) * v1) < reltol
+        @test norm(transpose(SnpLinAlg{t}(EUR, center=true, scale=true, model=model, impute=false)) * v1 - 
+            transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=false)) * v1) /
+            norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=false)) * v1) < reltol
+    end
+end
+
 end
 
 if get(ENV,"JULIA_SNPARRAYS_TEST_CUDA","") == "true"
