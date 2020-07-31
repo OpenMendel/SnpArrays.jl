@@ -380,10 +380,6 @@ function _snparray_atx_additive!(out, s, v, rows, cols, μ)
     out
 end
 
-function _snparray_atx_additive!(out, s, v, μ)
-    _snparray_atx_additive!(out, s, v, length(v), length(out), μ)
-end
-
 function _snparray_atx_dominant_rem!(out, s, v, μ)
     maxp = length(v)
     @avx for i in eachindex(out)
@@ -415,10 +411,6 @@ function _snparray_atx_dominant!(out, s, v, rows, cols, μ)
         _snparray_atx_dominant_rem!(out, @view(s[k+1:k+1, :]), @view(v[4k+1:end]), μ)
     end
     out
-end
-
-function _snparray_atx_dominant!(out, s, v, μ)
-    _snparray_atx_dominant!(out, s, v, length(v), length(out), μ)
 end
 
 function _snparray_atx_recessive_rem!(out, s, v, μ)
@@ -455,11 +447,6 @@ function _snparray_atx_recessive!(out, s, v, rows, cols, μ)
     out
 end
 
-function _snparray_atx_recessive!(out, s, v, μ)
-    _snparray_atx_recessive!(out, s, v, length(v), length(out), μ)
-end
-
-
 function _snparray_atx_additive_meanimpute_rem!(out, s, v, μ)
     maxp = length(v)
     @avx for i in eachindex(out)
@@ -491,10 +478,6 @@ function _snparray_atx_additive_meanimpute!(out, s, v, rows, cols, μ)
         _snparray_atx_additive_meanimpute_rem!(out, @view(s[k+1:k+1, :]), @view(v[4k+1:end]), μ)
     end
     out
-end
-
-function _snparray_atx_additive_meanimpute!(out, s, v, μ)
-    _snparray_atx_additive_meanimpute!(out, s, v, length(v), length(out), μ)
 end
 
 function _snparray_atx_dominant_meanimpute_rem!(out, s, v, μ)
@@ -530,10 +513,6 @@ function _snparray_atx_dominant_meanimpute!(out, s, v, rows, cols, μ)
     out
 end
 
-function _snparray_atx_dominant_meanimpute!(out, s, v, μ)
-    _snparray_atx_dominant_meanimpute!(out, s, v, length(v), length(out), μ)
-end
-
 function _snparray_atx_recessive_meanimpute_rem!(out, s, v, μ)
     maxp = length(v)
     @avx for i in eachindex(out)
@@ -560,16 +539,11 @@ function _snparray_atx_recessive_meanimpute!(out, s, v, rows, cols, μ)
             end
 
         end
-
     end
     if rem != 0
         _snparray_atx_recessive_meanimpute_rem!(out, @view(s[k+1:k+1, :]), @view(v[4k+1:end]), μ)
     end
     out
-end
-
-function _snparray_atx_recessive_meanimpute!(out, s, v, μ)
-    _snparray_atx_recessive_meanimpute!(out, s, v, length(v), length(out), μ)
 end
 
 function _snparray_atx_tile!(c, A, b, model, μ, impute)
