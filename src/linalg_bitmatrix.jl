@@ -10,6 +10,17 @@ struct SnpBitMatrix{T} <: AbstractMatrix{T}
     storagev2::Vector{T}
 end
 
+"""
+    SnpBitMatrix{T}(s; model=ADDITIVE_MODEL, center=false, scale=false)
+
+Store an `AbstractSnpArray` `s` as two `BitMatrix`es to simplify linear algebra.
+
+# Arguments
+- s: an `AbstractSnpArray`.
+- model: one of `ADDITIVE_MODEL`(default), `DOMINANT_MODEL`, `RECESSIVE_MODEL`.
+- center: whether to center (default: false).
+- scale: whether to scale to standard deviation 1 (default: false).
+"""
 function SnpBitMatrix{T}(
     s::AbstractSnpArray;
     model = ADDITIVE_MODEL,
@@ -144,6 +155,11 @@ function mul!(c::Vector{T}, A::Union{Transpose{Bool,BitArray{2}}, Adjoint{Bool, 
     end
 end
 
+"""
+    LinearAlgebra.mul!(out, s::SnpBitMatrix, v)
+
+In-place matrix-vector multiplication.
+"""
 function mul!(
     out::AbstractVector{T}, 
     s::SnpBitMatrix{T}, 
@@ -169,6 +185,11 @@ function mul!(
     end
 end
 
+"""
+    LinearAlgebra.mul!(out, s::Union{Transpose{T, SnpBitMatrix{T}}, Adjoint{T, SnpBitMatrix{T}}}, v)
+
+In-place matrix-vector multiplication, with transposed `SnpBitMatrix`.
+"""
 function mul!(
     out::AbstractVector{T}, 
     st::Union{Transpose{T, SnpBitMatrix{T}}, Adjoint{T, SnpBitMatrix{T}}},
