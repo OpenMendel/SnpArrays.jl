@@ -233,7 +233,7 @@ for t in [Float32, Float64]
 end
 end
 
-@testset "lin. alg. direct" begin
+@testset "lin. alg. direct meanimpute" begin
 reltol = 5e-4
 for t in [Float32, Float64]
     v1 = randn(t, size(EUR, 1))
@@ -265,7 +265,9 @@ for t in [Float32, Float64]
             norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=true)) * v1) < reltol
     end
 end
+end
 
+@testset "lin. alg. direct zeroimpute" begin
 for t in [Float32, Float64]
     v1 = randn(t, size(EUR, 1))
     v2 = randn(t, size(EUR, 2))
@@ -296,7 +298,6 @@ for t in [Float32, Float64]
             norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=false)) * v1) < reltol
     end
 end
-
 end
 
 if get(ENV,"JULIA_SNPARRAYS_TEST_CUDA","") == "true"
