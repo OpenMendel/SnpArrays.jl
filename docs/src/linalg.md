@@ -37,13 +37,11 @@ const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"));
 Let's try with EUR data repeated 100 and 101 times: 37900 by 54051 and 38279 by 54051, respectively.
 
 
-
 ```julia
 EUR_10 = [EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR]
 EUR_100 = [EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10];
 EUR_101 = [EUR_100; EUR];
 ```
-
 
 We create instnaces of SnpLinAlg, SnpBitmatrix and CuSnpArray:
 
@@ -51,11 +49,13 @@ We create instnaces of SnpLinAlg, SnpBitmatrix and CuSnpArray:
 ```julia
 EUR_100_bm = SnpBitMatrix{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false)
 EUR_100_sla = SnpLinAlg{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false)
-EUR_100_mat = convert(Matrix{Float64}, EUR_100, model=ADDITIVE_MODEL, center=true, scale=true);
+EUR_100_sla_ = SnpLinAlg{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+EUR_100_mat = convert(Matrix{Float64}, EUR_100, model=ADDITIVE_MODEL, center=false, scale=false);
 
 EUR_101_bm = SnpBitMatrix{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false)
 EUR_101_sla = SnpLinAlg{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false)
-EUR_101_mat = convert(Matrix{Float64}, EUR_101, model=ADDITIVE_MODEL, center=true, scale=true);
+EUR_101_sla_ = SnpLinAlg{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+EUR_101_mat = convert(Matrix{Float64}, EUR_101, model=ADDITIVE_MODEL, center=false, scale=false);
 ```
 
 
@@ -63,6 +63,7 @@ EUR_101_mat = convert(Matrix{Float64}, EUR_101, model=ADDITIVE_MODEL, center=tru
 ENV["JULIA_CUDA_USE_BINARYBUILDER"] = "false"
 using CUDA
 EUR_100_cu = CuSnpArray{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false);
+EUR_100_cu_ = CuSnpArray{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false, impute=false);
 ```
 
     ┌ Warning: `haskey(::TargetIterator, name::String)` is deprecated, use `Target(; name = name) !== nothing` instead.
@@ -81,6 +82,7 @@ using BenchmarkTools
 
 ```julia
 v1 = randn(size(EUR_100, 1))
+v1_ = randn(size(EUR_100, 1))
 v2 = randn(size(EUR_100, 2));
 ```
 
@@ -99,12 +101,12 @@ BLAS.set_num_threads(8)
       memory estimate:  0 bytes
       allocs estimate:  0
       --------------
-      minimum time:     321.207 ms (0.00% GC)
-      median time:      347.112 ms (0.00% GC)
-      mean time:        375.497 ms (0.00% GC)
-      maximum time:     769.390 ms (0.00% GC)
+      minimum time:     383.853 ms (0.00% GC)
+      median time:      417.986 ms (0.00% GC)
+      mean time:        431.205 ms (0.00% GC)
+      maximum time:     530.847 ms (0.00% GC)
       --------------
-      samples:          15
+      samples:          12
       evals/sample:     1
 
 
@@ -124,17 +126,17 @@ BLAS.set_num_threads(1)
       memory estimate:  0 bytes
       allocs estimate:  0
       --------------
-      minimum time:     1.745 s (0.00% GC)
-      median time:      1.905 s (0.00% GC)
-      mean time:        2.144 s (0.00% GC)
-      maximum time:     2.782 s (0.00% GC)
+      minimum time:     1.849 s (0.00% GC)
+      median time:      2.064 s (0.00% GC)
+      mean time:        2.047 s (0.00% GC)
+      maximum time:     2.229 s (0.00% GC)
       --------------
       samples:          3
       evals/sample:     1
 
 
 
-Direct linear algebra on a SnpArray: 
+Direct linear algebra on a SnpArray, with mean imputation: 
 
 
 ```julia
@@ -145,20 +147,46 @@ Direct linear algebra on a SnpArray:
 
 
     BenchmarkTools.Trial: 
-      memory estimate:  8.23 KiB
-      allocs estimate:  158
+      memory estimate:  38.33 KiB
+      allocs estimate:  1616
       --------------
-      minimum time:     1.014 s (0.00% GC)
-      median time:      1.021 s (0.00% GC)
-      mean time:        1.020 s (0.00% GC)
-      maximum time:     1.027 s (0.00% GC)
+      minimum time:     1.241 s (0.00% GC)
+      median time:      1.355 s (0.00% GC)
+      mean time:        1.352 s (0.00% GC)
+      maximum time:     1.457 s (0.00% GC)
+      --------------
+      samples:          4
+      evals/sample:     1
+
+
+
+With zero imputation:
+
+
+```julia
+@benchmark LinearAlgebra.mul!($v1, $EUR_100_sla_, $v2)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  38.33 KiB
+      allocs estimate:  1616
+      --------------
+      minimum time:     1.017 s (0.00% GC)
+      median time:      1.037 s (0.00% GC)
+      mean time:        1.034 s (0.00% GC)
+      maximum time:     1.045 s (0.00% GC)
       --------------
       samples:          5
       evals/sample:     1
 
 
 
-The below is the benchmark for SnpBitMatrix:
+Indeed, we are paying some price for mean imputation.
+
+The below is the benchmark for SnpBitMatrix (always zero-imputed):
 
 
 ```julia
@@ -172,12 +200,86 @@ The below is the benchmark for SnpBitMatrix:
       memory estimate:  0 bytes
       allocs estimate:  0
       --------------
-      minimum time:     1.041 s (0.00% GC)
-      median time:      1.056 s (0.00% GC)
-      mean time:        1.058 s (0.00% GC)
-      maximum time:     1.076 s (0.00% GC)
+      minimum time:     1.045 s (0.00% GC)
+      median time:      1.051 s (0.00% GC)
+      mean time:        1.051 s (0.00% GC)
+      maximum time:     1.058 s (0.00% GC)
       --------------
       samples:          5
+      evals/sample:     1
+
+
+
+At first glance, the result from SnpBitMatrix might look better than SnpLinAlg. However, SnpLinAlg is more stable in performance when the number of samples is not multiple of 4 or 8.
+
+
+```julia
+v1 = randn(size(EUR_101, 1))
+v2 = randn(size(EUR_101, 2));
+```
+
+
+```julia
+@benchmark LinearAlgebra.mul!($v1, $EUR_101_sla, $v2)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  44.13 KiB
+      allocs estimate:  1722
+      --------------
+      minimum time:     1.259 s (0.00% GC)
+      median time:      1.268 s (0.00% GC)
+      mean time:        1.268 s (0.00% GC)
+      maximum time:     1.277 s (0.00% GC)
+      --------------
+      samples:          4
+      evals/sample:     1
+
+
+
+
+```julia
+@benchmark LinearAlgebra.mul!($v1, $EUR_101_sla_, $v2)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  44.13 KiB
+      allocs estimate:  1722
+      --------------
+      minimum time:     1.038 s (0.00% GC)
+      median time:      1.043 s (0.00% GC)
+      mean time:        1.043 s (0.00% GC)
+      maximum time:     1.051 s (0.00% GC)
+      --------------
+      samples:          5
+      evals/sample:     1
+
+
+
+
+```julia
+@benchmark LinearAlgebra.mul!($v1, $EUR_101_bm, $v2)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     1.544 s (0.00% GC)
+      median time:      1.561 s (0.00% GC)
+      mean time:        1.561 s (0.00% GC)
+      maximum time:     1.577 s (0.00% GC)
+      --------------
+      samples:          4
       evals/sample:     1
 
 
@@ -193,7 +295,11 @@ Moving data to GPU:
 
 
 ```julia
+v1 = randn(size(EUR_100, 1))
+v1_ = randn(size(EUR_100, 1))
+v2 = randn(size(EUR_100, 2));
 v1_d = adapt(CuArray{Float64}, v1)
+v1_d_ = similar(v1_d)
 v2_d = adapt(CuArray{Float64}, v2);
 ```
 
@@ -215,27 +321,37 @@ using BenchmarkTools
       memory estimate:  3.28 KiB
       allocs estimate:  130
       --------------
-      minimum time:     22.138 ms (0.00% GC)
-      median time:      22.356 ms (0.00% GC)
-      mean time:        22.352 ms (0.00% GC)
-      maximum time:     23.825 ms (0.00% GC)
+      minimum time:     22.319 ms (0.00% GC)
+      median time:      22.429 ms (0.00% GC)
+      mean time:        22.722 ms (0.00% GC)
+      maximum time:     26.938 ms (0.00% GC)
       --------------
-      samples:          224
+      samples:          220
       evals/sample:     1
 
 
 
-The speedup is obvious. Let's check correctness:
+For CuSnpArray, the additional cost for mean imputation is negligible.
 
 
 ```julia
-isapprox(collect(v1_d), v1)
+@benchmark CUDA.@sync LinearAlgebra.mul!($v1_d_, $EUR_100_cu_, $v2_d)
 ```
 
 
 
 
-    true
+    BenchmarkTools.Trial: 
+      memory estimate:  3.28 KiB
+      allocs estimate:  130
+      --------------
+      minimum time:     22.243 ms (0.00% GC)
+      median time:      22.431 ms (0.00% GC)
+      mean time:        22.805 ms (0.00% GC)
+      maximum time:     57.050 ms (0.00% GC)
+      --------------
+      samples:          220
+      evals/sample:     1
 
 
 
@@ -256,67 +372,27 @@ EUR_100_mat_d = adapt(CuArray, EUR_100_mat);
       memory estimate:  2.58 KiB
       allocs estimate:  85
       --------------
-      minimum time:     78.002 ms (0.00% GC)
-      median time:      80.142 ms (0.00% GC)
-      mean time:        80.055 ms (0.00% GC)
-      maximum time:     83.111 ms (0.00% GC)
+      minimum time:     75.951 ms (0.00% GC)
+      median time:      76.516 ms (0.00% GC)
+      mean time:        77.909 ms (0.00% GC)
+      maximum time:     82.096 ms (0.00% GC)
       --------------
-      samples:          63
+      samples:          65
       evals/sample:     1
 
 
 
-Using CuSnpArray is both faster and memory-efficient compared to linear algebra with floating point matrix on GPU.
-
-At first glance, the result from SnpBitMatrix might look similar to SnpLinAlg. However, SnpLinAlg is more stable in performance when the number of samples is not multiple of 4 or 8.
+The speedup is obvious, CuSnpArrays is 30-50x faster than on CPU, and using CuSnpArray is both faster and memory-efficient compared to linear algebra with floating point matrix on GPU.
 
 
 ```julia
-v1 = randn(size(EUR_101, 1))
-v2 = randn(size(EUR_101, 2));
-```
-
-
-```julia
-@benchmark LinearAlgebra.mul!($v1, $EUR_101_sla, $v2)
+isapprox(v1_d, v1_d_)
 ```
 
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  14.03 KiB
-      allocs estimate:  264
-      --------------
-      minimum time:     1.022 s (0.00% GC)
-      median time:      1.024 s (0.00% GC)
-      mean time:        1.024 s (0.00% GC)
-      maximum time:     1.028 s (0.00% GC)
-      --------------
-      samples:          5
-      evals/sample:     1
-
-
-
-
-```julia
-@benchmark LinearAlgebra.mul!($v1, $EUR_101_bm, $v2)
-```
-
-
-
-
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     1.187 s (0.00% GC)
-      median time:      1.188 s (0.00% GC)
-      mean time:        1.191 s (0.00% GC)
-      maximum time:     1.197 s (0.00% GC)
-      --------------
-      samples:          5
-      evals/sample:     1
+    true
 
 
 
@@ -342,12 +418,12 @@ v2_d = adapt(CuArray{Float64}, v2);
       memory estimate:  16 bytes
       allocs estimate:  1
       --------------
-      minimum time:     662.131 ms (0.00% GC)
-      median time:      678.294 ms (0.00% GC)
-      mean time:        701.543 ms (0.00% GC)
-      maximum time:     790.350 ms (0.00% GC)
+      minimum time:     842.187 ms (0.00% GC)
+      median time:      882.157 ms (0.00% GC)
+      mean time:        913.111 ms (0.00% GC)
+      maximum time:     1.049 s (0.00% GC)
       --------------
-      samples:          8
+      samples:          6
       evals/sample:     1
 
 
@@ -364,12 +440,12 @@ v2_d = adapt(CuArray{Float64}, v2);
       memory estimate:  16 bytes
       allocs estimate:  1
       --------------
-      minimum time:     605.351 ms (0.00% GC)
-      median time:      618.706 ms (0.00% GC)
-      mean time:        620.553 ms (0.00% GC)
-      maximum time:     658.692 ms (0.00% GC)
+      minimum time:     618.434 ms (0.00% GC)
+      median time:      630.293 ms (0.00% GC)
+      mean time:        689.063 ms (0.00% GC)
+      maximum time:     881.782 ms (0.00% GC)
       --------------
-      samples:          9
+      samples:          8
       evals/sample:     1
 
 
@@ -386,12 +462,12 @@ v2_d = adapt(CuArray{Float64}, v2);
       memory estimate:  3.08 KiB
       allocs estimate:  118
       --------------
-      minimum time:     26.926 ms (0.00% GC)
-      median time:      27.330 ms (0.00% GC)
-      mean time:        27.494 ms (0.00% GC)
-      maximum time:     31.492 ms (0.00% GC)
+      minimum time:     26.710 ms (0.00% GC)
+      median time:      26.930 ms (0.00% GC)
+      mean time:        27.350 ms (0.00% GC)
+      maximum time:     32.306 ms (0.00% GC)
       --------------
-      samples:          182
+      samples:          183
       evals/sample:     1
 
 
@@ -426,10 +502,32 @@ v2 = randn(size(EUR_101, 2));
       memory estimate:  128 bytes
       allocs estimate:  3
       --------------
-      minimum time:     667.369 ms (0.00% GC)
-      median time:      681.264 ms (0.00% GC)
-      mean time:        697.866 ms (0.00% GC)
-      maximum time:     789.988 ms (0.00% GC)
+      minimum time:     850.050 ms (0.00% GC)
+      median time:      862.818 ms (0.00% GC)
+      mean time:        953.739 ms (0.00% GC)
+      maximum time:     1.391 s (0.00% GC)
+      --------------
+      samples:          6
+      evals/sample:     1
+
+
+
+
+```julia
+@benchmark LinearAlgebra.mul!($v2, transpose($EUR_101_sla_), $v1)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  128 bytes
+      allocs estimate:  3
+      --------------
+      minimum time:     673.269 ms (0.00% GC)
+      median time:      693.418 ms (0.00% GC)
+      mean time:        700.729 ms (0.00% GC)
+      maximum time:     784.130 ms (0.00% GC)
       --------------
       samples:          8
       evals/sample:     1
@@ -448,10 +546,10 @@ v2 = randn(size(EUR_101, 2));
       memory estimate:  16 bytes
       allocs estimate:  1
       --------------
-      minimum time:     612.441 ms (0.00% GC)
-      median time:      624.015 ms (0.00% GC)
-      mean time:        641.973 ms (0.00% GC)
-      maximum time:     770.845 ms (0.00% GC)
+      minimum time:     620.830 ms (0.00% GC)
+      median time:      637.698 ms (0.00% GC)
+      mean time:        656.708 ms (0.00% GC)
+      maximum time:     798.543 ms (0.00% GC)
       --------------
       samples:          8
       evals/sample:     1

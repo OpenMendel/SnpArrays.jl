@@ -167,7 +167,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      87.555 μs (64 allocations: 390.03 KiB)
+      94.032 μs (64 allocations: 390.03 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -430,11 +430,11 @@ tmpbf = SnpArray(undef, 5, 3)
 
 
     5×3 SnpArray:
-     0x00  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
+     0x00  0x01  0x01
+     0x00  0x03  0x01
+     0x01  0x03  0x02
+     0x02  0x01  0x00
+     0x00  0x00  0x03
 
 
 
@@ -449,11 +449,11 @@ tmpbf = SnpArray("tmp.bed", tmpbf)
 
 
     5×3 SnpArray:
-     0x00  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
+     0x00  0x01  0x01
+     0x00  0x03  0x01
+     0x01  0x03  0x02
+     0x02  0x01  0x00
+     0x00  0x00  0x03
 
 
 
@@ -467,11 +467,11 @@ tmpbf
 
 
     5×3 SnpArray:
-     0x02  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
-     0x00  0x00  0x00
+     0x02  0x01  0x01
+     0x00  0x03  0x01
+     0x01  0x03  0x02
+     0x02  0x01  0x00
+     0x00  0x00  0x03
 
 
 
@@ -481,11 +481,11 @@ tmpbf
 rm("tmp.bed", force=true)
 ```
 
-## `convert` and `copyto!`
+### `convert` and `copyto!`
 
 Most common usage of SnpArray is to convert genotypes to numeric values for statistical analysis. Conversion rule depends on genetic models (additive, dominant, or recessive), centering, scaling, or imputation.
 
-### `convert`
+#### `convert`
 
 `convert` function has 4 keyword arguments: `model`, `center`, `scale`, and `impute`.
 
@@ -730,7 +730,7 @@ convert(Vector{Float64}, @view(mouse[:, end]), center=true, scale=true, impute=t
 
 
 
-### `copyto!`
+#### `copyto!`
 
 `copyto!` is the in-place version of `convert`. It takes the same keyword arguments (`model`, `center`, `scale`, `impute`) as `convert`.
 
@@ -780,7 +780,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      3.719 μs (0 allocations: 0 bytes)
+      3.655 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -830,7 +830,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      7.138 μs (0 allocations: 0 bytes)
+      7.205 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -879,7 +879,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      6.860 μs (0 allocations: 0 bytes)
+      6.856 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -895,7 +895,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      50.433 ms (10150 allocations: 475.78 KiB)
+      50.329 ms (10150 allocations: 475.78 KiB)
 
 
 Copy whole SnpArray
@@ -906,12 +906,12 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      64.308 ms (0 allocations: 0 bytes)
+      64.344 ms (0 allocations: 0 bytes)
 
 
-## Summaries
+### Summaries
 
-### Counts
+#### Counts
 
 Counts of each the four possible values for each column are returned by `counts`.`
 
@@ -941,10 +941,10 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      6.047 ns (0 allocations: 0 bytes)
+      6.043 ns (0 allocations: 0 bytes)
 
 
-### Minor allele frequencies
+#### Minor allele frequencies
 
 Minor allele frequencies (MAF) for each SNP.
 
@@ -1026,7 +1026,7 @@ minorallele(mouse)
 
 
 
-### `mean` and `var`
+#### `mean` and `var`
 
 The package provides methods for the generics `mean` and `var` from the `Statistics` package.
 
@@ -1076,7 +1076,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      17.328 μs (2 allocations: 79.39 KiB)
+      17.263 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1119,7 +1119,7 @@ std(mouse, dims=2)
 
 
 
-### Missing rate
+#### Missing rate
 
 Proportion of missing genotypes
 
@@ -1199,7 +1199,7 @@ missingrate(mouse, 2)
 
 
 
-### Location of the missing values
+#### Location of the missing values
 
 The positions of the missing data are evaluated by
 
@@ -1246,7 +1246,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      43.661 ms (19274 allocations: 1.80 MiB)
+      43.843 ms (19274 allocations: 1.80 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1279,7 +1279,7 @@ view(counts(mouse, dims=1), 2:2, :)
 
 
 
-## Genetic relationship matrix
+### Genetic relationship matrix
 
 `grm` function computes the empirical kinship matrix using either the classical genetic relationship matrix, `grm(A, model=:GRM)`, or the method of moment method, `grm(A, model=:MoM)`, or the robust method, `grm(A, model=:Robust)`. 
 
@@ -1330,7 +1330,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      502.287 ms (25 allocations: 28.95 MiB)
+      505.403 ms (25 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1378,7 +1378,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      315.064 ms (26 allocations: 14.60 MiB)
+      312.411 ms (26 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1463,7 +1463,7 @@ grm(mouse, cinds=1:2:size(mouse, 2))
 
 
 
-## Filtering
+### Filtering
 
 Before GWAS, we often need to filter SNPs and/or samples according to genotyping success rates, minor allele frequencies, and Hardy-Weinberg Equilibrium test. This can be achieved by the `filter` function.
 
@@ -1502,7 +1502,7 @@ count(rowmask), count(colmask)
 @btime(SnpArrays.filter($mouse, min_success_rate_per_row=0.999, min_success_rate_per_col=0.999));
 ```
 
-      150.800 ms (11460 allocations: 171.28 MiB)
+      148.931 ms (11460 allocations: 171.28 MiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -1510,7 +1510,7 @@ One may use the `rowmask` and `colmask` to filter and save filtering result as P
 SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
 ```
 
-### Filter Plink files
+#### Filter Plink files
 
 Filter a set of Plink files according to row indices and column indices. By result, filtered Plink files are saved as `srcname.filtered.bed`, `srcname.filtered.fam`, and `srcname.filtered.bim`, where `srcname` is the source Plink file name. You can also specify destimation file name using keyword `des`.
 
@@ -1694,14 +1694,10 @@ readdir(glob"tmp_*", ".")
 
 
 
-    7-element Array{String,1}:
+    3-element Array{String,1}:
      "./tmp_hcat_arr_1.bed"
      "./tmp_hvcat_arr_1.bed"
      "./tmp_vcat_arr_1.bed"
-     "./tmp_vcat_arr_2.bed"
-     "./tmp_vcat_arr_3.bed"
-     "./tmp_vcat_arr_4.bed"
-     "./tmp_vcat_arr_5.bed"
 
 
 
@@ -1770,12 +1766,17 @@ rm(SnpArrays.datadir("mouse.test.vcat.bed"), force=true)
 rm(SnpArrays.datadir("mouse.test.hvcat.bed"), force=true)
 ```
 
-## SnpBitMatrix
+## Linear Algebra
 
-In some applications we want to perform linear algebra using SnpArray directly without expanding it to numeric matrix. This is achieved by the `SnpBitMatrix` type. The implementation assumes:
+In some applications we want to perform linear algebra using SnpArray directly without expanding it to numeric matrix. This is achieved in three different `struct`s:
 
-1. the SnpArray does not have missing genotypes, and
-2. the matrix corresponding to SnpArray is the matrix of A2 allele counts.
+1. Direct operations on a plink-formatted `SnpArray`: `SnpLinAlg`
+2. Operations on transformed `BitMatrix`es: `SnpBitMatrix`
+3. Direct operations on a plink-formatted data on an Nvidia GPU: `CuSnpArray`.
+
+`SnpLinAlg` and `SnpBitMatrix` use Chris Elrod's [LoopVectorization.jl](https://github.com/chriselrod/LoopVectorization.jl) internally. It is much faster on machines with AVX support. `CuSnpArray` uses [CUDA.jl](https://juliagpu.gitlab.io/CUDA.jl/) internally.
+
+The implementation assumes that the matrix corresponding to SnpArray is the matrix of the A2 allele counts. `SnpLinAlg` and `CuSnpArray` impute any missing genotype with its column mean by default. They can also configured to impute missing genotypes with zero. `SnpBitMatrix` can only impute missing values with zero. 
 
 ### Constructor
 
@@ -1819,60 +1820,98 @@ const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"))
 
 
 
-To instantiate a SnpBitMatrix based on SnpArray,
+To instantiate a SnpLinAlg based on SnpArray,
 
 
 ```julia
+const EURsla = SnpLinAlg{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true);
+const EURsla_ = SnpLinAlg{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true, impute=false);
 const EURbm = SnpBitMatrix{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true);
 ```
 
-The constructor shares the same keyword arguments as the `convert` or `copyto!` functions. The type parameter, `Float64` in this example, indicates the SnpBitMatrix acts like a Float64 matrix.
+The constructor shares the same keyword arguments as the `convert` or `copyto!` functions. The type parameter, `Float64` in this example, indicates the SnpLinAlg acts like a Float64 matrix.
+SnpLinAlg directly uses the SnpArray for computation. 
 
-The memory usage of the SnpBitMatrix should be similar to the SnpArray, or equivalently bed file size, if `model=ADDITIVE_MODEL`, or half of that of SnpArray if `model=DOMINANT_MODEL` or `model=RECESSIVE_MODEL`.
+On the other hand, memory usage of SnpBitMatrix should be similar to the SnpArray, or equivalently bed file size, if `model=ADDITIVE_MODEL`, or half of that of SnpArray if `model=DOMINANT_MODEL` or `model=RECESSIVE_MODEL`.
 
 
 ```julia
-Base.summarysize(EUR), Base.summarysize(EURbm)
+Base.summarysize(EUR), Base.summarysize(EURsla), Base.summarysize(EURbm)
 ```
 
 
 
 
-    (6876757, 6421960)
+    (6876757, 8177221, 6421960)
 
 
 
-### Linear algebra
+### `mul!()`
 
-A SnpBitMatrix acts similar to a regular matrix and responds to `size`, `eltype`, and SnpBitMatrix-vector multiplications.
+SnpLinAlg and SnpBitMatrix act similar to a regular matrix and responds to `size`, `eltype`, and matrix-vector multiplications.
 
 
 ```julia
+@show size(EURsla)
+@show eltype(EURsla)
+@show typeof(EURsla) <: AbstractMatrix;
+
 @show size(EURbm)
 @show eltype(EURbm)
 @show typeof(EURbm) <: AbstractMatrix;
 ```
 
+    size(EURsla) = (379, 54051)
+    eltype(EURsla) = Float64
+    typeof(EURsla) <: AbstractMatrix = true
     size(EURbm) = (379, 54051)
     eltype(EURbm) = Float64
     typeof(EURbm) <: AbstractMatrix = true
 
 
-SnpBitMatrix-vector multiplication is mathematically equivalent to the corresponding Float matrix contained from `convert` or `copyto!` a SnpArray.
+Matrix-vector multiplications with SnpLinAlg and SnpBitMatrix are mathematically equivalent to the corresponding Float matrix contained from `convert` or `copyto!` a SnpArray.
 
 
 ```julia
 using LinearAlgebra
 v1 = randn(size(EUR, 1))
 v2 = randn(size(EUR, 2))
-A = convert(Matrix{Float64}, EUR, model=ADDITIVE_MODEL, center=true, scale=true)
+A = convert(Matrix{Float64}, EUR, model=ADDITIVE_MODEL, center=true, scale=true);
+```
+
+
+```julia
+norm(EURsla * v2 -  A * v2)
+```
+
+
+
+
+    3.255157000354014e-11
+
+
+
+
+```julia
+norm(EURsla' * v1 - A' *v1)
+```
+
+
+
+
+    5.398163705112499e-12
+
+
+
+
+```julia
 norm(EURbm * v2 -  A * v2)
 ```
 
 
 
 
-    2.837775572500693e-11
+    3.590044545281484e-11
 
 
 
@@ -1884,47 +1923,15 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    5.399567080480323e-12
+    8.54121862883797e-12
 
 
 
-In this example, the Float64 matrix fits into memory so the SnpBitMatrix-vector multiplication is much slower than Matrix{Float64}-vector multiplication (highly optimized BLAS).
+See Linear Algebra page for performance comparison among BLAS, SnpLinAlg, and SnpBitMatrix. In general, SnpLinAlg and SnpBitMatrix operations are at least twice faster than the corresponding Matrix{Float64}-vector multiplication. 
 
+In general, computing $Ax$ is more effective in SnpLinAlg, and computing $A^T x$ is faster in SnpBitMatrix. Note that SnpLinAlg does not allocate additional memory, and can impute missing values with column means. See Linear Algebra page for more information.
 
-```julia
-out1 = Vector{Float64}(undef, size(EUR, 1))
-out2 = Vector{Float64}(undef, size(EUR, 2))
-@btime(mul!($out1, $EURbm, $v2));
-```
-
-      8.495 ms (0 allocations: 0 bytes)
-
-
-
-```julia
-@btime(mul!($out1, $A, $v2));
-```
-
-      7.844 ms (0 allocations: 0 bytes)
-
-
-
-```julia
-@btime(mul!($out2, $transpose($EURbm), $v1));
-```
-
-      6.612 ms (1 allocation: 16 bytes)
-
-
-
-```julia
-@btime(mul!($out2, $transpose($A), $v1));
-```
-
-      3.011 ms (0 allocations: 0 bytes)
-
-
-In another test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 folder faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
+In a test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 fold faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
 
 `SnpBitMatrix` can be created from a subarray of SnpArray.
 
@@ -1970,7 +1977,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    8.987658251177042e-14
+    5.05574647736198e-14
 
 
 
@@ -1982,43 +1989,11 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    1.6136185547316357e-14
+    1.4647267077134765e-14
 
 
 
-### Two alternatives: SnpLinAlg and CuSnpArray
-
-Basically, creating SnpBitMatrix doubles the memory usage. If it becomes an issue,  direct linear algebra operations from a SnpArray is possible. 
-
-#### SnpLinAlg
-
-
-```julia
-const EURla = SnpLinAlg{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=true);
-```
-
-
-```julia
-v1 = randn(size(EUR, 1))
-v2 = randn(size(EUR, 2))
-out1 = Vector{Float64}(undef, size(EUR, 1))
-out2 = Vector{Float64}(undef, size(EUR, 2))
-@btime mul!($out1, $EURla, $v2);
-```
-
-      6.880 ms (264 allocations: 14.03 KiB)
-
-
-```julia
-@btime mul!($out2, transpose($EURla), $v1);
-```
-
-      9.760 ms (3 allocations: 128 bytes)
-
-
-Computing $Ax$ is faster in SnpLinAlg, and computing $A^T x$ is faster in SnpBitMatrix. Note that SnpLinAlg does not allocate additional memory. See Linear Algebra page for more information.
-
-#### CuSnpArray
+### GPU support: CuSnpArray
 
 On machines with Nvidia GPU, matrix-vector multiplications can be performed on it via CuSnpArray. The input vectors should be CuVectors. 
 
@@ -2026,6 +2001,10 @@ On machines with Nvidia GPU, matrix-vector multiplications can be performed on i
 ```julia
 ENV["JULIA_CUDA_USE_BINARYBUILDER"] = "false" # will use local CUDA installation
 using CUDA, Adapt
+out1 = randn(size(EUR, 1))
+out2 = randn(size(EUR, 2))
+v1 = randn(size(EUR, 1))
+v2 = randn(size(EUR, 2))
 v1_d = adapt(CuVector{Float64}, v1) # sends data to GPU
 v2_d = adapt(CuVector{Float64}, v2)
 out1_d = adapt(CuVector{Float64}, out1)
@@ -2049,7 +2028,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
     └ @ Core :-1
 
 
-      18.361 ms (253 allocations: 7.69 KiB)
+      18.204 ms (253 allocations: 7.69 KiB)
 
 
 
@@ -2057,7 +2036,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
 @btime mul!($out2_d, transpose($EURcu), $v1_d);
 ```
 
-      626.435 μs (465 allocations: 15.00 KiB)
+      544.722 μs (465 allocations: 15.00 KiB)
 
 
 The operations are parallelized along the output dimension, hence the GPU was not fully utilized in the first case. With 100-time larger data, 30 to 50-fold speedup were observed for both cases with Nvidia Titan V. See linear algebra page for more information.
@@ -2072,7 +2051,7 @@ norm(collect(EURcu' * v1_d) -  EURbm' * v1)
 
 
 
-    4.38122146476498e-11
+    2.2306544292754367e-11
 
 
 
@@ -2600,9 +2579,9 @@ We can merge the splitted dictionary back into one SnpData using `merge_plink`.
 merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
 ```
 
-      0.066388 seconds (117.18 k allocations: 7.904 MiB)
-      0.049178 seconds (125.97 k allocations: 11.520 MiB)
-      0.051638 seconds (134.18 k allocations: 8.737 MiB)
+      0.067004 seconds (117.20 k allocations: 7.905 MiB)
+      0.102031 seconds (125.97 k allocations: 11.520 MiB, 51.01% gc time)
+      0.050454 seconds (134.18 k allocations: 8.737 MiB)
 
 
 
@@ -2645,10 +2624,10 @@ You can also merge the plink formatted files based on their common prefix.
 merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
 ```
 
-      0.143816 seconds (783.53 k allocations: 36.258 MiB)
-      0.575327 seconds (1.19 M allocations: 61.140 MiB)
-      0.003704 seconds (8 allocations: 4.897 MiB)
-      0.000827 seconds (8 allocations: 1.650 MiB)
+      0.146038 seconds (783.53 k allocations: 36.252 MiB)
+      0.568753 seconds (1.19 M allocations: 61.158 MiB)
+      0.003368 seconds (8 allocations: 4.897 MiB)
+      0.001259 seconds (8 allocations: 1.650 MiB)
 
 
 
@@ -2750,12 +2729,12 @@ mouse_toreorder
     │ Row │ fid      │ iid        │ father       │ mother       │ sex      │ phenotype │
     │     │ Abstrac… │ AbstractS… │ AbstractStr… │ AbstractStr… │ Abstrac… │ Abstract… │
     ├─────┼──────────┼────────────┼──────────────┼──────────────┼──────────┼───────────┤
-    │ 1   │ 1_5      │ A053629514 │ F5.3:E2.2(6) │ F5.3:A3.2(5) │ 1        │ -9        │
-    │ 2   │ 1_18     │ A067077564 │ G1.5:B5.4(5) │ G1.5:F5.4(5) │ 1        │ -9        │
-    │ 3   │ 1_2      │ A048029086 │ G1.3:B1.2(3) │ G1.3:F3.2(3) │ 2        │ -9        │
-    │ 4   │ 1_1      │ A048097274 │ H4.2:C5.1(4) │ H4.2:G1.1(7) │ 1        │ -9        │
-    │ 5   │ 1_15     │ A063796366 │ H2.5:C3.4(3) │ H2.5:G4.4(2) │ 2        │ -9        │
-    │ 6   │ 1_45     │ A084280094 │ 6.6:F1.5(6)  │ 6.6:G1.5(1)  │ 1        │ -9        │
+    │ 1   │ 1_3      │ A067289112 │ E2.4:H3.3(2) │ E2.4:D4.3(2) │ 1        │ -9        │
+    │ 2   │ 1_1      │ A048031769 │ H4.2:C5.1(4) │ H4.2:G1.1(7) │ 1        │ -9        │
+    │ 3   │ 1_2      │ A084286354 │ H4.4:C2.3(5) │ H4.4:G3.3(7) │ 1        │ -9        │
+    │ 4   │ 1_3      │ A048072266 │ G5.2:B5.1(4) │ G5.2:F5.1(2) │ 2        │ -9        │
+    │ 5   │ 1_3      │ A063311623 │ A5.4:D4.3(5) │ A5.4:H1.3(6) │ 1        │ -9        │
+    │ 6   │ 1_54     │ A063011268 │ B3.5:E4.4(2) │ B3.5:A3.4(4) │ 1        │ -9        │
     …,
     srcbed: mouse_reorder.bed
     srcbim: mouse_reorder.bim
