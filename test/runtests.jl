@@ -268,6 +268,7 @@ end
 end
 
 @testset "lin. alg. direct zeroimpute" begin
+reltol = 5e-4
 for t in [Float32, Float64]
     v1 = randn(t, size(EUR, 1))
     v2 = randn(t, size(EUR, 2))
