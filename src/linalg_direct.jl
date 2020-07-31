@@ -572,6 +572,65 @@ function _snparray_atx_recessive_meanimpute!(out, s, v, μ)
     _snparray_atx_recessive_meanimpute!(out, s, v, length(v), length(out), μ)
 end
 
+function _snparray_atx_tile!(c, A, b, model, μ, impute)
+    vstep = 2048
+    hstep = 2048
+    vstep_log2 = 11
+    hstep_log2 = 11
+
+    if !impute
+        if model == ADDITIVE_MODEL
+            _ftn! = _snparray_atx_additive!
+        elseif model == DOMINANT_MODEL
+            _ftn! = _snparray_atx_dominant!
+        else
+            _ftn! = _snparray_atx_recessive!
+        end
+    else
+        if model == ADDITIVE_MODEL
+            _ftn! = _snparray_atx_additive_meanimpute!
+        elseif model == DOMINANT_MODEL
+            _ftn! = _snparray_atx_dominant_meanimpute!
+        else
+            _ftn! = _snparray_atx_recessive_meanimpute!
+        end
+    end
+    
+    fill!(c, zero(UInt8))
+
+    M = length(b) >> 2
+    N = size(A, 2)
+    Miter = M >>> vstep_log2 # fast div(M, 512)
+    Mrem = M & (vstep-1) # fast rem(M, 512)
+    Niter = N >>> hstep_log2
+    Nrem = N & (hstep-1)
+    GC.@preserve c A b for n in 0:Niter-1
+        for m in 0:Miter-1
+            _ftn!(
+                gesp(stridedpointer(c), (hstep*n,)),
+                gesp(stridedpointer(A), (vstep*m, hstep*n)),
+                gesp(stridedpointer(b), ((4 * vstep)*m,)),
+                vstep << 2,
+                hstep, μ
+            )
+        end
+        if Mrem != 0
+            _ftn!(@view(c[hstep*n+1:hstep*(n+1)]), 
+                @view(A[vstep*(Miter)+1:end, hstep*n+1:hstep*(n+1)]),
+                @view(b[(4*vstep)*Miter+1:end]),
+                length(b) - 4*vstep*Miter,
+                hstep, μ
+            )
+        end
+    end
+    if Nrem != 0
+        _ftn!(@view(c[hstep*Niter+1:end]), @view(A[:, (hstep*Niter+1):end]), b,
+            length(b), Nrem, μ
+        )
+    end
+
+end
+
 """
     LinearAlgebra.mul!(out, s::SnpLiinAlg, v)
 
@@ -613,25 +672,8 @@ function mul!(
     sla = st.parent
     s = sla.s
     fill!(out, zero(eltype(out)))
-    if !sla.impute
-        if sla.model == ADDITIVE_MODEL
-            _ftn! = _snparray_atx_additive!
-        elseif sla.model == DOMINANT_MODEL
-            _ftn! = _snparray_atx_dominant!
-        else
-            _ftn! = _snparray_atx_recessive!
-        end
-    else
-        if sla.model == ADDITIVE_MODEL
-            _ftn! = _snparray_atx_additive_meanimpute!
-        elseif sla.model == DOMINANT_MODEL
-            _ftn! = _snparray_atx_dominant_meanimpute!
-        else
-            _ftn! = _snparray_atx_recessive_meanimpute!
-        end        
-    end
 
-    _ftn!(out, s.data, v, sla.μ)
+    _snparray_atx_tile!(out, s.data, v, sla.model, sla.μ, sla.impute)
     if sla.center
         out .-= sum(v) .* sla.μ
     end
