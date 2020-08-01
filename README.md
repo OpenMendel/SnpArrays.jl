@@ -9,6 +9,8 @@ Routines for reading and manipulating compressed storage of biallelic [SNP (Sing
 Data from [*genome-wide association studies (GWAS)*](https://en.wikipedia.org/wiki/Genome-wide_association_study) are often saved as a [**PLINK binary biallelic genotype table**](https://www.cog-genomics.org/plink2/formats#bed) or `.bed` file.
 To be useful, such files should be accompanied by a `.fam` file, containing metadata on the rows of the table, and a `.bim` file, containing metadata on the columns. The `.fam` and `.bim` files are in tab-separated format.
 
+Linear algebra operations on the PLINK formatted data now support multi-threading and GPU (CUDA) computing.
+
 ## Installation
 
 This package requires Julia v1.4 or later, which can be obtained from
