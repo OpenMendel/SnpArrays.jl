@@ -5,7 +5,7 @@ module SnpArrays
 using CodecZlib, CodecXz, CodecBzip2, CodecZstd,  TranscodingStreams
 using Glob, LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase, LoopVectorization
 using Requires, Adapt
-import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size
+import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size, wait
 import DataFrames: DataFrame, rename!, eachrow
 import DelimitedFiles: readdlm, writedlm
 import CSV: categorical!
