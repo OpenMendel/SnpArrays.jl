@@ -92,195 +92,57 @@ end
 Base.size(s::CuSnpArray) = s.m, size(s.data, 2)
 eltype(s::CuSnpArray) = eltype(s.μ)
 
-function _snparray_cuda_ax_additive!(out, s, v)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += (Aij >= 2) * v[j] + (Aij >= 3) * v[j]
+for (_ftn!, expr) in [
+        (:_snparray_cuda_ax_additive!, :(((Aij >= 2) + (Aij >= 3)) * v[j])),
+        (:_snparray_cuda_ax_dominant!, :((Aij >= 2) * v[j])),
+        (:_snparray_cuda_ax_recessive!, :((Aij >= 3) * v[j])),
+        (:_snparray_cuda_ax_additive_meanimpute!, :(((Aij >= 2) + (Aij >= 3) + (Aij == 1) * μ[j]) * v[j])),
+        (:_snparray_cuda_ax_dominant_meanimpute!, :(((Aij >= 2) + (Aij == 1) * μ[j]) * v[j])),
+        (:_snparray_cuda_ax_recessive_meanimpute!, :(((Aij >= 3) + (Aij == 1) * μ[j]) * v[j]))
+    ]
+    @eval begin
+        function $_ftn!(out, s, v)
+            packedstride = size(s, 1)
+            index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+            stride_x = blockDim().x * gridDim().x
+            for i = index_x:stride_x:length(out)
+                outi = zero(eltype(out))
+                for j = 1:length(v)
+                    k = 2 * ((i-1) & 3)
+                    block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
+                    Aij = (block >> k) & 3
+                    @inbounds outi += $expr
+                end
+                out[i] = outi
+            end
         end
-        out[i] = outi
     end
 end
 
-function _snparray_cuda_ax_dominant!(out, s, v)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += (Aij >= 2) * v[j]
+for (_ftn!, expr) in [
+        (:_snparray_cuda_atx_additive!, :((((Aij >= 2) + (Aij >= 3))) * v[j])),
+        (:_snparray_cuda_atx_dominant!, :((Aij >= 2) * v[j])),
+        (:_snparray_cuda_atx_recessive!, :((Aij >= 3) * v[j])),
+        (:_snparray_cuda_atx_additive_meanimpute!, :(((Aij >= 2) + (Aij >= 3) + (Aij == 1) * μ[i]) * v[j])),
+        (:_snparray_cuda_atx_dominant_meanimpute!, :(((Aij >= 2) + (Aij == 1) * μ[i]) * v[j])),
+        (:_snparray_cuda_atx_recessive_meanimpute!, :(((Aij >= 3) + (Aij == 1) * μ[i]) * v[j]))
+    ]
+    @eval begin
+        function $_ftn!(out, s, v)
+            packedstride = size(s, 1)
+            index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+            stride_x = blockDim().x * gridDim().x
+            for i = index_x:stride_x:length(out)
+                outi = zero(eltype(out))
+                for j = 1:length(v)
+                    k = 2 * ((j-1) & 3)
+                    block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
+                    Aij = (block >> k) & 3
+                    @inbounds outi += $expr
+                end
+                out[i] = outi
+            end
         end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_ax_recessive!(out, s, v)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += (Aij >= 3) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_atx_additive!(out, s, v)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += (((Aij >= 2) + (Aij >= 3))) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_atx_dominant!(out, s, v)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += (Aij >= 2) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_atx_recessive!(out, s, v)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += (Aij >= 3) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_ax_additive_meanimpute!(out, s, v, μ)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += ((Aij >= 2) + (Aij >= 3) + (Aij == 1) * μ[j]) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_ax_dominant_meanimpute!(out, s, v, μ)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += ((Aij >= 2) + (Aij == 1) * μ[j]) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_ax_recessive_meanimpute!(out, s, v, μ)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((i-1) & 3)
-            block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += ((Aij >= 3) + (Aij == 1) * μ[j]) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_atx_additive_meanimpute!(out, s, v, μ)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += ((Aij >= 2) + (Aij >= 3) + (Aij == 1) * μ[i]) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_atx_dominant_meanimpute!(out, s, v, μ)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += ((Aij >= 2) + (Aij == 1) * μ[i]) * v[j]
-        end
-        out[i] = outi
-    end
-end
-
-function _snparray_cuda_atx_recessive_meanimpute!(out, s, v, μ)
-    packedstride = size(s, 1)
-    index_x = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    stride_x = blockDim().x * gridDim().x
-    for i = index_x:stride_x:length(out)
-        outi = zero(eltype(out))
-        for j = 1:length(v)
-            k = 2 * ((j-1) & 3)
-            block = s[(i-1) * packedstride + ((j-1) >> 2) + 1]
-            Aij = (block >> k) & 3
-            @inbounds outi += ((Aij >= 3) + (Aij == 1) * μ[i]) * v[j]
-        end
-        out[i] = outi
     end
 end
 

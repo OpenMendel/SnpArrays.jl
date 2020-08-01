@@ -322,388 +322,88 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute)
     end
 end
 
-function _snparray_ax_additive_rem!(out, s, v)
-    maxp = length(out)
-    @avx for j in eachindex(v)
-        block = s[1, j]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[p] += ((Aij >= 2) + (Aij == 3)) * v[j]
-        end
-    end
-end
-
-function _snparray_ax_additive!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for j ∈ 1:cols
-        for l in 1:k
-            block = s[l, j]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[4 * (l - 1) + p] += ((Aij >= 2) + (Aij == 3)) * v[j]
+for (_ftn!, _ftn_rem!, expr) in [
+        (:_snparray_ax_additive!, :_snparray_ax_additive_rem!, :(((Aij >= 2) + (Aij == 3)) * v[j])),
+        (:_snparray_ax_dominant!, :_snparray_ax_dominant_rem!, :((Aij >= 2)  * v[j])),
+        (:_snparray_ax_recessive!, :_snparray_ax_recessive_rem!, :((Aij == 3) * v[j])),
+        (:_snparray_ax_additive_meanimpute!, :_snparray_ax_additive_meanimpute_rem!, :(((Aij >= 2) + (Aij == 3) + (Aij == 1) * μ[j]) * v[j])),
+        (:_snparray_ax_dominant_meanimpute!, :_snparray_ax_dominant_meanimpute_rem!, :(((Aij >= 2) + (Aij == 1) * μ[j]) * v[j])),
+        (:_snparray_ax_recessive_meanimpute!, :_snparray_ax_recessive_meanimpute_rem!, :(((Aij == 3) + (Aij == 1) * μ[j]) * v[j]))
+    ]
+    @eval begin
+        function ($_ftn_rem!)(out, s, v, μ)
+            maxp = length(out)
+            @avx for j in eachindex(v)
+                block = s[1, j]
+                for p in 1:maxp
+                    Aij = (block >> (2 * (p - 1))) & 3
+                    out[p] += $expr
+                end
             end
-
         end
-    end
-    if rem != 0
-        _snparray_ax_additive_rem!(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), v)
-    end
-    nothing
-end
-
-function _snparray_ax_dominant_rem!(out, s, v)
-    maxp = length(out)
-    @avx for j in eachindex(v)
-        block = s[1, j]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[p] += (Aij >= 2) * v[j]
-        end
-    end
-end
-
-function _snparray_ax_dominant!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for j ∈ 1:cols
-        for l in 1:k
-            block = s[l, j]
+        
+        function ($_ftn!)(out, s, v, rows, cols, μ)
+            k = rows >> 2
+            rem = rows & 3
             
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[4 * (l - 1) + p] += (Aij >= 2) * v[j]
+            @avx for j ∈ 1:cols
+                for l in 1:k
+                    block = s[l, j]
+                    
+                    for p in 1:4
+                        Aij = (block >> (2 * (p - 1))) & 3
+                        out[4 * (l - 1) + p] += $expr
+                    end
+        
+                end
             end
-
-        end
-    end
-    if rem != 0
-        _snparray_ax_dominant_rem!(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), v)
-    end
-    nothing
-end
-
-function _snparray_ax_recessive_rem!(out, s, v)
-    maxp = length(out)
-    @avx for j in eachindex(v)
-        block = s[1, j]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[p] += (Aij == 3) * v[j]
+            if rem != 0
+                ($_ftn_rem!)(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), v, μ)
+            end
+            nothing
         end
     end
 end
 
-function _snparray_ax_recessive!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for j ∈ 1:cols
-        for l in 1:k
-            block = s[l, j]
+for (_ftn!, _ftn_rem!, expr) in [
+        (:_snparray_atx_additive!, :_snparray_atx_additive_rem!, :(((Aij >= 2) + (Aij == 3)) * v[4 * (l - 1) + p])),
+        (:_snparray_atx_dominant!, :_snparray_atx_dominant_rem!, :((Aij >= 2)  * v[4 * (l - 1) + p])),
+        (:_snparray_atx_recessive!, :_snparray_atx_recessive_rem!, :((Aij == 3) * v[4 * (l - 1) + p])),
+        (:_snparray_atx_additive_meanimpute!, :_snparray_atx_additive_meanimpute_rem!, :(((Aij >= 2) + (Aij == 3) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p])),
+        (:_snparray_atx_dominant_meanimpute!, :_snparray_atx_dominant_meanimpute_rem!, :(((Aij >= 2) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p])),
+        (:_snparray_atx_recessive_meanimpute!, :_snparray_atx_recessive_meanimpute_rem!, :(((Aij == 3) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p]))
+    ]
+    @eval begin
+        function $(_ftn_rem!)(out, s, v, μ)
+            maxp = length(v)
+            l = 1
+            @avx for i in eachindex(out)
+                block = s[1, i]
+                for p in 1:maxp
+                    Aij = (block >> (2 * (p - 1))) & 3
+                    out[i] += $expr
+                end
+            end
+        end
+        
+        function $(_ftn!)(out, s, v, rows, cols, μ)
+            k = rows >> 2
+            rem = rows & 3
             
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[4 * (l - 1) + p] += (Aij == 3) * v[j]
+            @avx for i ∈ 1:cols
+                for l in 1:k
+                    block = s[l, i]
+                    
+                    for p in 1:4
+                        Aij = (block >> (2 * (p - 1))) & 3
+                        out[i] += $expr
+                    end
+                end
             end
-
-        end
-    end
-    if rem != 0
-        _snparray_ax_recessive_rem!(@view(out[4k+1:end]), @view(s[k+1:k+1, :]), v)
-    end
-    nothing
-end
-
-function _snparray_ax_additive_meanimpute_rem!(out, s, v, μ)
-    maxp = length(out)
-    @avx for j in eachindex(v)
-        block = s[1, j]
-        for p in 1:maxp
-            Aij = (block >> (2*(p-1))) & 3
-            out[p] += ((Aij >= 2) + (Aij == 3) + (Aij == 1) * μ[j]) * v[j]
-        end
-    end
-end
-
-function _snparray_ax_additive_meanimpute!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for j ∈ 1:cols
-        for l in 1:k
-            block = s[l, j]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[4*(l-1)+p] += ((Aij >= 2) + (Aij == 3) + (Aij == 1) * μ[j]) * v[j]
+            if rem != 0
+                $(_ftn_rem!)(out, @view(s[k + 1:k + 1, :]), @view(v[4k + 1:end]), μ)
             end
-
+            nothing
         end
     end
-    if rem != 0
-        _snparray_ax_additive_meanimpute_rem!(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), v, μ)
-    end
-    nothing
-end
-
-function _snparray_ax_dominant_meanimpute_rem!(out, s, v, μ)
-    maxp = length(out)
-    @avx for j in eachindex(v)
-        block = s[1, j]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[p] += ((Aij >= 2) + (Aij == 1) * μ[j]) * v[j]
-        end
-    end
-end
-
-function _snparray_ax_dominant_meanimpute!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for j ∈ 1:cols
-        for l in 1:k
-            block = s[l, j]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[4 * (l - 1) + p] += ((Aij >= 2) + (Aij == 1) * μ[j]) * v[j]
-            end
-
-        end
-    end
-    if rem != 0
-        _snparray_ax_dominant_meanimpute_rem!(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), v, μ)
-    end
-    nothing
-end
-
-function _snparray_ax_recessive_meanimpute_rem!(out, s, v, μ)
-    maxp = length(out)
-    @avx for j in eachindex(v)
-        block = s[1, j]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[p] += ((Aij == 3) + (Aij == 1) * μ[j]) * v[j]
-        end
-    end
-end
-
-function _snparray_ax_recessive_meanimpute!(out, s, v, rows, cols, μ)
-    #fill!(out, zero(Float64))
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for j ∈ 1:cols
-        for l in 1:k
-            block = s[l, j]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[4*(l-1)+p] += ((Aij == 3) + (Aij == 1) * μ[j]) * v[j]
-            end
-
-        end
-    end
-    if rem != 0
-        _snparray_ax_recessive_meanimpute_rem!(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), v, μ)
-    end
-    nothing
-end
-
-function _snparray_atx_additive_rem!(out, s, v, μ)
-    maxp = length(v)
-    @avx for i in eachindex(out)
-        block = s[1, i]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[i] += ((Aij >= 2) + (Aij == 3)) * v[p]
-        end
-    end
-end
-
-function _snparray_atx_additive!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for i ∈ 1:cols
-        for l in 1:k
-            block = s[l, i]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[i] += ((Aij >= 2) + (Aij == 3)) * v[4 * (l - 1) + p]
-            end
-
-        end
-    end
-    if rem != 0
-        _snparray_atx_additive_rem!(out, @view(s[k + 1:k + 1, :]), @view(v[4k + 1:end]), μ)
-    end
-    nothing
-end
-
-function _snparray_atx_dominant_rem!(out, s, v, μ)
-    maxp = length(v)
-    @avx for i in eachindex(out)
-        block = s[1, i]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[i] += (Aij >= 2) * v[p]
-        end
-    end
-end
-
-function _snparray_atx_dominant!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for i ∈ 1:cols
-        for l in 1:k
-            block = s[l, i]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[i] += (Aij >= 2) * v[4 * (l - 1) + p]
-            end
-
-        end
-    end
-    if rem != 0
-        _snparray_atx_dominant_rem!(out, @view(s[k + 1:k + 1, :]), @view(v[4k + 1:end]), μ)
-    end
-    nothing
-end
-
-function _snparray_atx_recessive_rem!(out, s, v, μ)
-    maxp = length(v)
-    @avx for i in eachindex(out)
-        block = s[1, i]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[i] += (Aij == 3) * v[p]
-        end
-    end
-end
-
-function _snparray_atx_recessive!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for i ∈ 1:cols
-        for l in 1:k
-            block = s[l, i]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[i] += (Aij == 3) * v[4 * (l - 1) + p]
-            end
-
-        end
-
-    end
-    if rem != 0
-        _snparray_atx_recessive_rem!(out, @view(s[k + 1:k + 1, :]), @view(v[4k + 1:end]), μ)
-    end
-    nothing
-end
-
-function _snparray_atx_additive_meanimpute_rem!(out, s, v, μ)
-    maxp = length(v)
-    @avx for i in eachindex(out)
-        block = s[1, i]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[i] += ((Aij >= 2) + (Aij == 3) + (Aij == 1) * μ[i]) * v[p]
-        end
-    end
-end
-
-function _snparray_atx_additive_meanimpute!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for i ∈ 1:cols
-        for l in 1:k
-            block = s[l, i]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[i] += ((Aij >= 2) + (Aij == 3) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p]
-            end
-
-        end
-    end
-    if rem != 0
-        _snparray_atx_additive_meanimpute_rem!(out, @view(s[k + 1:k + 1, :]), @view(v[4k + 1:end]), μ)
-    end
-    nothing
-end
-
-function _snparray_atx_dominant_meanimpute_rem!(out, s, v, μ)
-    maxp = length(v)
-    @avx for i in eachindex(out)
-        block = s[1, i]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[i] += ((Aij >= 2) + (Aij == 1) * μ[i]) * v[p]
-        end
-    end
-end
-
-function _snparray_atx_dominant_meanimpute!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for i ∈ 1:cols
-        for l in 1:k
-            block = s[l, i]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[i] += ((Aij >= 2) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p]
-            end
-
-        end
-    end
-    if rem != 0
-        _snparray_atx_dominant_meanimpute_rem!(out, @view(s[k + 1:k + 1, :]), @view(v[4k + 1:end]), μ)
-    end
-    nothing
-end
-
-function _snparray_atx_recessive_meanimpute_rem!(out, s, v, μ)
-    maxp = length(v)
-    @avx for i in eachindex(out)
-        block = s[1, i]
-        for p in 1:maxp
-            Aij = (block >> (2 * (p - 1))) & 3
-            out[i] += ((Aij == 3) + (Aij == 1) * μ[i]) * v[p]
-        end
-    end
-end
-
-function _snparray_atx_recessive_meanimpute!(out, s, v, rows, cols, μ)
-    k = rows >> 2
-    rem = rows & 3
-    
-    @avx for i ∈ 1:cols
-        for l in 1:k
-            block = s[l, i]
-            
-            for p in 1:4
-                Aij = (block >> (2 * (p - 1))) & 3
-                out[i] += ((Aij == 3) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p]
-            end
-
-        end
-    end
-    if rem != 0
-        _snparray_atx_recessive_meanimpute_rem!(out, @view(s[k + 1:k + 1, :]), @view(v[4k + 1:end]), μ)
-    end
-    nothing
 end
