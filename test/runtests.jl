@@ -563,3 +563,19 @@ rm("mouse_testreorder.bim", force=true)
 rm("mouse_testreorder.fam", force=true)
 rm("mouse_testreorder.reordered.fam", force=true)
 end
+
+@testset "vcf2plink" begin
+# Download an example VCF file
+isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+    joinpath(pwd(), "test.08Jun17.d8b.vcf.gz"));
+s = vcf2plink("test.08Jun17.d8b.vcf.gz", "test.08Jun17.d8b")
+@test size(s, 1) == 191
+@test size(s, 2) == 1354
+@test s[1, 1] == 0x00
+@test s[1, 5] == 0x02
+@test s[38, 5] == 0x03
+rm("test.08Jun17.d8b.vcf.gz", force=true)
+rm("test.08Jun17.d8b.bed", force=true)
+rm("test.08Jun17.d8b.bim", force=true)
+rm("test.08Jun17.d8b.fam", force=true)
+end
