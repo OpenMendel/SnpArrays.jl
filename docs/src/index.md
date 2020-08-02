@@ -46,6 +46,16 @@ versioninfo()
 using SnpArrays, BenchmarkTools, Glob
 ```
 
+    ┌ Info: Precompiling SnpArrays [4e780e97-f5bf-4111-9dc4-b70aaf691b06]
+    └ @ Base loading.jl:1260
+    ┌ Warning: Package SnpArrays does not have GeneticVariation in its dependencies:
+    │ - If you have SnpArrays checked out for development and have
+    │   added GeneticVariation as a dependency but haven't updated your primary
+    │   environment's manifest file, try `Pkg.resolve()`.
+    │ - Otherwise you may need to report an issue with SnpArrays
+    └ Loading GeneticVariation into SnpArrays from project dependency, future warnings for SnpArrays are suppressed.
+
+
 ## Example data
 
 There are two example data sets attached to this package. They are availabe in the `data` folder of the package.
@@ -167,7 +177,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      94.032 μs (64 allocations: 390.03 KiB)
+      84.460 μs (64 allocations: 390.03 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -430,11 +440,11 @@ tmpbf = SnpArray(undef, 5, 3)
 
 
     5×3 SnpArray:
-     0x00  0x01  0x01
-     0x00  0x03  0x01
-     0x01  0x03  0x02
-     0x02  0x01  0x00
      0x00  0x00  0x03
+     0x00  0x01  0x00
+     0x01  0x01  0x01
+     0x00  0x01  0x02
+     0x01  0x02  0x03
 
 
 
@@ -449,11 +459,11 @@ tmpbf = SnpArray("tmp.bed", tmpbf)
 
 
     5×3 SnpArray:
-     0x00  0x01  0x01
-     0x00  0x03  0x01
-     0x01  0x03  0x02
-     0x02  0x01  0x00
      0x00  0x00  0x03
+     0x00  0x01  0x00
+     0x01  0x01  0x01
+     0x00  0x01  0x02
+     0x01  0x02  0x03
 
 
 
@@ -467,11 +477,11 @@ tmpbf
 
 
     5×3 SnpArray:
-     0x02  0x01  0x01
-     0x00  0x03  0x01
-     0x01  0x03  0x02
-     0x02  0x01  0x00
-     0x00  0x00  0x03
+     0x02  0x00  0x03
+     0x00  0x01  0x00
+     0x01  0x01  0x01
+     0x00  0x01  0x02
+     0x01  0x02  0x03
 
 
 
@@ -780,7 +790,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      3.655 μs (0 allocations: 0 bytes)
+      5.574 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -830,7 +840,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      7.205 μs (0 allocations: 0 bytes)
+      10.368 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -879,7 +889,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      6.856 μs (0 allocations: 0 bytes)
+      7.255 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -895,7 +905,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      50.329 ms (10150 allocations: 475.78 KiB)
+      66.187 ms (10150 allocations: 475.78 KiB)
 
 
 Copy whole SnpArray
@@ -906,7 +916,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      64.344 ms (0 allocations: 0 bytes)
+      50.702 ms (0 allocations: 0 bytes)
 
 
 ### Summaries
@@ -941,7 +951,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      6.043 ns (0 allocations: 0 bytes)
+      6.044 ns (0 allocations: 0 bytes)
 
 
 #### Minor allele frequencies
@@ -1076,7 +1086,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      17.263 μs (2 allocations: 79.39 KiB)
+      15.557 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1246,7 +1256,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      43.843 ms (19274 allocations: 1.80 MiB)
+      43.850 ms (19274 allocations: 1.80 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1330,7 +1340,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      505.403 ms (25 allocations: 28.95 MiB)
+      509.350 ms (25 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1378,7 +1388,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      312.411 ms (26 allocations: 14.60 MiB)
+      314.125 ms (26 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcude SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1502,7 +1512,7 @@ count(rowmask), count(colmask)
 @btime(SnpArrays.filter($mouse, min_success_rate_per_row=0.999, min_success_rate_per_col=0.999));
 ```
 
-      148.931 ms (11460 allocations: 171.28 MiB)
+      133.245 ms (11460 allocations: 171.28 MiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -1694,10 +1704,12 @@ readdir(glob"tmp_*", ".")
 
 
 
-    3-element Array{String,1}:
+    5-element Array{String,1}:
      "./tmp_hcat_arr_1.bed"
      "./tmp_hvcat_arr_1.bed"
      "./tmp_vcat_arr_1.bed"
+     "./tmp_vcat_arr_2.bed"
+     "./tmp_vcat_arr_3.bed"
 
 
 
@@ -1887,7 +1899,7 @@ norm(EURsla * v2 -  A * v2)
 
 
 
-    3.255157000354014e-11
+    2.719382277038839e-11
 
 
 
@@ -1899,7 +1911,7 @@ norm(EURsla' * v1 - A' *v1)
 
 
 
-    5.398163705112499e-12
+    5.817837291818981e-12
 
 
 
@@ -1911,7 +1923,7 @@ norm(EURbm * v2 -  A * v2)
 
 
 
-    3.590044545281484e-11
+    2.0909259908204076e-11
 
 
 
@@ -1923,7 +1935,7 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    8.54121862883797e-12
+    9.553990509751393e-12
 
 
 
@@ -1977,7 +1989,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    5.05574647736198e-14
+    7.782687159141538e-14
 
 
 
@@ -1989,7 +2001,7 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    1.4647267077134765e-14
+    3.6739702231772136e-14
 
 
 
@@ -2028,7 +2040,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
     └ @ Core :-1
 
 
-      18.204 ms (253 allocations: 7.69 KiB)
+      18.620 ms (253 allocations: 7.69 KiB)
 
 
 
@@ -2036,7 +2048,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
 @btime mul!($out2_d, transpose($EURcu), $v1_d);
 ```
 
-      544.722 μs (465 allocations: 15.00 KiB)
+      466.112 μs (465 allocations: 15.00 KiB)
 
 
 The operations are parallelized along the output dimension, hence the GPU was not fully utilized in the first case. With 100-time larger data, 30 to 50-fold speedup were observed for both cases with Nvidia Titan V. See linear algebra page for more information.
@@ -2051,7 +2063,7 @@ norm(collect(EURcu' * v1_d) -  EURbm' * v1)
 
 
 
-    2.2306544292754367e-11
+    1.0429307096671663e-11
 
 
 
@@ -2579,9 +2591,9 @@ We can merge the splitted dictionary back into one SnpData using `merge_plink`.
 merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
 ```
 
-      0.067004 seconds (117.20 k allocations: 7.905 MiB)
-      0.102031 seconds (125.97 k allocations: 11.520 MiB, 51.01% gc time)
-      0.050454 seconds (134.18 k allocations: 8.737 MiB)
+      0.066657 seconds (117.54 k allocations: 7.922 MiB)
+      0.102569 seconds (126.08 k allocations: 11.556 MiB, 51.01% gc time)
+      0.050176 seconds (134.28 k allocations: 8.742 MiB)
 
 
 
@@ -2624,10 +2636,10 @@ You can also merge the plink formatted files based on their common prefix.
 merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
 ```
 
-      0.146038 seconds (783.53 k allocations: 36.252 MiB)
-      0.568753 seconds (1.19 M allocations: 61.158 MiB)
-      0.003368 seconds (8 allocations: 4.897 MiB)
-      0.001259 seconds (8 allocations: 1.650 MiB)
+      0.142526 seconds (784.11 k allocations: 36.280 MiB)
+      0.570500 seconds (1.19 M allocations: 61.266 MiB)
+      0.004030 seconds (8 allocations: 4.897 MiB)
+      0.000392 seconds (8 allocations: 1.650 MiB)
 
 
 
@@ -2678,7 +2690,7 @@ run(`cp $(mouse_prefix * ".fam") mouse_reorder.fam`)
 
 
 
-    Process(`[4mcp[24m [4m/home/kose/.julia/dev/SnpArrays/src/../data/mouse.fam[24m [4mmouse_reorder.fam[24m`, ProcessExited(0))
+    Process(`[4mcp[24m [4m/home/kose/.julia/dev/SnpArrays/src/../data/mouse.fam[24m [4mmouse_reorder.fam[24m`, ProcessExited(0))
 
 
 
@@ -2729,12 +2741,12 @@ mouse_toreorder
     │ Row │ fid      │ iid        │ father       │ mother       │ sex      │ phenotype │
     │     │ Abstrac… │ AbstractS… │ AbstractStr… │ AbstractStr… │ Abstrac… │ Abstract… │
     ├─────┼──────────┼────────────┼──────────────┼──────────────┼──────────┼───────────┤
-    │ 1   │ 1_3      │ A067289112 │ E2.4:H3.3(2) │ E2.4:D4.3(2) │ 1        │ -9        │
-    │ 2   │ 1_1      │ A048031769 │ H4.2:C5.1(4) │ H4.2:G1.1(7) │ 1        │ -9        │
-    │ 3   │ 1_2      │ A084286354 │ H4.4:C2.3(5) │ H4.4:G3.3(7) │ 1        │ -9        │
-    │ 4   │ 1_3      │ A048072266 │ G5.2:B5.1(4) │ G5.2:F5.1(2) │ 2        │ -9        │
-    │ 5   │ 1_3      │ A063311623 │ A5.4:D4.3(5) │ A5.4:H1.3(6) │ 1        │ -9        │
-    │ 6   │ 1_54     │ A063011268 │ B3.5:E4.4(2) │ B3.5:A3.4(4) │ 1        │ -9        │
+    │ 1   │ 1_3      │ A067014773 │ A5.4:D4.3(5) │ A5.4:H1.3(6) │ 1        │ -9        │
+    │ 2   │ 1_2      │ A053381362 │ G3.3:B1.2(4) │ G3.3:F1.2(4) │ 2        │ -9        │
+    │ 3   │ 1_55     │ A048273604 │ F3.3:A2.2(5) │ F3.3:E1.2(4) │ 1        │ -9        │
+    │ 4   │ 1_70     │ A063375363 │ C1.5:F2.4(3) │ C1.5:B1.4(3) │ 1        │ -9        │
+    │ 5   │ 1_2      │ A048051064 │ B5.2:E5.1(4) │ B5.2:A1.1(4) │ 1        │ -9        │
+    │ 6   │ 1_1      │ A063806359 │ A5.3:D1.2(5) │ A5.3:H3.2(5) │ 1        │ -9        │
     …,
     srcbed: mouse_reorder.bed
     srcbim: mouse_reorder.bim
@@ -2744,6 +2756,55 @@ mouse_toreorder
 
 
 This functionality mainly targets Cox regression, where sorting subjects in decreasing order of (censored) survival time results in more efficient implementation.
+
+## VCF to PLINK
+
+SnpArrays.jl includes a function to transform a (gzipped) VCF file to PLINK-formatted files. This function drops multi-allelic variants and variants with missing identifier.
+
+
+```julia
+# Download an example VCF file
+isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+    joinpath(pwd(), "test.08Jun17.d8b.vcf.gz"));
+```
+
+
+```julia
+vcf2plink("test.08Jun17.d8b.vcf.gz", "test.08Jun17.d8b")
+```
+
+
+
+
+    191×1354 SnpArray:
+     0x00  0x00  0x00  0x00  0x02  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x02  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x02  0x02  0x00
+     0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00  …  0x00  0x00  0x00  0x02  0x02  0x00
+     0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x02  0x02  0x00
+        ⋮                             ⋮  ⋱                 ⋮              
+     0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x02  0x02  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+     0x00  0x00  0x00  0x00  0x00  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+
+
 
 
 ```julia
@@ -2778,4 +2839,8 @@ rm("mouse_reorder.bim", force=true)
 rm("mouse_reorder.bed", force=true)
 rm("mouse_reorder.fam", force=true)
 rm("mouse_reorder.reordered.fam", force=true)
+rm("test.08Jun17.d8b.vcf.gz", force=true)
+rm("test.08Jun17.d8b.bed", force=true)
+rm("test.08Jun17.d8b.bim", force=true)
+rm("test.08Jun17.d8b.fam", force=true)
 ```

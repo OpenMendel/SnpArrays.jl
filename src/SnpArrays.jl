@@ -15,9 +15,11 @@ import Statistics: mean, std, var
 import StatsBase: counts
 import SpecialFunctions: gamma_inc
 import VectorizationBase: gesp
+import GeneticVariation.VCF
 export AbstractSnpArray, SnpArray, SnpBitMatrix, SnpLinAlg, SnpData
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
 export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
+export vcf2plink
 export ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL
 export CuSnpArray
 
@@ -34,6 +36,7 @@ include("grm.jl")
 include("linalg_direct.jl")
 include("linalg_bitmatrix.jl")
 include("reorder.jl")
+include("vcf2plink.jl")
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 

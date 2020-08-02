@@ -6,8 +6,10 @@ SnpArrays.jl supports three modes of matrix-vector multiplications.
 2. Operations on transformed `BitMatrix`es: `SnpBitMatrix`
 3. Direct operations on a plink-formatted data on an Nvidia GPU: `CuSnpArray`.
 
-`SnpLinAlg` and `SnpBitMatrix` use Chris Elrod's [LoopVectorization.jl](https://github.com/chriselrod/LoopVectorization.jl) internally. It is much faster on machines with AVX support. `CuSnpArray` uses [CUDA.jl](https://juliagpu.gitlab.io/CUDA.jl/) internally.
+- `SnpLinAlg` and `SnpBitMatrix` use Chris Elrod's [LoopVectorization.jl](https://github.com/chriselrod/LoopVectorization.jl) internally. It is much faster on machines with AVX support.  
+- `CuSnpArray` uses [CUDA.jl](https://juliagpu.gitlab.io/CUDA.jl/) internally.
 On this page, we compare these three.
+- `SnpLinAlg` supports multithreading. See [this page](https://docs.julialang.org/en/v1/manual/multi-threading/#Starting-Julia-with-multiple-threads-1) to learn how to use it.
 
 
 ```julia
@@ -47,14 +49,14 @@ We create instnaces of SnpLinAlg, SnpBitmatrix and CuSnpArray:
 
 
 ```julia
-EUR_100_bm = SnpBitMatrix{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false)
-EUR_100_sla = SnpLinAlg{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false)
-EUR_100_sla_ = SnpLinAlg{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+EUR_100_bm = SnpBitMatrix{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false);
+EUR_100_sla = SnpLinAlg{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false);
+EUR_100_sla_ = SnpLinAlg{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false, impute=false);
 EUR_100_mat = convert(Matrix{Float64}, EUR_100, model=ADDITIVE_MODEL, center=false, scale=false);
 
-EUR_101_bm = SnpBitMatrix{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false)
-EUR_101_sla = SnpLinAlg{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false)
-EUR_101_sla_ = SnpLinAlg{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+EUR_101_bm = SnpBitMatrix{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false);
+EUR_101_sla = SnpLinAlg{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false);
+EUR_101_sla_ = SnpLinAlg{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false, impute=false);
 EUR_101_mat = convert(Matrix{Float64}, EUR_101, model=ADDITIVE_MODEL, center=false, scale=false);
 ```
 
@@ -101,12 +103,12 @@ BLAS.set_num_threads(8)
       memory estimate:  0 bytes
       allocs estimate:  0
       --------------
-      minimum time:     383.853 ms (0.00% GC)
-      median time:      417.986 ms (0.00% GC)
-      mean time:        431.205 ms (0.00% GC)
-      maximum time:     530.847 ms (0.00% GC)
+      minimum time:     361.080 ms (0.00% GC)
+      median time:      581.438 ms (0.00% GC)
+      mean time:        535.216 ms (0.00% GC)
+      maximum time:     668.896 ms (0.00% GC)
       --------------
-      samples:          12
+      samples:          10
       evals/sample:     1
 
 
@@ -126,12 +128,12 @@ BLAS.set_num_threads(1)
       memory estimate:  0 bytes
       allocs estimate:  0
       --------------
-      minimum time:     1.849 s (0.00% GC)
-      median time:      2.064 s (0.00% GC)
-      mean time:        2.047 s (0.00% GC)
-      maximum time:     2.229 s (0.00% GC)
+      minimum time:     2.741 s (0.00% GC)
+      median time:      2.880 s (0.00% GC)
+      mean time:        2.880 s (0.00% GC)
+      maximum time:     3.019 s (0.00% GC)
       --------------
-      samples:          3
+      samples:          2
       evals/sample:     1
 
 
@@ -150,12 +152,12 @@ Direct linear algebra on a SnpArray, with mean imputation:
       memory estimate:  38.33 KiB
       allocs estimate:  1616
       --------------
-      minimum time:     1.241 s (0.00% GC)
-      median time:      1.355 s (0.00% GC)
-      mean time:        1.352 s (0.00% GC)
-      maximum time:     1.457 s (0.00% GC)
+      minimum time:     1.726 s (0.00% GC)
+      median time:      1.748 s (0.00% GC)
+      mean time:        1.744 s (0.00% GC)
+      maximum time:     1.757 s (0.00% GC)
       --------------
-      samples:          4
+      samples:          3
       evals/sample:     1
 
 
@@ -174,10 +176,10 @@ With zero imputation:
       memory estimate:  38.33 KiB
       allocs estimate:  1616
       --------------
-      minimum time:     1.017 s (0.00% GC)
-      median time:      1.037 s (0.00% GC)
-      mean time:        1.034 s (0.00% GC)
-      maximum time:     1.045 s (0.00% GC)
+      minimum time:     1.013 s (0.00% GC)
+      median time:      1.032 s (0.00% GC)
+      mean time:        1.029 s (0.00% GC)
+      maximum time:     1.037 s (0.00% GC)
       --------------
       samples:          5
       evals/sample:     1
@@ -200,10 +202,10 @@ The below is the benchmark for SnpBitMatrix (always zero-imputed):
       memory estimate:  0 bytes
       allocs estimate:  0
       --------------
-      minimum time:     1.045 s (0.00% GC)
-      median time:      1.051 s (0.00% GC)
-      mean time:        1.051 s (0.00% GC)
-      maximum time:     1.058 s (0.00% GC)
+      minimum time:     1.057 s (0.00% GC)
+      median time:      1.089 s (0.00% GC)
+      mean time:        1.085 s (0.00% GC)
+      maximum time:     1.124 s (0.00% GC)
       --------------
       samples:          5
       evals/sample:     1
@@ -230,10 +232,10 @@ v2 = randn(size(EUR_101, 2));
       memory estimate:  44.13 KiB
       allocs estimate:  1722
       --------------
-      minimum time:     1.259 s (0.00% GC)
-      median time:      1.268 s (0.00% GC)
-      mean time:        1.268 s (0.00% GC)
-      maximum time:     1.277 s (0.00% GC)
+      minimum time:     1.322 s (0.00% GC)
+      median time:      1.635 s (0.00% GC)
+      mean time:        1.561 s (0.00% GC)
+      maximum time:     1.654 s (0.00% GC)
       --------------
       samples:          4
       evals/sample:     1
@@ -252,10 +254,10 @@ v2 = randn(size(EUR_101, 2));
       memory estimate:  44.13 KiB
       allocs estimate:  1722
       --------------
-      minimum time:     1.038 s (0.00% GC)
-      median time:      1.043 s (0.00% GC)
-      mean time:        1.043 s (0.00% GC)
-      maximum time:     1.051 s (0.00% GC)
+      minimum time:     1.032 s (0.00% GC)
+      median time:      1.039 s (0.00% GC)
+      mean time:        1.039 s (0.00% GC)
+      maximum time:     1.046 s (0.00% GC)
       --------------
       samples:          5
       evals/sample:     1
@@ -274,10 +276,10 @@ v2 = randn(size(EUR_101, 2));
       memory estimate:  0 bytes
       allocs estimate:  0
       --------------
-      minimum time:     1.544 s (0.00% GC)
-      median time:      1.561 s (0.00% GC)
-      mean time:        1.561 s (0.00% GC)
-      maximum time:     1.577 s (0.00% GC)
+      minimum time:     1.214 s (0.00% GC)
+      median time:      1.230 s (0.00% GC)
+      mean time:        1.256 s (0.00% GC)
+      maximum time:     1.348 s (0.00% GC)
       --------------
       samples:          4
       evals/sample:     1
@@ -321,12 +323,12 @@ using BenchmarkTools
       memory estimate:  3.28 KiB
       allocs estimate:  130
       --------------
-      minimum time:     22.319 ms (0.00% GC)
-      median time:      22.429 ms (0.00% GC)
-      mean time:        22.722 ms (0.00% GC)
-      maximum time:     26.938 ms (0.00% GC)
+      minimum time:     22.141 ms (0.00% GC)
+      median time:      22.287 ms (0.00% GC)
+      mean time:        22.286 ms (0.00% GC)
+      maximum time:     22.739 ms (0.00% GC)
       --------------
-      samples:          220
+      samples:          225
       evals/sample:     1
 
 
@@ -345,12 +347,12 @@ For CuSnpArray, the additional cost for mean imputation is negligible.
       memory estimate:  3.28 KiB
       allocs estimate:  130
       --------------
-      minimum time:     22.243 ms (0.00% GC)
-      median time:      22.431 ms (0.00% GC)
-      mean time:        22.805 ms (0.00% GC)
-      maximum time:     57.050 ms (0.00% GC)
+      minimum time:     22.063 ms (0.00% GC)
+      median time:      22.283 ms (0.00% GC)
+      mean time:        22.667 ms (0.00% GC)
+      maximum time:     54.782 ms (0.00% GC)
       --------------
-      samples:          220
+      samples:          221
       evals/sample:     1
 
 
@@ -372,12 +374,12 @@ EUR_100_mat_d = adapt(CuArray, EUR_100_mat);
       memory estimate:  2.58 KiB
       allocs estimate:  85
       --------------
-      minimum time:     75.951 ms (0.00% GC)
-      median time:      76.516 ms (0.00% GC)
-      mean time:        77.909 ms (0.00% GC)
-      maximum time:     82.096 ms (0.00% GC)
+      minimum time:     76.064 ms (0.00% GC)
+      median time:      80.063 ms (0.00% GC)
+      mean time:        78.925 ms (0.00% GC)
+      maximum time:     81.984 ms (0.00% GC)
       --------------
-      samples:          65
+      samples:          64
       evals/sample:     1
 
 
@@ -402,6 +404,7 @@ isapprox(v1_d, v1_d_)
 ```julia
 v1 = randn(size(EUR_100, 1))
 v2 = randn(size(EUR_100, 2))
+v2_ = randn(size(EUR_100, 2))
 v1_d = adapt(CuArray{Float64}, v1)
 v2_d = adapt(CuArray{Float64}, v2);
 ```
@@ -415,13 +418,13 @@ v2_d = adapt(CuArray{Float64}, v2);
 
 
     BenchmarkTools.Trial: 
-      memory estimate:  16 bytes
-      allocs estimate:  1
+      memory estimate:  38.34 KiB
+      allocs estimate:  1617
       --------------
-      minimum time:     842.187 ms (0.00% GC)
-      median time:      882.157 ms (0.00% GC)
-      mean time:        913.111 ms (0.00% GC)
-      maximum time:     1.049 s (0.00% GC)
+      minimum time:     934.273 ms (0.00% GC)
+      median time:      941.154 ms (0.00% GC)
+      mean time:        940.465 ms (0.00% GC)
+      maximum time:     946.902 ms (0.00% GC)
       --------------
       samples:          6
       evals/sample:     1
@@ -440,12 +443,12 @@ v2_d = adapt(CuArray{Float64}, v2);
       memory estimate:  16 bytes
       allocs estimate:  1
       --------------
-      minimum time:     618.434 ms (0.00% GC)
-      median time:      630.293 ms (0.00% GC)
-      mean time:        689.063 ms (0.00% GC)
-      maximum time:     881.782 ms (0.00% GC)
+      minimum time:     613.994 ms (0.00% GC)
+      median time:      624.201 ms (0.00% GC)
+      mean time:        623.735 ms (0.00% GC)
+      maximum time:     635.480 ms (0.00% GC)
       --------------
-      samples:          8
+      samples:          9
       evals/sample:     1
 
 
@@ -462,12 +465,12 @@ v2_d = adapt(CuArray{Float64}, v2);
       memory estimate:  3.08 KiB
       allocs estimate:  118
       --------------
-      minimum time:     26.710 ms (0.00% GC)
-      median time:      26.930 ms (0.00% GC)
-      mean time:        27.350 ms (0.00% GC)
-      maximum time:     32.306 ms (0.00% GC)
+      minimum time:     26.717 ms (0.00% GC)
+      median time:      26.903 ms (0.00% GC)
+      mean time:        27.136 ms (0.00% GC)
+      maximum time:     31.066 ms (0.00% GC)
       --------------
-      samples:          183
+      samples:          185
       evals/sample:     1
 
 
@@ -499,13 +502,13 @@ v2 = randn(size(EUR_101, 2));
 
 
     BenchmarkTools.Trial: 
-      memory estimate:  128 bytes
-      allocs estimate:  3
+      memory estimate:  44.14 KiB
+      allocs estimate:  1723
       --------------
-      minimum time:     850.050 ms (0.00% GC)
-      median time:      862.818 ms (0.00% GC)
-      mean time:        953.739 ms (0.00% GC)
-      maximum time:     1.391 s (0.00% GC)
+      minimum time:     958.926 ms (0.00% GC)
+      median time:      965.005 ms (0.00% GC)
+      mean time:        969.983 ms (0.00% GC)
+      maximum time:     1.002 s (0.00% GC)
       --------------
       samples:          6
       evals/sample:     1
@@ -521,15 +524,15 @@ v2 = randn(size(EUR_101, 2));
 
 
     BenchmarkTools.Trial: 
-      memory estimate:  128 bytes
-      allocs estimate:  3
+      memory estimate:  44.14 KiB
+      allocs estimate:  1723
       --------------
-      minimum time:     673.269 ms (0.00% GC)
-      median time:      693.418 ms (0.00% GC)
-      mean time:        700.729 ms (0.00% GC)
-      maximum time:     784.130 ms (0.00% GC)
+      minimum time:     1.089 s (0.00% GC)
+      median time:      1.092 s (0.00% GC)
+      mean time:        1.097 s (0.00% GC)
+      maximum time:     1.107 s (0.00% GC)
       --------------
-      samples:          8
+      samples:          5
       evals/sample:     1
 
 
@@ -546,10 +549,10 @@ v2 = randn(size(EUR_101, 2));
       memory estimate:  16 bytes
       allocs estimate:  1
       --------------
-      minimum time:     620.830 ms (0.00% GC)
-      median time:      637.698 ms (0.00% GC)
-      mean time:        656.708 ms (0.00% GC)
-      maximum time:     798.543 ms (0.00% GC)
+      minimum time:     620.057 ms (0.00% GC)
+      median time:      628.593 ms (0.00% GC)
+      mean time:        635.710 ms (0.00% GC)
+      maximum time:     664.656 ms (0.00% GC)
       --------------
       samples:          8
       evals/sample:     1
