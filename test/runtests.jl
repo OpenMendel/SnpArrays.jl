@@ -146,6 +146,13 @@ v = convert(Vector{Float64}, @view(mouse[:, 1]))
 @test std(filter(!isnan, v)) ≈ cstd[1]
 end
 
+@testset "convert (ADMIXTURE)" begin
+# convert A2 allele frequency to dosage
+@test convert(Float64, 0.5, ADDITIVE_MODEL)  == 1.0
+@test convert(Float64, 0.5, DOMINANT_MODEL)  == 0.75
+@test convert(Float64, 0.5, RECESSIVE_MODEL) == 0.25
+end
+
 @testset "maf" begin
 cc = counts(mouse, dims=1)
 @test all(0 .≤ maf(mouse) .≤ 0.5)
@@ -166,6 +173,14 @@ end
 Φrbs = grm(EUR, method=:Robust)
 @test size(Φrbs) == (size(EUR, 1), size(EUR, 1))
 @test issymmetric(Φrbs)
+@test eigmin(Φrbs) > -1e-8
+m, n, K = size(EUR, 1), size(EUR, 2), 3
+P = rand(n, K)
+Q = rand(m, K)
+Q ./= sum(Q, dims=2)
+Φreap = grm_admixture(EUR, transpose(P), transpose(Q))
+@test size(Φreap) == (size(EUR, 1), size(EUR, 1))
+@test issymmetric(Φreap)
 @test eigmin(Φrbs) > -1e-8
 end
 

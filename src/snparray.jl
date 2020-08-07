@@ -1,8 +1,8 @@
 """
-SnpArray
-SnpArray(bednm, m)
-SnpArray(plknm)
-SnpArray(undef, m, n)
+    SnpArray
+    SnpArray(bednm, m)
+    SnpArray(plknm)
+    SnpArray(undef, m, n)
 
 Raw .bed file as a shared, memory-mapped Matrix{UInt8}.  The number of rows, `m`
 is stored separately because it is not uniquely determined by the size of the `data` field.
@@ -251,7 +251,7 @@ function _var(s::AbstractSnpArray, corrected::Bool, mean, dims::Integer)
 end
 
 """
-maf!(out, s)
+    maf!(out, s)
 
 Populate `out` with minor allele frequencies of SnpArray `s`.
 """
@@ -266,7 +266,7 @@ end
 maf(s::AbstractSnpArray) = maf!(Vector{Float64}(undef, size(s, 2)), s)
 
 """
-minorallele(out, s)
+    minorallele(out, s)
 
 Populate `out` with minor allele indicators. `out[j] == true` means A2 is the minor 
 allele of `j`th column; `out[j] == false` means A1 is the minor allele.
@@ -280,7 +280,7 @@ function minorallele!(out::AbstractVector{Bool}, s::AbstractSnpArray)
 end
 
 """
-minorallele(s)
+    minorallele(s)
 
 Calculate minor allele indicators. `out[j] == true` means A2 is the minor 
 allele of `j`th column; `out[j] == false` means A1 is the minor allele.
@@ -300,7 +300,7 @@ end
 end
 
 """
-Base.copyto!(v, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+    Base.copyto!(v, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
 
 Copy SnpArray `s` to numeric vector or matrix `v`.
 
@@ -350,7 +350,7 @@ end
 
 
 """
-Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+    Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
 
 Convert a SnpArray `s` to a numeric vector or matrix of same shape as `s`.
 
@@ -367,11 +367,12 @@ function Base.convert(
     kwargs...) where T <: Array
     T(s; kwargs...)
 end
-Array{T,N}(s::AbstractSnpArray; kwargs...) where {T,N} = copyto!(Array{T,N}(undef, size(s)), s; kwargs...)
+Array{T,N}(s::AbstractSnpArray; kwargs...) where {T,N} = 
+    copyto!(Array{T,N}(undef, size(s)), s; kwargs...)
 
 
 """
-missingpos(s::SnpArray)
+    missingpos(s::SnpArray)
 
 Return a `SparseMatrixCSC{Bool,Int32}` of the same size as `s` indicating the positions with missing data.
 """
