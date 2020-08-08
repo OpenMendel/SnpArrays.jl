@@ -19,7 +19,7 @@ import GeneticVariation.VCF
 export AbstractSnpArray, SnpArray, SnpBitMatrix, SnpLinAlg, SnpData
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
 export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
-export vcf2plink
+export vcf2plink, kinship_pruning
 export ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL
 export CuSnpArray
 
@@ -33,6 +33,7 @@ include("filter.jl")
 include("cat.jl")
 include("snpdata.jl")
 include("grm.jl")
+include("kinship_pruning.jl")
 include("linalg_direct.jl")
 include("linalg_bitmatrix.jl")
 include("reorder.jl")

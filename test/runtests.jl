@@ -579,3 +579,11 @@ rm("test.08Jun17.d8b.bed", force=true)
 rm("test.08Jun17.d8b.bim", force=true)
 rm("test.08Jun17.d8b.fam", force=true)
 end
+
+@testset "kinship_pruning" begin
+g = grm(mouse)
+@test count(kinship_pruning(g; method=:gcta)) == 558
+@test count(kinship_pruning(g; method=:top_down)) == 641
+@test count(kinship_pruning(g; method=:bottom_up)) == 661
+@test count(kinship_pruning(g; method=:plink)) == 659
+end
