@@ -582,8 +582,8 @@ end
 
 @testset "kinship_pruning" begin
 g = grm(mouse)
-@test count(kinship_pruning(g; method=:gcta)) == 558
-@test count(kinship_pruning(g; method=:top_down)) == 641
-@test count(kinship_pruning(g; method=:bottom_up)) == 661
-@test count(kinship_pruning(g; method=:plink)) == 659
+@test count(kinship_pruning(g; method=:gcta)) == 68
+@test count(kinship_pruning(g; method=:top_down)) == 125
+@test count(kinship_pruning(g; method=:bottom_up)) == 132
+@test count(kinship_pruning(g; method=:plink)) == 126
 end
