@@ -1,5 +1,5 @@
 """
-    kinship_pruning(grm::Matrix; method=:bottom_up, cutoff=0.25, min_samples=0)
+    kinship_pruning(grm::Matrix; method=:bottom_up, cutoff=0.125, min_samples=0)
 
 Return a BitVector indicating which samples remains after kinship pruning. 
 Valid values for `method` are `:bottom_up`, `:top_down`, `:gcta`, and `:plink`.
