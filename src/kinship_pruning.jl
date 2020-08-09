@@ -28,7 +28,7 @@ function kinship_pruning(grm::AbstractMatrix; method=:bottom_up, cutoff=0.125, m
     r
 end
 
-function _find_neighbors!(neighbors::Vector{Int}, i::Integer, grm::AbstractMatrix, r::BitVector, degree::Int; cutoff=0.125)
+function _find_neighbors!(neighbors::Vector{Integer}, i::Integer, grm::AbstractMatrix, r::BitVector, degree::Integer; cutoff=0.125)
     m = size(grm, 1)
     n_neighbors = 0
     @inbounds for j in 1:m
@@ -41,7 +41,7 @@ function _find_neighbors!(neighbors::Vector{Int}, i::Integer, grm::AbstractMatri
     neighbors
 end
 
-function _count_degrees(grm::Matrix; cutoff=0.125)
+function _count_degrees(grm::AbstractMatrix; cutoff=0.125)
     m = size(grm, 1)
     degrees = zeros(Int, m)
     @inbounds for i in 1:m
@@ -55,7 +55,7 @@ function _count_degrees(grm::Matrix; cutoff=0.125)
     degrees
 end
 
-function _eliminate_node!(i::Integer, grm::AbstractMatrix, r::BitVector, degrees::Vector{Int}; cutoff=0.125)
+function _eliminate_node!(i::Integer, grm::AbstractMatrix, r::BitVector, degrees::Vector{Integer}; cutoff=0.125)
     m = size(grm, 1)
     r[i] = false
     degrees[i] = 0
