@@ -46,14 +46,12 @@ function Base.copyto!(
     # center, scale, impute
     @inbounds for j in 1:n, i in 1:m
         vij = SnpArrays.convert(T1, s[i, j], model)
-        if isnan(vij) || center || scale
-            a2freq = T2(0)
-            for k in 1:K
-                a2freq += Q[k, i] * P[k, j]
-            end    
-            μij = SnpArrays.convert(T1, a2freq, model)
-            σij = model == ADDITIVE_MODEL ? sqrt(μij * (1 - μij / 2)) : sqrt(μij * (1 - μij))
+        a2freq = T2(0)
+        for k in 1:K
+            a2freq += Q[k, i] * P[k, j]
         end
+        μij = SnpArrays.convert(T1, a2freq, model)
+        σij = model == ADDITIVE_MODEL ? sqrt(μij * (1 - μij / 2)) : sqrt(μij * (1 - μij))
         v[i, j] = (isnan(vij) || a2freq ≤ 0.01 || a2freq ≥ 0.99) ? μij : vij
         center && (v[i, j] -= μij)
         scale  && (v[i, j] /= σij)
