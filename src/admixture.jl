@@ -13,12 +13,14 @@ end
 end
 
 """
-Base.copyto!(v, s, P, Q; model=ADDITIVE_MODEL, center=false, scale=false)
+    Base.copyto!(v, s, P, Q; model=ADDITIVE_MODEL, center=false, scale=false)
 
-Copy SnpArray `s` to numeric vector or matrix `v`. Impute missing genotypes 
+Copy SnpArray `s` to a numeric vector or matrix `v`. Impute missing genotypes 
 according to ADMIXTURE estimates `P` (population A2 allele frequencies of SNPs) 
 and `Q` (population fractions of individuals). Columns of `P` should match columns of 
-`s`. Columns of `Q` should match rows of `s`.
+`s`. Columns of `Q` should match rows of `s`. Note if the inferred minor allele 
+frequency from `P` and `Q` is ≤0.01, that genotype will be imputed according to 
+the inferred minor allele frequency.
 
 # Positional arguments
 - `v`: output vector or array. 
@@ -52,7 +54,7 @@ function Base.copyto!(
             μij = SnpArrays.convert(T1, a2freq, model)
             σij = model == ADDITIVE_MODEL ? sqrt(μij * (1 - μij / 2)) : sqrt(μij * (1 - μij))
         end
-        v[i, j] = isnan(vij) ? μij : vij
+        v[i, j] = (isnan(vij) || a2freq ≤ 0.01 || a2freq ≥ 0.99) ? μij : vij
         center && (v[i, j] -= μij)
         scale  && (v[i, j] /= σij)
     end
@@ -77,17 +79,29 @@ function grm_admixture(
     ::Type{T} = Float64
     ) where T <: AbstractFloat
     m, n = size(s)
-    G = Mmap.mmap(Matrix{T}, m, n) # slightly faster than G = Matrix{T}(undef, m, n)    
+    # convert genotype
+    tic = time()
+    G = Mmap.mmap(Matrix{T}, m, n) # slightly faster than G = Matrix{T}(undef, m, n)
     Base.copyto!(G, s, P, Q, model=ADDITIVE_MODEL, center=true, scale=true)
-    Φ   = G * transpose(G) # m x m
-    # M = sparse matrix of missing positions
-    M   = missingpos(s)
-    Mrs = sum(M, dims=2)
+    @printf("convert genotype: %.2f seconds\n", time() - tic)
+    # GG'
+    tic = time()
+    Φ = G * transpose(G) # m x m
+    @printf("Φ = GG': %.2f seconds\n", time() - tic)
+    # convert G to {0,1} matrix
+    tic = time()
+    @inbounds for (idx, g) in enumerate(G)
+        G[idx] = ifelse(iszero(g), T(0), T(1))
+        # iszero(g) || (G[idx] = T(1))
+    end
+    @printf("convert G to {0,1} matrix: %.2f seconds\n", time() - tic)
     # Sij = # SNPs observed in both individuals i and j
-    # S = (1m * 1n^T - M)(1n * 1m^T - M^T) = n 1m1m^T - (M 1n) 1m^T - 1m (M 1n)^T + MM^T
-    S   = M * transpose(M)
+    tic = time()
+    S = G * transpose(G)
+    @printf("S = GG': %.2f seconds\n", time() - tic)
+    # Φ /= 2S
     @inbounds for j in 1:m, i in 1:j
-        Φ[i, j] /= 2(S[i, j] + n - Mrs[i] - Mrs[j])
+        Φ[i, j] /= 2S[i, j]
     end
     copytri!(Φ, 'U')
 end # function grm_admixture
