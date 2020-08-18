@@ -46,7 +46,8 @@ versioninfo()
 
 ```julia
 # for use in this tutorial
-using SnpArrays, ADMIXTURE, BenchmarkTools, CUDA, DelimitedFiles, Glob
+using SnpArrays, ADMIXTURE, BenchmarkTools, DelimitedFiles, Glob
+Sys.islinux() && (using CUDA);
 ```
 
 ## Example data
@@ -170,7 +171,7 @@ Because the file is memory-mapped opening the file and accessing the data is fas
 @btime(SnpArray(SnpArrays.datadir("mouse.bed")));
 ```
 
-      72.074 μs (58 allocations: 389.97 KiB)
+      64.547 μs (58 allocations: 389.97 KiB)
 
 
 By default, the memory-mapped file is read only, changing entries is not allowed.
@@ -785,7 +786,7 @@ copyto!(v, @view(mouse[:, 1]))
 @btime(copyto!($v, $@view(mouse[:, 1])));
 ```
 
-      2.316 μs (0 allocations: 0 bytes)
+      2.235 μs (0 allocations: 0 bytes)
 
 
 Copy columns using defaults
@@ -835,7 +836,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
 @btime(copyto!($v2, $@view(mouse[:, 1:2])));
 ```
 
-      5.088 μs (0 allocations: 0 bytes)
+      4.919 μs (0 allocations: 0 bytes)
 
 
 Center and scale
@@ -884,7 +885,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
-      5.124 μs (0 allocations: 0 bytes)
+      4.859 μs (0 allocations: 0 bytes)
 
 
 Looping over all columns
@@ -900,7 +901,7 @@ end
 @btime(loop_test($v, $mouse))
 ```
 
-      35.223 ms (0 allocations: 0 bytes)
+      33.304 ms (0 allocations: 0 bytes)
 
 
 Copy whole SnpArray
@@ -911,7 +912,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse));
 ```
 
-      34.455 ms (0 allocations: 0 bytes)
+      33.720 ms (0 allocations: 0 bytes)
 
 
 #### Impute missing genotypes using ADMIXTURE estimates
@@ -926,11 +927,11 @@ Step 1: Calculate the ancestry estimate and allele frequencies using ADMIXTURE.j
 using ADMIXTURE
 if isfile("mouse.3.P") && isfile("mouse.3.Q")
     P = readdlm("mouse.3.P", ' ', Float64) 
-    Q = readdlm("mouse.3.Q", ' ', Float64) |> transpose |> Matrix
+    Q = readdlm("mouse.3.Q", ' ', Float64)
 else
     # run ADMIXTURE using 4 threads
     P, Q = admixture(SnpArrays.datadir("mouse.bed"), 3, j=4)
-end
+end;
 ```
 
     ****                   ADMIXTURE Version 1.3.0                  ****
@@ -958,46 +959,40 @@ end
 
     Size of G: 1940x10150
     Performing five EM steps to prime main algorithm
-    1 (EM) 	Elapsed: 1.104	Loglikelihood: -2.27484e+07	(delta): 8.92872e+06
-    2 (EM) 	Elapsed: 1.065	Loglikelihood: -2.21886e+07	(delta): 559814
-    3 (EM) 	Elapsed: 1.041	Loglikelihood: -2.20025e+07	(delta): 186060
-    4 (EM) 	Elapsed: 1.036	Loglikelihood: -2.1896e+07	(delta): 106495
-    5 (EM) 	Elapsed: 1.037	Loglikelihood: -2.18274e+07	(delta): 68590.1
+    1 (EM) 	Elapsed: 0.754	Loglikelihood: -2.27484e+07	(delta): 8.92872e+06
+    2 (EM) 	Elapsed: 0.754	Loglikelihood: -2.21886e+07	(delta): 559814
+    3 (EM) 	Elapsed: 0.753	Loglikelihood: -2.20025e+07	(delta): 186060
+    4 (EM) 	Elapsed: 0.753	Loglikelihood: -2.1896e+07	(delta): 106495
+    5 (EM) 	Elapsed: 0.755	Loglikelihood: -2.18274e+07	(delta): 68590.1
     Initial loglikelihood: -2.18274e+07
     Starting main algorithm
-    1 (QN/Block) 	Elapsed: 3.309	Loglikelihood: -2.12515e+07	(delta): 575921
-    2 (QN/Block) 	Elapsed: 3.296	Loglikelihood: -2.10686e+07	(delta): 182932
-    3 (QN/Block) 	Elapsed: 3.368	Loglikelihood: -2.09068e+07	(delta): 161743
-    4 (QN/Block) 	Elapsed: 3.428	Loglikelihood: -2.07604e+07	(delta): 146489
-    5 (QN/Block) 	Elapsed: 3.361	Loglikelihood: -2.07231e+07	(delta): 37298.4
-    6 (QN/Block) 	Elapsed: 3.495	Loglikelihood: -2.07133e+07	(delta): 9725.06
-    7 (QN/Block) 	Elapsed: 3.552	Loglikelihood: -2.07084e+07	(delta): 4890.12
-    8 (QN/Block) 	Elapsed: 3.475	Loglikelihood: -2.07074e+07	(delta): 1005.56
-    9 (QN/Block) 	Elapsed: 3.48	Loglikelihood: -2.07073e+07	(delta): 177.386
-    10 (QN/Block) 	Elapsed: 3.449	Loglikelihood: -2.07072e+07	(delta): 38.4425
-    11 (QN/Block) 	Elapsed: 3.446	Loglikelihood: -2.07072e+07	(delta): 4.13198
-    12 (QN/Block) 	Elapsed: 3.435	Loglikelihood: -2.07072e+07	(delta): 0.703112
-    13 (QN/Block) 	Elapsed: 3.457	Loglikelihood: -2.07072e+07	(delta): 0.0677833
-    14 (QN/Block) 	Elapsed: 3.438	Loglikelihood: -2.07072e+07	(delta): 0.00937156
-    15 (QN/Block) 	Elapsed: 3.431	Loglikelihood: -2.07072e+07	(delta): 0.00123898
-    16 (QN/Block) 	Elapsed: 3.458	Loglikelihood: -2.07072e+07	(delta): 0.00017862
-    17 (QN/Block) 	Elapsed: 3.453	Loglikelihood: -2.07072e+07	(delta): 4.55976e-06
+    1 (QN/Block) 	Elapsed: 3.222	Loglikelihood: -2.12515e+07	(delta): 575921
+    2 (QN/Block) 	Elapsed: 3.194	Loglikelihood: -2.10686e+07	(delta): 182932
+    3 (QN/Block) 	Elapsed: 3.295	Loglikelihood: -2.09068e+07	(delta): 161743
+    4 (QN/Block) 	Elapsed: 3.353	Loglikelihood: -2.07604e+07	(delta): 146489
+    5 (QN/Block) 	Elapsed: 3.293	Loglikelihood: -2.07231e+07	(delta): 37298.4
+    6 (QN/Block) 	Elapsed: 3.299	Loglikelihood: -2.07134e+07	(delta): 9627.91
+    7 (QN/Block) 	Elapsed: 3.336	Loglikelihood: -2.07086e+07	(delta): 4866.55
+    8 (QN/Block) 	Elapsed: 3.288	Loglikelihood: -2.07075e+07	(delta): 1084.44
+    9 (QN/Block) 	Elapsed: 3.293	Loglikelihood: -2.07073e+07	(delta): 211.684
+    10 (QN/Block) 	Elapsed: 3.291	Loglikelihood: -2.07072e+07	(delta): 41.0546
+    11 (QN/Block) 	Elapsed: 3.289	Loglikelihood: -2.07072e+07	(delta): 7.42558
+    12 (QN/Block) 	Elapsed: 3.301	Loglikelihood: -2.07072e+07	(delta): 1.90748
+    13 (QN/Block) 	Elapsed: 3.293	Loglikelihood: -2.07072e+07	(delta): 0.390135
+    14 (QN/Block) 	Elapsed: 3.3	Loglikelihood: -2.07072e+07	(delta): 0.098405
+    15 (QN/Block) 	Elapsed: 3.303	Loglikelihood: -2.07072e+07	(delta): 0.0219686
+    16 (QN/Block) 	Elapsed: 3.289	Loglikelihood: -2.07072e+07	(delta): 0.00373476
+    17 (QN/Block) 	Elapsed: 3.294	Loglikelihood: -2.07072e+07	(delta): 0.000527754
+    18 (QN/Block) 	Elapsed: 3.294	Loglikelihood: -2.07072e+07	(delta): 1.77249e-05
     Summary: 
-    Converged in 17 iterations (64.58 sec)
-    Loglikelihood: -20707210.979594
+    Converged in 18 iterations (63.882 sec)
+    Loglikelihood: -20707210.979052
     Fst divergences between estimated populations: 
     	Pop0	Pop1	
     Pop0	
     Pop1	0.141	
     Pop2	0.120	0.128	
     Writing output files.
-
-
-
-
-
-    ([0.508719 0.43227 0.672503; 0.507707 0.432104 0.672914; … ; 0.79946 0.99999 0.922402; 0.799461 0.99999 0.922399], [0.153092 0.119529 0.727379; 0.073211 0.840822 0.085967; … ; 0.189348 0.60467 0.205982; 0.852207 0.090633 0.05716])
-
 
 
 **Step 2**: Impute using ancestry estimates `P` and `Q`. Note `copyto!` and `convert` assumes `P` has dimension `K x S` and `Q` has dimension `K x N` where `K` is number of populations, `S` is number of SNPs, and `N` is number of individuals. So we need to transpose the output of `admixture`.
@@ -1037,7 +1032,7 @@ convert(Matrix{Float64}, mouse, Pt, Qt)
      1.0  1.0  1.0  1.0  2.0  1.0  2.0  …  2.0      2.0      2.0      2.0
      1.0  1.0  2.0  1.0  1.0  1.0  1.0     2.0      2.0      2.0      2.0
      1.0  1.0  2.0  1.0  1.0  1.0  1.0     2.0      2.0      2.0      2.0
-     1.0  1.0  1.0  1.0  1.0  1.0  1.0     1.89365  1.89217  1.89208  1.89208
+     1.0  1.0  1.0  1.0  1.0  1.0  1.0     1.89365  1.89217  1.89207  1.89207
      0.0  0.0  0.0  0.0  2.0  0.0  2.0     2.0      2.0      2.0      2.0
 
 
@@ -1049,7 +1044,7 @@ M = similar(mouse, Float64)
 @btime(copyto!($M, $mouse, $Pt, $Qt));
 ```
 
-      62.416 ms (0 allocations: 0 bytes)
+      91.494 ms (0 allocations: 0 bytes)
 
 
 ### Summaries
@@ -1084,7 +1079,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
 @btime(counts($mouse, dims=1));
 ```
 
-      3.660 ns (0 allocations: 0 bytes)
+      3.495 ns (0 allocations: 0 bytes)
 
 
 #### Minor allele frequencies
@@ -1219,7 +1214,7 @@ These methods make use of the cached column or row counts and thus are very fast
 @btime(mean($mouse, dims=1));
 ```
 
-      10.589 μs (2 allocations: 79.39 KiB)
+      9.919 μs (2 allocations: 79.39 KiB)
 
 
 The column-wise or row-wise standard deviations are returned by `std`.
@@ -1389,7 +1384,7 @@ mp = missingpos(mouse)
 @btime(missingpos($mouse));
 ```
 
-      23.709 ms (19272 allocations: 1.80 MiB)
+      22.649 ms (19272 allocations: 1.80 MiB)
 
 
 So, for example, the number of missing data values in each column can be evaluated as
@@ -1434,7 +1429,7 @@ Classical genetic relation matrix
 ```julia
 # grm(mouse, method=:MoM)
 # grm(mouse, method=:Robust)
-grm(mouse, method=:GRM)
+g = grm(mouse, method=:GRM)
 ```
 
 
@@ -1475,7 +1470,7 @@ grm(mouse, method=:GRM)
 @btime(grm($mouse, method=:GRM));
 ```
 
-      448.463 ms (15 allocations: 28.95 MiB)
+      456.543 ms (15 allocations: 28.95 MiB)
 
 
 Using Float32 (single precision) potentially saves memory usage and computation time.
@@ -1523,7 +1518,7 @@ grm(mouse, method=:GRM, t=Float32)
 @btime(grm($mouse, method=:GRM, t=Float32));
 ```
 
-      254.048 ms (16 allocations: 14.60 MiB)
+      168.607 ms (16 allocations: 14.60 MiB)
 
 
 By default, `grm` exlcudes SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
@@ -1610,7 +1605,7 @@ grm(mouse, cinds=1:2:size(mouse, 2))
 
 #### Inhomogenous/admixed populations
 
-For inhomogenous/admixed population, we recommend first estimate the ancestry and pupulation allele frequencies using the ADMIXTURE software. See [ADMIXTURE.jl](https://github.com/OpenMendel/ADMIXTURE.jl) for usage. Then compute the kinship coefficients using the `P` (allele frequencies) and `Q` (ancestry fractions) matrix from the output of ADMIXTURE. This is essentially what the [REAP software](http://faculty.washington.edu/tathornt/software/REAP) does, except our implementation seems to run much faster than REAP. 
+For inhomogenous/admixed population, we recommend first estimate the ancestry and pupulation allele frequencies using the ADMIXTURE software. See [ADMIXTURE.jl](https://github.com/OpenMendel/ADMIXTURE.jl) for usage. Then compute the kinship coefficients using the `P` (allele frequencies) and `Q` (ancestry fractions) matrix from the output of ADMIXTURE. This is essentially what the [REAP software](http://faculty.washington.edu/tathornt/software/REAP) does, except our implementation runs much faster than REAP (>50 fold speedup). 
 
 
 ```julia
@@ -1624,36 +1619,42 @@ Qt = readdlm("mouse.3.Q", ' ', Float64) |> transpose |> Matrix;
 SnpArrays.grm_admixture(mouse, Pt, Qt)
 ```
 
+    convert genotype: 0.17 seconds
+    Φ = GG': 0.35 seconds
+    convert G to {0,1} matrix: 0.01 seconds
+    S = GG': 0.12 seconds
+
+
 
 
 
     1940×1940 Array{Float64,2}:
-      0.459157     -0.0156932    -0.0032161   …  -0.0241032     0.0122089
-     -0.0156932     0.382539     -0.00894899      0.00213639    0.0256346
-     -0.0032161    -0.00894899    0.487793       -0.0171798    -0.0464871
-      0.00309659    0.0202297    -0.0243061      -0.0176487     0.000467423
-      0.0332113     0.00312466   -0.0272321      -0.0327538    -0.012443
-     -0.0358109    -0.00853744   -0.027062    …   0.0243008    -0.001445
-      0.121113     -0.0392918     0.00166591      0.010853     -0.0377006
-     -0.0436499     0.0985264    -0.0330118       0.022887     -0.0145011
-      0.0448066    -0.00136652   -0.0144994       0.0091237    -0.0446065
-      0.0907353     0.0141615    -0.0255001      -0.00300813    0.00994184
-      0.0033764     0.00227666   -0.00869279  …  -0.0258832    -0.0457113
-     -0.0177262     0.145081      0.0300254      -0.0133903    -0.0325101
-      0.000957243  -0.00906886    0.0292785      -0.0270565     0.0232375
+      0.459157     -0.0156932    -0.00323859  …  -0.0241031     0.0122942
+     -0.0156932     0.382541     -0.00891406      0.00213633    0.0256827
+     -0.00323859   -0.00891406    0.488814       -0.0171977    -0.046833
+      0.00309653    0.0202298    -0.0243852      -0.0176487     0.000560896
+      0.0332112     0.00312467   -0.0272922      -0.0327539    -0.0122725
+     -0.0358109    -0.00853754   -0.0271514   …   0.0243008    -0.00138403
+      0.121113     -0.0392918     0.00165843      0.0108529    -0.0377002
+     -0.0449198     0.10156      -0.0339267       0.0239007    -0.0152297
+      0.0448066    -0.00136634   -0.0145567       0.00912358   -0.0448302
+      0.0907813     0.0141714    -0.0255689      -0.0029764     0.00990252
+      0.00337646    0.0022767    -0.00875798  …  -0.0258833    -0.0459812
+     -0.0177262     0.145082      0.030058       -0.0133903    -0.0327256
+      0.000957255  -0.00906896    0.029328       -0.0270566     0.0232713
       ⋮                                       ⋱                
-     -0.00488412    0.000742238   0.015138        0.0414037    -0.0191539
-     -0.020688     -0.0165481    -0.0108914      -0.0255624    -0.0505516
-      0.0599927     0.0195086    -0.0422401   …  -0.0172649     0.0268191
-     -0.00501032   -0.00669102   -0.0323522      -0.00621584    0.212539
-      0.0200332    -0.0180062    -0.0103863      -0.000495397  -0.0200013
-      0.0143138     0.0127261    -0.020156        0.0734971    -0.0177217
-      0.0427474    -0.0223633    -0.0274116       0.0145014     0.0371953
-      0.00727996    0.0106728    -0.0186028   …   0.00858452    0.00934161
-     -0.0282602     0.019769      0.016452        0.00381185    0.0482326
-      0.0376711    -0.0081048    -0.0200654       0.0179723     0.0385716
-     -0.0241032     0.00213639   -0.0171798       0.501372     -0.0264347
-      0.0122089     0.0256346    -0.0464871      -0.0264347     0.509282
+     -0.00488405    0.000742107   0.0151453       0.0414035    -0.0193764
+     -0.0206988    -0.0165347    -0.0109314      -0.0255689    -0.0508723
+      0.0604747     0.0196284    -0.0426789   …  -0.0174935     0.027048
+     -0.00510927   -0.00671173   -0.0330136      -0.0063972     0.21654
+      0.0203133    -0.0184515    -0.0104571      -0.000598233  -0.020399
+      0.0143139     0.012726     -0.0201427       0.0734971    -0.0175891
+      0.0431031    -0.0226697    -0.0277297       0.0145732     0.0375869
+      0.00723518    0.010699     -0.0187391   …   0.00859219    0.00929042
+     -0.0282601     0.0197691     0.0164642       0.0038118     0.048468
+      0.0376865    -0.0080739    -0.0201107       0.0180008     0.0385872
+     -0.0241031     0.00213633   -0.0171977       0.501371     -0.0266087
+      0.0122942     0.0256827    -0.046833       -0.0266087     0.511511
 
 
 
@@ -1703,7 +1704,7 @@ count(rowmask), count(colmask)
 @btime(SnpArrays.filter($mouse, min_success_rate_per_row=0.999, min_success_rate_per_col=0.999));
 ```
 
-      85.736 ms (11459 allocations: 171.28 MiB)
+      81.107 ms (11459 allocations: 171.28 MiB)
 
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
@@ -2047,7 +2048,7 @@ Base.summarysize(EUR), Base.summarysize(EURsla), Base.summarysize(EURbm)
 
 
 
-### `mul!()`
+### `mul!`
 
 SnpLinAlg and SnpBitMatrix act similar to a regular matrix and responds to `size`, `eltype`, and matrix-vector multiplications.
 
@@ -2088,7 +2089,7 @@ norm(EURsla * v2 -  A * v2)
 
 
 
-    2.7652317987540737e-11
+    3.817880684465469e-11
 
 
 
@@ -2100,7 +2101,7 @@ norm(EURsla' * v1 - A' *v1)
 
 
 
-    1.3288688898053143e-11
+    5.3523385433402475e-12
 
 
 
@@ -2112,7 +2113,7 @@ norm(EURbm * v2 -  A * v2)
 
 
 
-    2.2783692465201226e-11
+    2.2223739837476315e-11
 
 
 
@@ -2124,7 +2125,7 @@ norm(EURbm' * v1 - A' * v1)
 
 
 
-    1.0648738244518775e-11
+    9.555358324934836e-12
 
 
 
@@ -2178,7 +2179,7 @@ norm(EURsubbm * v2 -  A * v2)
 
 
 
-    3.93578368430768e-14
+    3.5635737961131887e-14
 
 
 
@@ -2190,7 +2191,7 @@ norm(EURsubbm' * v1 - A' * v1)
 
 
 
-    7.24093178406e-14
+    1.2048250356606118e-13
 
 
 
@@ -2219,7 +2220,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
 @btime mul!($out1_d, $EURcu, $v2_d);
 ```
 
-      14.989 ms (98 allocations: 2.41 KiB)
+      15.023 ms (98 allocations: 2.41 KiB)
 
 
 
@@ -2227,7 +2228,7 @@ const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=
 @btime mul!($out2_d, transpose($EURcu), $v1_d);
 ```
 
-      392.743 μs (162 allocations: 5.28 KiB)
+      488.026 μs (162 allocations: 5.28 KiB)
 
 
 The operations are parallelized along the output dimension, hence the GPU was not fully utilized in the first case. With 100-time larger data, 30 to 50-fold speedup were observed for both cases with Nvidia Titan V. See linear algebra page for more information.
@@ -2242,7 +2243,7 @@ norm(collect(EURcu' * v1_d) -  EURbm' * v1)
 
 
 
-    1.3960319822499844e-11
+    1.6074725741184302e-11
 
 
 
@@ -2770,9 +2771,9 @@ We can merge the splitted dictionary back into one SnpData using `merge_plink`.
 merged = SnpArrays.merge_plink("tmp.merged", splitted) # write_plink is included here
 ```
 
-      0.071297 seconds (98.16 k allocations: 7.223 MiB)
-      0.044819 seconds (122.92 k allocations: 11.498 MiB)
-      0.049391 seconds (130.58 k allocations: 8.695 MiB)
+      0.056015 seconds (98.16 k allocations: 7.223 MiB)
+      0.035861 seconds (122.92 k allocations: 11.498 MiB)
+      0.038899 seconds (130.58 k allocations: 8.695 MiB)
 
 
 
@@ -2815,10 +2816,10 @@ You can also merge the plink formatted files based on their common prefix.
 merged_from_splitted_files = merge_plink("tmp.split.chr"; des = "tmp.merged.2")
 ```
 
-      0.114899 seconds (562.86 k allocations: 30.022 MiB)
-      0.071447 seconds (691 allocations: 2.101 MiB, 96.60% gc time)
-      0.002582 seconds (12 allocations: 4.897 MiB)
-      0.000583 seconds (12 allocations: 1.650 MiB)
+      0.165377 seconds (562.86 k allocations: 30.022 MiB, 39.41% gc time)
+      0.001048 seconds (691 allocations: 2.101 MiB)
+      0.002526 seconds (12 allocations: 4.897 MiB)
+      0.000520 seconds (12 allocations: 1.650 MiB)
 
 
 
@@ -2920,12 +2921,12 @@ mouse_toreorder
     │ Row │ fid      │ iid        │ father       │ mother       │ sex      │ phenotype │
     │     │ Abstrac… │ AbstractS… │ AbstractStr… │ AbstractStr… │ Abstrac… │ Abstract… │
     ├─────┼──────────┼────────────┼──────────────┼──────────────┼──────────┼───────────┤
-    │ 1   │ 1_10     │ A084126878 │ H3.5:C5.4(2) │ H3.5:G1.4(6) │ 1        │ -9        │
-    │ 2   │ 1_4      │ A063599376 │ G3.4:B5.3(3) │ G3.4:F4.3(3) │ 1        │ -9        │
-    │ 3   │ 1_2      │ A048115873 │ B2.2:E1.1(6) │ B2.2:A2.1(5) │ 1        │ -9        │
-    │ 4   │ 1_5      │ A048067529 │ A1.2:D4.1(4) │ A1.2:H5.1(4) │ 1        │ -9        │
-    │ 5   │ 1_2      │ A084271879 │ D5.4:G2.3(4) │ D5.4:C4.3(4) │ 1        │ -9        │
-    │ 6   │ 1_55     │ A048272323 │ F3.3:A2.2(5) │ F3.3:E1.2(4) │ 1        │ -9        │
+    │ 1   │ 1_1      │ A048097274 │ H4.2:C5.1(4) │ H4.2:G1.1(7) │ 1        │ -9        │
+    │ 2   │ 1_3      │ A064095000 │ E5.4:H3.3(6) │ E5.4:D3.3(6) │ 2        │ -9        │
+    │ 3   │ 1_48     │ A064048791 │ F2.5:A4.4(2) │ F2.5:E2.4(4) │ 1        │ -9        │
+    │ 4   │ 1_58     │ A063516577 │ B1.5:E1.4(4) │ B1.5:A1.4(5) │ 1        │ -9        │
+    │ 5   │ 1_1      │ A066891006 │ E4.3:H4.2(4) │ E4.3:D3.2(3) │ 2        │ -9        │
+    │ 6   │ 1_49     │ A063812087 │ A2.5:D2.4(4) │ A2.5:H3.4(2) │ 1        │ -9        │
     …,
     srcbed: mouse_reorder.bed
     srcbim: mouse_reorder.bim
