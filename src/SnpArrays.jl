@@ -3,14 +3,14 @@ __precompile__()
 module SnpArrays
 
 using CodecZlib, CodecXz, CodecBzip2, CodecZstd,  TranscodingStreams
-using Glob, LinearAlgebra, Missings, Mmap, SparseArrays, Statistics, StatsBase, LoopVectorization
-using Requires, Adapt
+using Adapt, Glob, LinearAlgebra, LoopVectorization, Missings, Mmap, Printf
+using Requires, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size, wait
 import DataFrames: DataFrame, rename!, eachrow
 import DelimitedFiles: readdlm, writedlm
 import CSV: categorical!
 import CSV # for CSV.read, to avoid clash with Base.read
-import LinearAlgebra: mul!
+import LinearAlgebra: copytri!, mul!
 import Statistics: mean, std, var
 import StatsBase: counts
 import SpecialFunctions: gamma_inc
@@ -18,6 +18,8 @@ import VectorizationBase: gesp
 import GeneticVariation.VCF
 export AbstractSnpArray, SnpArray, SnpBitMatrix, SnpLinAlg, SnpData
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
+export counts, grm, grm_admixture, maf, mean, minorallele, missingpos, missingrate
+export std, var, vcf2plink
 export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
 export vcf2plink, kinship_pruning
 export ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL
@@ -38,6 +40,7 @@ include("linalg_direct.jl")
 include("linalg_bitmatrix.jl")
 include("reorder.jl")
 include("vcf2plink.jl")
+include("admixture.jl")
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 
