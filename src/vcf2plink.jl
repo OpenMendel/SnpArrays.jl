@@ -59,7 +59,7 @@ function vcf2plink(vcffile, plinkprefix)
         write(io, 0x01)
         write(io, Matrix{UInt8}(undef, (nsamples + 3) >> 2, nsnps))
     end
-    snparray  = SnpArray(plinkprefix * ".bed", nsamples, "r+")
+    snparray = SnpArray(plinkprefix * ".bed", nsamples, "r+")
     bimio = makestream(plinkprefix * ".bim", "w")
     vcfio = makestream(vcffile, "r")
     reader = VCF.Reader(vcfio)
@@ -105,5 +105,8 @@ function vcf2plink(vcffile, plinkprefix)
             end
         end
     end
+    close(bimio)
+    close(vcfio)
+    close(reader)
     snparray
 end
