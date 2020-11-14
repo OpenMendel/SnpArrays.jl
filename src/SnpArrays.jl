@@ -6,9 +6,8 @@ using CodecZlib, CodecXz, CodecBzip2, CodecZstd,  TranscodingStreams
 using Adapt, Glob, LinearAlgebra, LoopVectorization, Missings, Mmap, Printf
 using Requires, SparseArrays, Statistics, StatsBase
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size, wait
-import DataFrames: DataFrame, rename!, eachrow
+import DataFrames: DataFrame, DataFrame!, rename!, eachrow
 import DelimitedFiles: readdlm, writedlm
-import CSV: categorical!
 import CSV # for CSV.read, to avoid clash with Base.read
 import LinearAlgebra: copytri!, mul!
 import Statistics: mean, std, var

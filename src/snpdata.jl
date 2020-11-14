@@ -18,13 +18,15 @@ struct SnpData
     srcfam::AbstractString
 end
 
-function SnpData(plink_file::AbstractString, args...; famnm::AbstractString=plink_file*".fam", bimnm::AbstractString=plink_file*".bim", kwargs...)
+function SnpData(
+    plink_file::AbstractString, args...; 
+    famnm::AbstractString=plink_file*".fam", 
+    bimnm::AbstractString=plink_file*".bim", 
+    kwargs...)
     
     # load snp info
-    snp_info = open(bimnm) do io
-        categorical!(CSV.read(io,  delim='\t', header=SNP_INFO_KEYS, 
-        types=[String, String, Float64, Int, String, String]), [:allele1, :allele2])
-    end
+    snp_info = DataFrame!(CSV.File(bimnm,  delim='\t', header=SNP_INFO_KEYS, 
+        types=[String, String, Float64, Int, String, String]))
     
     # load person info
     person_info = convert(DataFrame, readdlm(famnm, AbstractString))
