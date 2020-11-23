@@ -10,6 +10,9 @@ struct SnpBitMatrix{T} <: AbstractMatrix{T}
     storagev2::Vector{T}
 end
 
+AbstractSnpBitMatrix = Union{SnpBitMatrix, SubArray{T, 1, SnpBitMatrix{T}}, 
+    SubArray{T, 2, SnpBitMatrix{T}}} where T
+
 """
     SnpBitMatrix{T}(s; model=ADDITIVE_MODEL, center=false, scale=false)
 
@@ -90,6 +93,10 @@ end
 
 Base.size(bm::SnpBitMatrix) = size(bm.B1)
 Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
+
+Base.getindex(s::SnpBitMatrix, i::Int) = getindex(s.B1, i) + getindex(s.B2, i) # ADDITIVE_MODEL
+Base.getindex(s::SnpBitMatrix, i::Int, j::Int) = getindex(s.B1, i, j) + 
+                                                 getindex(s.B2, i, j)
 
 eltype(bm::SnpBitMatrix) = eltype(bm.μ)
 issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B2) && issymmetric(bm.B1)
@@ -211,4 +218,48 @@ function mul!(
     else
         return out
     end
+end
+
+"""
+    Base.copyto!(v, s, model=ADDITIVE_MODEL, center=false, scale=false)
+
+Copy SnpBitMatrix `s` to numeric vector or matrix `v`. Assumes `ADDITIVE_MODEL`.
+
+# Arguments
+- `center::Bool=false`: center column by mean.
+- `scale::Bool=false`: scale column by theoretical variance.
+"""
+function Base.copyto!(
+    v::AbstractVecOrMat{T}, 
+    s::AbstractSnpBitMatrix;
+    center::Bool = false,
+    scale::Bool = false,
+    ) where T <: AbstractFloat
+    m, n = size(s, 1), size(s, 2)
+    # no center or scale
+    if !center && !scale
+        @inbounds for j in 1:n
+            @simd for i in 1:m
+                v[i, j] = convert(T, s[i, j])
+            end
+        end
+        return v
+    end
+    # center, scale
+    @inbounds for j in 1:n
+        μj, mj = zero(T), 0
+        @simd for i in 1:m
+            vij = convert(T, s[i, j])
+            v[i, j] = vij
+            μj += isnan(vij) ? zero(T) : vij
+            mj += isnan(vij) ? 0 : 1
+        end
+        μj /= mj
+        σj = sqrt(μj * (1 - μj / 2))
+        @simd for i in 1:m
+            center && (v[i, j] -= μj)
+            scale && σj > 0 && (v[i, j] /= σj)
+        end
+    end
+    return v
 end

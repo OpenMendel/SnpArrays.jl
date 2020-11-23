@@ -248,6 +248,24 @@ for t in [Float32, Float64]
 end
 end
 
+@testset "copyto bitmatrix" begin
+EURbm = SnpBitMatrix{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true);
+EURtrue_noscale = convert(Matrix{Float64}, EUR, model=ADDITIVE_MODEL, center=false, scale=false)
+EURtest = zeros(size(EUR))
+copyto!(EURtest, EURbm)
+@test all(EURtest .== EURtrue_noscale)
+EURtrue_scale = convert(Matrix{Float64}, EUR, center=true, scale=true)
+copyto!(EURtest, EURbm, center=true, scale=true)
+@test all(EURtest .≈ EURtrue_scale)
+x1, x2 = zeros(10, 10), zeros(10, 10)
+copyto!(x1, @view(EUR[1:10, 1:10]), center=false, scale=false)
+copyto!(x2, @view(EURbm[1:10, 1:10]))
+@test all(x1 .== x2)
+copyto!(x1, @view(EUR[1:10, 1:10]), center=true, scale=true)
+copyto!(x2, @view(EURbm[1:10, 1:10]), center=true, scale=true)
+@test all(x1 .== x2)
+end
+
 @testset "lin. alg. direct meanimpute" begin
 reltol = 5e-4
 for t in [Float32, Float64]
