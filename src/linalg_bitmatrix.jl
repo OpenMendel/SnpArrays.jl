@@ -94,9 +94,10 @@ end
 Base.size(bm::SnpBitMatrix) = size(bm.B1)
 Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
 
-Base.getindex(s::SnpBitMatrix, i::Int) = getindex(s.B1, i) + getindex(s.B2, i) # ADDITIVE_MODEL
-Base.getindex(s::SnpBitMatrix, i::Int, j::Int) = getindex(s.B1, i, j) + 
-                                                 getindex(s.B2, i, j)
+Base.getindex(s::SnpBitMatrix, i::Int) = s.model == ADDITIVE_MODEL ?
+    getindex(s.B1, i) + getindex(s.B2, i) : getindex(s.B1, i)
+Base.getindex(s::SnpBitMatrix, i::Int, j::Int) = s.model == ADDITIVE_MODEL ? 
+    getindex(s.B1, i, j) + getindex(s.B2, i, j) : getindex(s.B1, i, j)
 
 eltype(bm::SnpBitMatrix) = eltype(bm.μ)
 issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B2) && issymmetric(bm.B1)
@@ -221,9 +222,9 @@ function mul!(
 end
 
 """
-    Base.copyto!(v, s, model=ADDITIVE_MODEL, center=false, scale=false)
+    Base.copyto!(v, s, center=false, scale=false)
 
-Copy SnpBitMatrix `s` to numeric vector or matrix `v`. Assumes `ADDITIVE_MODEL`.
+Copy SnpBitMatrix `s` to numeric vector or matrix `v`. 
 
 # Arguments
 - `center::Bool=false`: center column by mean.
@@ -236,6 +237,7 @@ function Base.copyto!(
     scale::Bool = false,
     ) where T <: AbstractFloat
     m, n = size(s, 1), size(s, 2)
+    model = typeof(s) <: SubArray ? s.parent.model : s.model
     # no center or scale
     if !center && !scale
         @inbounds for j in 1:n
@@ -255,7 +257,7 @@ function Base.copyto!(
             mj += isnan(vij) ? 0 : 1
         end
         μj /= mj
-        σj = sqrt(μj * (1 - μj / 2))
+        σj = model == ADDITIVE_MODEL ? sqrt(μj * (1 - μj / 2)) : sqrt(μj * (1 - μj))
         @simd for i in 1:m
             center && (v[i, j] -= μj)
             scale && σj > 0 && (v[i, j] /= σj)
