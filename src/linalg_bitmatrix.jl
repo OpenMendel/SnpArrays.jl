@@ -94,10 +94,14 @@ end
 Base.size(bm::SnpBitMatrix) = size(bm.B1)
 Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
 
-Base.getindex(s::SnpBitMatrix, i::Int) = s.model == ADDITIVE_MODEL ?
-    getindex(s.B1, i) + getindex(s.B2, i) : getindex(s.B1, i)
-Base.getindex(s::SnpBitMatrix, i::Int, j::Int) = s.model == ADDITIVE_MODEL ? 
-    getindex(s.B1, i, j) + getindex(s.B2, i, j) : getindex(s.B1, i, j)
+function Base.getindex(s::SnpBitMatrix{T}, i::Int) where T 
+    s.model == ADDITIVE_MODEL ?
+        T(getindex(s.B1, i) + getindex(s.B2, i)) : T(getindex(s.B1, i))
+end
+function Base.getindex(s::SnpBitMatrix{T}, i::Int, j::Int) where T 
+    s.model == ADDITIVE_MODEL ? 
+        T(getindex(s.B1, i, j) + getindex(s.B2, i, j)) : T(getindex(s.B1, i, j))
+end
 
 eltype(bm::SnpBitMatrix) = eltype(bm.μ)
 issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B2) && issymmetric(bm.B1)
@@ -237,7 +241,6 @@ function Base.copyto!(
     scale::Bool = false,
     ) where T <: AbstractFloat
     m, n = size(s, 1), size(s, 2)
-    model = typeof(s) <: SubArray ? s.parent.model : s.model
     # no center or scale
     if !center && !scale
         @inbounds for j in 1:n
@@ -247,7 +250,8 @@ function Base.copyto!(
         end
         return v
     end
-    # center, scale
+    # center, scale (TODO: how to use precomputed μ and σinv?)
+    model = typeof(s) <: SubArray ? s.parent.model : s.model
     @inbounds for j in 1:n
         μj, mj = zero(T), 0
         @simd for i in 1:m

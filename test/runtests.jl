@@ -249,29 +249,41 @@ end
 end
 
 @testset "copyto bitmatrix" begin
-# using Revise, LinearAlgebra, SnpArrays, SparseArrays, Test
-
-# const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed")) # no missing genotypes
-# const mouse = SnpArray(SnpArrays.datadir("mouse.bed")) # has missing genotypes
-
-for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL]
-    EURbm = SnpBitMatrix{Float64}(EUR, model=model, center=true, scale=true);
-    EURtrue_noscale = convert(Matrix{Float64}, EUR, model=model, center=false, scale=false)
-    EURtest = zeros(size(EUR))
+for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
+    EURbm = SnpBitMatrix{t}(EUR, model=model, center=true, scale=true)
+    EURtrue_noscale = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
+    EURtest = zeros(t, size(EUR))
     copyto!(EURtest, EURbm)
     @test all(EURtest .== EURtrue_noscale)
-
-    EURtrue_scale = convert(Matrix{Float64}, EUR, model=model, center=true, scale=true)
+    EURtrue_scale = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
     copyto!(EURtest, EURbm, center=true, scale=true)
     @test all(EURtest .≈ EURtrue_scale)
-
     x1, x2 = zeros(10, 10), zeros(10, 10)
     copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=false, scale=false)
     copyto!(x2, @view(EURbm[1:10, 1:10]))
     @test all(x1 .== x2)
-
     copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=true, scale=true)
     copyto!(x2, @view(EURbm[1:10, 1:10]), center=true, scale=true)
+    @test all(x1 .== x2)
+end
+end
+
+@testset "copyto SnpLinAlg" begin
+for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
+    EURla = SnpLinAlg{t}(EUR, model=model, center=true, scale=true)
+    EURtrue_noscale = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
+    EURtest = zeros(t, size(EUR))
+    copyto!(EURtest, EURla)
+    @test all(EURtest .== EURtrue_noscale)
+    EURtrue_scale = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
+    copyto!(EURtest, EURla, center=true, scale=true)
+    @test all(EURtest .≈ EURtrue_scale)
+    x1, x2 = zeros(10, 10), zeros(10, 10)
+    copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=false, scale=false)
+    copyto!(x2, @view(EURla[1:10, 1:10]))
+    @test all(x1 .== x2)
+    copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=true, scale=true)
+    copyto!(x2, @view(EURla[1:10, 1:10]), center=true, scale=true)
     @test all(x1 .== x2)
 end
 end
