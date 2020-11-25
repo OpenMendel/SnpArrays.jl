@@ -465,3 +465,24 @@ function Base.copyto!(
     end
     return v
 end
+
+"""
+    Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+
+Convert a AbstractSnpLinAlg `s` to a numeric vector or matrix of same shape as `s`.
+
+# Arguments
+- `t::Type{AbstractVecOrMat{T}}`: Vector or matrix type.
+- `model::Union{Val{1}, Val{2}, Val{3}}=ADDITIVE_MODEL`: `ADDITIVE_MODEL` (default), `DOMINANT_MODEL`, or `RECESSIVE_MODEL`.  
+- `center::Bool=false`: center column by mean.
+- `scale::Bool=false`: scale column by theoretical variance.
+- `impute::Bool=falase`: impute missing values by column mean.
+"""
+function Base.convert(
+    ::Type{T},
+    s::AbstractSnpLinAlg;
+    kwargs...) where T <: Array
+    T(s; kwargs...)
+end
+Array{T,N}(s::AbstractSnpLinAlg; kwargs...) where {T,N} = 
+    copyto!(Array{T,N}(undef, size(s)), s; kwargs...)

@@ -268,6 +268,18 @@ for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, F
 end
 end
 
+@testset "convert (SnpBitMatrix)" begin
+for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
+    EURbm = SnpBitMatrix{t}(EUR, model=model, center=true, scale=true)
+    xtrue = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
+    xtest = convert(Matrix{t}, EURbm, center=true, scale=true)
+    @test all(xtrue .== xtest)
+    xtrue = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
+    xtest = convert(Matrix{t}, EURbm, center=false, scale=false)
+    @test all(xtrue .== xtest)
+end
+end
+
 @testset "copyto SnpLinAlg" begin
 for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
     EURla = SnpLinAlg{t}(EUR, model=model, center=true, scale=true)
@@ -285,6 +297,18 @@ for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, F
     copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=true, scale=true)
     copyto!(x2, @view(EURla[1:10, 1:10]), center=true, scale=true)
     @test all(x1 .== x2)
+end
+end
+
+@testset "convert (SnpLinAlg)" begin
+for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
+    EURla = SnpLinAlg{t}(EUR, model=model, center=true, scale=true)
+    xtrue = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
+    xtest = convert(Matrix{t}, EURla, center=true, scale=true)
+    @test all(xtrue .== xtest)
+    xtrue = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
+    xtest = convert(Matrix{t}, EURla, center=false, scale=false)
+    @test all(xtrue .== xtest)
 end
 end
 

@@ -359,7 +359,7 @@ Convert a SnpArray `s` to a numeric vector or matrix of same shape as `s`.
 - `model::Union{Val{1}, Val{2}, Val{3}}=ADDITIVE_MODEL`: `ADDITIVE_MODEL` (default), `DOMINANT_MODEL`, or `RECESSIVE_MODEL`.  
 - `center::Bool=false`: center column by mean.
 - `scale::Bool=false`: scale column by theoretical variance.
-- `impute::Bool=falase`: impute missing values by column mean.
+- `impute::Bool=false`: impute missing values by column mean.
 """
 function Base.convert(
     ::Type{T},
