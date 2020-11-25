@@ -10,6 +10,9 @@ struct SnpLinAlg{T} <: AbstractMatrix{T}
     storagev2::Vector{T}
 end
 
+AbstractSnpLinAlg = Union{SnpLinAlg, SubArray{T, 1, SnpLinAlg{T}}, 
+    SubArray{T, 2, SnpLinAlg{T}}} where T
+
 """
     SnpLinAlg{T}(s; model=ADDITIVE_MODEL, center=false, scale=false, impute=true)
 
@@ -88,6 +91,13 @@ Base.size(sla::SnpLinAlg) = size(sla.s)
 Base.size(sla::SnpLinAlg, k::Integer) = size(sla.s, k)
 
 eltype(bm::SnpLinAlg) = eltype(bm.μ)
+
+function Base.getindex(s::SnpLinAlg{T}, i::Int) where T
+    SnpArrays.convert(T, getindex(s.s, i), s.model)
+end
+function Base.getindex(s::SnpLinAlg{T}, i::Int, j::Int) where T
+    SnpArrays.convert(T, getindex(s.s, i, j), s.model)
+end
 
 # macros taken from Gaius.jl
 macro _spawn(ex)
@@ -406,4 +416,52 @@ for (_ftn!, _ftn_rem!, expr) in [
             nothing
         end
     end
+end
+
+"""
+    Base.copyto!(v, s, center=false, scale=false)
+
+Copy SnpLinAlg `s` to numeric vector or matrix `v`.
+
+# Arguments
+- `center::Bool=false`: center column by mean.
+- `scale::Bool=false`: scale column by theoretical variance.
+- `impute::Bool=false`: impute missing values by column mean.
+"""
+function Base.copyto!(
+    v::AbstractVecOrMat{T}, 
+    s::AbstractSnpLinAlg;
+    center::Bool = false,
+    scale::Bool = false,
+    impute::Bool = true
+    ) where T <: AbstractFloat
+    m, n = size(s, 1), size(s, 2)
+    # no center, scale, or impute
+    if !center && !scale && !impute
+        @inbounds for j in 1:n
+            @simd for i in 1:m
+                v[i, j] = s[i, j]
+            end
+        end
+        return v
+    end
+    # center, scale, impute (TODO: how to use precomputed μ and σinv?)
+    model = typeof(s) <: SubArray ? s.parent.model : s.model
+    @inbounds for j in 1:n
+        μj, mj = zero(T), 0
+        @simd for i in 1:m
+            vij = s[i, j]
+            v[i, j] = vij
+            μj += isnan(vij) ? zero(T) : vij
+            mj += isnan(vij) ? 0 : 1
+        end
+        μj /= mj
+        σj = model == ADDITIVE_MODEL ? sqrt(μj * (1 - μj / 2)) : sqrt(μj * (1 - μj))
+        @simd for i in 1:m
+            impute && isnan(v[i, j]) && (v[i, j] = μj)
+            center && (v[i, j] -= μj)
+            scale && σj > 0 && (v[i, j] /= σj)
+        end
+    end
+    return v
 end
