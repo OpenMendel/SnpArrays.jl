@@ -283,20 +283,17 @@ end
 @testset "copyto SnpLinAlg" begin
 for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
     EURla = SnpLinAlg{t}(EUR, model=model, center=true, scale=true)
-    EURtrue_noscale = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
-    EURtest = zeros(t, size(EUR))
-    copyto!(EURtest, EURla)
-    @test all(EURtest .== EURtrue_noscale)
-    EURtrue_scale = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
-    copyto!(EURtest, EURla, center=true, scale=true)
-    @test all(EURtest .≈ EURtrue_scale)
-    x1, x2 = zeros(10, 10), zeros(10, 10)
-    copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=false, scale=false)
-    copyto!(x2, @view(EURla[1:10, 1:10]))
-    @test all(x1 .== x2)
-    copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=true, scale=true)
-    copyto!(x2, @view(EURla[1:10, 1:10]), center=true, scale=true)
-    @test all(x1 .== x2)
+    EURtrue = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
+    EURtest = copyto!(zeros(t, size(EUR)), EURla)
+    @test all(EURtest .≈ EURtrue)
+    EURtest = copyto!(zeros(10, 5), @view(EURla[11:20, 1:2:10]))
+    @test all(EURtest .≈ EURtrue[11:20, 1:2:10])
+    EURla = SnpLinAlg{t}(EUR, model=model, center=false, scale=false)
+    EURtrue = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
+    EURtest = copyto!(zeros(t, size(EUR)), EURla)
+    @test all(EURtest .≈ EURtrue)
+    EURtest = copyto!(zeros(10, 5), @view(EURla[11:20, 1:2:10]))
+    @test all(EURtest .≈ EURtrue[11:20, 1:2:10])
 end
 end
 
@@ -304,11 +301,20 @@ end
 for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
     EURla = SnpLinAlg{t}(EUR, model=model, center=true, scale=true)
     xtrue = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
-    xtest = convert(Matrix{t}, EURla, center=true, scale=true)
-    @test all(xtrue .== xtest)
+    xtest = convert(Matrix{t}, EURla)
+    @test all(xtrue .≈ xtest)
+    EURla = SnpLinAlg{t}(EUR, model=model, center=false, scale=false)
     xtrue = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
-    xtest = convert(Matrix{t}, EURla, center=false, scale=false)
-    @test all(xtrue .== xtest)
+    xtest = convert(Matrix{t}, EURla)
+    @test all(xtrue .≈ xtest)
+    EURla = SnpLinAlg{t}(EUR, model=model, center=true, scale=true)
+    xtrue = convert(Matrix{t}, @view(EUR[:, 2:2:10]), model=model, center=true, scale=true)
+    xtest = convert(Matrix{t}, @view(EURla[:, 2:2:10]))
+    @test all(xtrue .≈ xtest)
+    EURla = SnpLinAlg{t}(EUR, model=model, center=false, scale=false)
+    xtrue = convert(Matrix{t}, @view(EUR[:, 2:2:10]), model=model, center=false, scale=false)
+    xtest = convert(Matrix{t}, @view(EURla[:, 2:2:10]))
+    @test all(xtrue .≈ xtest)
 end
 end
 

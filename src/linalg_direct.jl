@@ -92,11 +92,11 @@ Base.size(sla::SnpLinAlg, k::Integer) = size(sla.s, k)
 
 eltype(bm::SnpLinAlg) = eltype(bm.μ)
 
-function Base.getindex(s::SnpLinAlg{T}, i::Int) where T
-    SnpArrays.convert(T, getindex(s.s, i), s.model)
-end
 function Base.getindex(s::SnpLinAlg{T}, i::Int, j::Int) where T
-    SnpArrays.convert(T, getindex(s.s, i, j), s.model)
+    x = SnpArrays.convert(T, getindex(s.s, i, j), s.model)
+    s.center && (x -= s.μ[j])
+    s.scale && (x *= s.σinv[j])
+    return x
 end
 
 # macros taken from Gaius.jl
@@ -421,46 +421,17 @@ end
 """
     Base.copyto!(v, s, center=false, scale=false)
 
-Copy SnpLinAlg `s` to numeric vector or matrix `v`.
-
-# Arguments
-- `center::Bool=false`: center column by mean.
-- `scale::Bool=false`: scale column by theoretical variance.
-- `impute::Bool=false`: impute missing values by column mean.
+Copy SnpLinAlg `s` to numeric vector or matrix `v`. `v` will be centered/scaled
+if `s` is. 
 """
 function Base.copyto!(
     v::AbstractVecOrMat{T}, 
-    s::AbstractSnpLinAlg;
-    center::Bool = false,
-    scale::Bool = false,
-    impute::Bool = true
+    s::AbstractSnpLinAlg
     ) where T <: AbstractFloat
     m, n = size(s, 1), size(s, 2)
-    # no center, scale, or impute
-    if !center && !scale && !impute
-        @inbounds for j in 1:n
-            @simd for i in 1:m
-                v[i, j] = s[i, j]
-            end
-        end
-        return v
-    end
-    # center, scale, impute (TODO: how to use precomputed μ and σinv?)
-    model = typeof(s) <: SubArray ? s.parent.model : s.model
     @inbounds for j in 1:n
-        μj, mj = zero(T), 0
         @simd for i in 1:m
-            vij = s[i, j]
-            v[i, j] = vij
-            μj += isnan(vij) ? zero(T) : vij
-            mj += isnan(vij) ? 0 : 1
-        end
-        μj /= mj
-        σj = model == ADDITIVE_MODEL ? sqrt(μj * (1 - μj / 2)) : sqrt(μj * (1 - μj))
-        @simd for i in 1:m
-            impute && isnan(v[i, j]) && (v[i, j] = μj)
-            center && (v[i, j] -= μj)
-            scale && σj > 0 && (v[i, j] /= σj)
+            v[i, j] = s[i, j]
         end
     end
     return v
@@ -470,19 +441,11 @@ end
     Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
 
 Convert a AbstractSnpLinAlg `s` to a numeric vector or matrix of same shape as `s`.
+Uses precomputed column mean `μ` and inverse std `σinv` if `s` were centered/scaled. 
 
 # Arguments
 - `t::Type{AbstractVecOrMat{T}}`: Vector or matrix type.
-- `model::Union{Val{1}, Val{2}, Val{3}}=ADDITIVE_MODEL`: `ADDITIVE_MODEL` (default), `DOMINANT_MODEL`, or `RECESSIVE_MODEL`.  
-- `center::Bool=false`: center column by mean.
-- `scale::Bool=false`: scale column by theoretical variance.
-- `impute::Bool=falase`: impute missing values by column mean.
 """
-function Base.convert(
-    ::Type{T},
-    s::AbstractSnpLinAlg;
-    kwargs...) where T <: Array
-    T(s; kwargs...)
-end
-Array{T,N}(s::AbstractSnpLinAlg; kwargs...) where {T,N} = 
-    copyto!(Array{T,N}(undef, size(s)), s; kwargs...)
+Base.convert(::Type{T}, s::AbstractSnpLinAlg) where T <: Array = T(s)
+Array{T,N}(s::AbstractSnpLinAlg) where {T,N} = 
+    copyto!(Array{T,N}(undef, size(s)), s)
