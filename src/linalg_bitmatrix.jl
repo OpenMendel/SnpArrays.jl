@@ -94,13 +94,12 @@ end
 Base.size(bm::SnpBitMatrix) = size(bm.B1)
 Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
 
-function Base.getindex(s::SnpBitMatrix{T}, i::Int) where T 
-    s.model == ADDITIVE_MODEL ?
-        T(getindex(s.B1, i) + getindex(s.B2, i)) : T(getindex(s.B1, i))
-end
 function Base.getindex(s::SnpBitMatrix{T}, i::Int, j::Int) where T 
-    s.model == ADDITIVE_MODEL ? 
+    x = s.model == ADDITIVE_MODEL ? 
         T(getindex(s.B1, i, j) + getindex(s.B2, i, j)) : T(getindex(s.B1, i, j))
+    s.center && (x -= s.μ[j])
+    s.scale && (x *= s.σinv[j])
+    return x
 end
 
 eltype(bm::SnpBitMatrix) = eltype(bm.μ)
@@ -226,66 +225,35 @@ function mul!(
 end
 
 """
-    Base.copyto!(v, s, center=false, scale=false)
+    Base.copyto!(v, s)
 
-Copy SnpBitMatrix `s` to numeric vector or matrix `v`. 
-
-# Arguments
-- `center::Bool=false`: center column by mean.
-- `scale::Bool=false`: scale column by theoretical variance.
+Copy SnpBitMatrix `s` to numeric vector or matrix `v`. If `s` is centered/scaled,
+`v` will be centered/scaled using precomputed column mean `s.μ` and inverse std 
+`s.σinv`.
 """
 function Base.copyto!(
     v::AbstractVecOrMat{T}, 
-    s::AbstractSnpBitMatrix;
-    center::Bool = false,
-    scale::Bool = false,
+    s::AbstractSnpBitMatrix
     ) where T <: AbstractFloat
     m, n = size(s, 1), size(s, 2)
-    # no center or scale
-    if !center && !scale
-        @inbounds for j in 1:n
-            @simd for i in 1:m
-                v[i, j] = convert(T, s[i, j])
-            end
-        end
-        return v
-    end
-    # center, scale (TODO: how to use precomputed μ and σinv?)
-    model = typeof(s) <: SubArray ? s.parent.model : s.model
     @inbounds for j in 1:n
-        μj, mj = zero(T), 0
         @simd for i in 1:m
-            vij = convert(T, s[i, j])
-            v[i, j] = vij
-            μj += isnan(vij) ? zero(T) : vij
-            mj += isnan(vij) ? 0 : 1
-        end
-        μj /= mj
-        σj = model == ADDITIVE_MODEL ? sqrt(μj * (1 - μj / 2)) : sqrt(μj * (1 - μj))
-        @simd for i in 1:m
-            center && (v[i, j] -= μj)
-            scale && σj > 0 && (v[i, j] /= σj)
+            v[i, j] = s[i, j]
         end
     end
     return v
 end
 
 """
-    Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+    Base.convert(t, s)
 
 Convert a SnpBitMatrix `s` to a numeric vector or matrix of same shape as `s`.
+If `s` is centered/scaled, `v` will be centered/scaled using precomputed column
+mean `s.μ` and inverse std `s.σinv`.
 
 # Arguments
 - `t::Type{AbstractVecOrMat{T}}`: Vector or matrix type.
-- `model::Union{Val{1}, Val{2}, Val{3}}=ADDITIVE_MODEL`: `ADDITIVE_MODEL` (default), `DOMINANT_MODEL`, or `RECESSIVE_MODEL`.  
-- `center::Bool=false`: center column by mean.
-- `scale::Bool=false`: scale column by theoretical variance.
 """
-function Base.convert(
-    ::Type{T},
-    s::AbstractSnpBitMatrix;
-    kwargs...) where T <: Array
-    T(s; kwargs...)
-end
-Array{T,N}(s::AbstractSnpBitMatrix; kwargs...) where {T,N} = 
-    copyto!(Array{T,N}(undef, size(s)), s; kwargs...)
+Base.convert(::Type{T}, s::AbstractSnpBitMatrix) where T <: Array = T(s)
+Array{T,N}(s::AbstractSnpBitMatrix) where {T,N} = 
+    copyto!(Array{T,N}(undef, size(s)), s)

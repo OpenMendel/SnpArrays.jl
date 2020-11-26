@@ -419,10 +419,11 @@ for (_ftn!, _ftn_rem!, expr) in [
 end
 
 """
-    Base.copyto!(v, s, center=false, scale=false)
+    Base.copyto!(v, s)
 
-Copy SnpLinAlg `s` to numeric vector or matrix `v`. `v` will be centered/scaled
-if `s` is. 
+Copy SnpLinAlg `s` to numeric vector or matrix `v`. If `s` is centered/scaled,
+`v` will be centered/scaled using precomputed column mean `s.μ` and inverse std 
+`s.σinv`.
 """
 function Base.copyto!(
     v::AbstractVecOrMat{T}, 
@@ -438,10 +439,11 @@ function Base.copyto!(
 end
 
 """
-    Base.convert(t, s, model=ADDITIVE_MODEL, center=false, scale=false, impute=false)
+    Base.convert(t, s)
 
 Convert a AbstractSnpLinAlg `s` to a numeric vector or matrix of same shape as `s`.
-Uses precomputed column mean `μ` and inverse std `σinv` if `s` were centered/scaled. 
+If `s` is centered/scaled, `v` will be centered/scaled using precomputed column
+mean `s.μ` and inverse std `s.σinv`.
 
 # Arguments
 - `t::Type{AbstractVecOrMat{T}}`: Vector or matrix type.

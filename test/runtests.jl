@@ -250,21 +250,24 @@ end
 
 @testset "copyto bitmatrix" begin
 for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
+    mousebm = SnpBitMatrix{t}(mouse, model=ADDITIVE_MODEL, center=false, scale=false)
+    v = copyto!(zeros(1), @view(mousebm[702]))
+    @test v[1] == 0
+    mousebm = SnpBitMatrix{t}(mouse, model=ADDITIVE_MODEL, center=true, scale=true)
+    v = copyto!(zeros(1), @view(mousebm[702]))
+    @test v[1] ≈ -1 * mousebm.μ[1] * mousebm.σinv[1]
     EURbm = SnpBitMatrix{t}(EUR, model=model, center=true, scale=true)
-    EURtrue_noscale = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
-    EURtest = zeros(t, size(EUR))
-    copyto!(EURtest, EURbm)
-    @test all(EURtest .== EURtrue_noscale)
-    EURtrue_scale = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
-    copyto!(EURtest, EURbm, center=true, scale=true)
-    @test all(EURtest .≈ EURtrue_scale)
-    x1, x2 = zeros(10, 10), zeros(10, 10)
-    copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=false, scale=false)
-    copyto!(x2, @view(EURbm[1:10, 1:10]))
-    @test all(x1 .== x2)
-    copyto!(x1, @view(EUR[1:10, 1:10]), model=model, center=true, scale=true)
-    copyto!(x2, @view(EURbm[1:10, 1:10]), center=true, scale=true)
-    @test all(x1 .== x2)
+    EURtrue = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
+    EURtest = copyto!(zeros(t, size(EUR)), EURbm)
+    @test all(EURtest .≈ EURtrue)
+    EURtest = copyto!(zeros(10, 5), @view(EURbm[11:20, 1:2:10]))
+    @test all(EURtest .≈ EURtrue[11:20, 1:2:10])
+    EURbm = SnpBitMatrix{t}(EUR, model=model, center=false, scale=false)
+    EURtrue = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
+    EURtest = copyto!(zeros(t, size(EUR)), EURbm)
+    @test all(EURtest .≈ EURtrue)
+    EURtest = copyto!(zeros(10, 5), @view(EURbm[11:20, 1:2:10]))
+    @test all(EURtest .≈ EURtrue[11:20, 1:2:10])
 end
 end
 
@@ -272,16 +275,28 @@ end
 for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
     EURbm = SnpBitMatrix{t}(EUR, model=model, center=true, scale=true)
     xtrue = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
-    xtest = convert(Matrix{t}, EURbm, center=true, scale=true)
-    @test all(xtrue .== xtest)
+    xtest = convert(Matrix{t}, EURbm)
+    @test all(xtrue .≈ xtest)
+    EURbm = SnpBitMatrix{t}(EUR, model=model, center=false, scale=false)
     xtrue = convert(Matrix{t}, EUR, model=model, center=false, scale=false)
-    xtest = convert(Matrix{t}, EURbm, center=false, scale=false)
-    @test all(xtrue .== xtest)
+    xtest = convert(Matrix{t}, EURbm)
+    @test all(xtrue .≈ xtest)
+    EURbm = SnpBitMatrix{t}(EUR, model=model, center=true, scale=true)
+    xtrue = convert(Matrix{t}, @view(EUR[:, 2:2:10]), model=model, center=true, scale=true)
+    xtest = convert(Matrix{t}, @view(EURbm[:, 2:2:10]))
+    @test all(xtrue .≈ xtest)
+    EURbm = SnpBitMatrix{t}(EUR, model=model, center=false, scale=false)
+    xtrue = convert(Matrix{t}, @view(EUR[:, 2:2:10]), model=model, center=false, scale=false)
+    xtest = convert(Matrix{t}, @view(EURbm[:, 2:2:10]))
+    @test all(xtrue .≈ xtest)
 end
 end
 
 @testset "copyto SnpLinAlg" begin
 for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
+    mousela = SnpLinAlg{t}(mouse, model=ADDITIVE_MODEL, center=true, scale=true)
+    v = copyto!(zeros(1), @view(mousela[702]))
+    @test isnan(v[1])
     EURla = SnpLinAlg{t}(EUR, model=model, center=true, scale=true)
     EURtrue = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
     EURtest = copyto!(zeros(t, size(EUR)), EURla)
