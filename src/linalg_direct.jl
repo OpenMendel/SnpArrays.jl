@@ -10,6 +10,9 @@ struct SnpLinAlg{T} <: AbstractMatrix{T}
     storagev2::Vector{T}
 end
 
+AbstractSnpLinAlg = Union{SnpLinAlg, SubArray{T, 1, SnpLinAlg{T}}, 
+    SubArray{T, 2, SnpLinAlg{T}}} where T
+
 """
     SnpLinAlg{T}(s; model=ADDITIVE_MODEL, center=false, scale=false, impute=true)
 
@@ -88,6 +91,13 @@ Base.size(sla::SnpLinAlg) = size(sla.s)
 Base.size(sla::SnpLinAlg, k::Integer) = size(sla.s, k)
 
 eltype(bm::SnpLinAlg) = eltype(bm.μ)
+
+function Base.getindex(s::SnpLinAlg{T}, i::Int, j::Int) where T
+    x = SnpArrays.convert(T, getindex(s.s, i, j), s.model)
+    s.center && (x -= s.μ[j])
+    s.scale && (x *= s.σinv[j])
+    return x
+end
 
 # macros taken from Gaius.jl
 macro _spawn(ex)
@@ -407,3 +417,37 @@ for (_ftn!, _ftn_rem!, expr) in [
         end
     end
 end
+
+"""
+    Base.copyto!(v, s)
+
+Copy SnpLinAlg `s` to numeric vector or matrix `v`. If `s` is centered/scaled,
+`v` will be centered/scaled using precomputed column mean `s.μ` and inverse std 
+`s.σinv`.
+"""
+function Base.copyto!(
+    v::AbstractVecOrMat{T}, 
+    s::AbstractSnpLinAlg
+    ) where T <: AbstractFloat
+    m, n = size(s, 1), size(s, 2)
+    @inbounds for j in 1:n
+        @simd for i in 1:m
+            v[i, j] = s[i, j]
+        end
+    end
+    return v
+end
+
+"""
+    Base.convert(t, s)
+
+Convert a AbstractSnpLinAlg `s` to a numeric vector or matrix of same shape as `s`.
+If `s` is centered/scaled, `v` will be centered/scaled using precomputed column
+mean `s.μ` and inverse std `s.σinv`.
+
+# Arguments
+- `t::Type{AbstractVecOrMat{T}}`: Vector or matrix type.
+"""
+Base.convert(::Type{T}, s::AbstractSnpLinAlg) where T <: Array = T(s)
+Array{T,N}(s::AbstractSnpLinAlg) where {T,N} = 
+    copyto!(Array{T,N}(undef, size(s)), s)

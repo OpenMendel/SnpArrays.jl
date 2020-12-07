@@ -10,6 +10,9 @@ struct SnpBitMatrix{T} <: AbstractMatrix{T}
     storagev2::Vector{T}
 end
 
+AbstractSnpBitMatrix = Union{SnpBitMatrix, SubArray{T, 1, SnpBitMatrix{T}}, 
+    SubArray{T, 2, SnpBitMatrix{T}}} where T
+
 """
     SnpBitMatrix{T}(s; model=ADDITIVE_MODEL, center=false, scale=false)
 
@@ -90,6 +93,14 @@ end
 
 Base.size(bm::SnpBitMatrix) = size(bm.B1)
 Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
+
+function Base.getindex(s::SnpBitMatrix{T}, i::Int, j::Int) where T 
+    x = s.model == ADDITIVE_MODEL ? 
+        T(getindex(s.B1, i, j) + getindex(s.B2, i, j)) : T(getindex(s.B1, i, j))
+    s.center && (x -= s.μ[j])
+    s.scale && (x *= s.σinv[j])
+    return x
+end
 
 eltype(bm::SnpBitMatrix) = eltype(bm.μ)
 issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B2) && issymmetric(bm.B1)
@@ -212,3 +223,37 @@ function mul!(
         return out
     end
 end
+
+"""
+    Base.copyto!(v, s)
+
+Copy SnpBitMatrix `s` to numeric vector or matrix `v`. If `s` is centered/scaled,
+`v` will be centered/scaled using precomputed column mean `s.μ` and inverse std 
+`s.σinv`.
+"""
+function Base.copyto!(
+    v::AbstractVecOrMat{T}, 
+    s::AbstractSnpBitMatrix
+    ) where T <: AbstractFloat
+    m, n = size(s, 1), size(s, 2)
+    @inbounds for j in 1:n
+        @simd for i in 1:m
+            v[i, j] = s[i, j]
+        end
+    end
+    return v
+end
+
+"""
+    Base.convert(t, s)
+
+Convert a SnpBitMatrix `s` to a numeric vector or matrix of same shape as `s`.
+If `s` is centered/scaled, `v` will be centered/scaled using precomputed column
+mean `s.μ` and inverse std `s.σinv`.
+
+# Arguments
+- `t::Type{AbstractVecOrMat{T}}`: Vector or matrix type.
+"""
+Base.convert(::Type{T}, s::AbstractSnpBitMatrix) where T <: Array = T(s)
+Array{T,N}(s::AbstractSnpBitMatrix) where {T,N} = 
+    copyto!(Array{T,N}(undef, size(s)), s)
