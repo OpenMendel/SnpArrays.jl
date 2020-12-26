@@ -25,7 +25,7 @@ function SnpData(
     kwargs...)
     
     # load snp info
-    snp_info = DataFrame!(CSV.File(bimnm,  delim='\t', header=SNP_INFO_KEYS, 
+    snp_info = DataFrame(CSV.File(bimnm,  delim='\t', header=SNP_INFO_KEYS, 
         types=[String, String, Float64, Int, String, String]))
     
     # load person info
