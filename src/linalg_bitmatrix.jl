@@ -10,7 +10,7 @@ struct SnpBitMatrix{T} <: AbstractMatrix{T}
     storagev2::Vector{T}
 end
 
-AbstractSnpBitMatrix = Union{SnpBitMatrix, SubArray{T, 1, SnpBitMatrix{T}}, 
+AbstractSnpBitMatrix = Union{SnpBitMatrix, SubArray{T, 1, SnpBitMatrix{T}},
     SubArray{T, 2, SnpBitMatrix{T}}} where T
 
 """
@@ -29,6 +29,8 @@ function SnpBitMatrix{T}(
     model = ADDITIVE_MODEL,
     center::Bool = false,
     scale::Bool = false) where T <: AbstractFloat
+    Base.depwarn("`SnpBitMatrix{T}` is deprecated and will be removed soon. " *
+        "Please use `SnpLinAlg{T}` instead.", nothing)
     if model == ADDITIVE_MODEL
         B1 = s .≥ 0x02
         B2 = s .≥ 0x03
@@ -94,8 +96,8 @@ end
 Base.size(bm::SnpBitMatrix) = size(bm.B1)
 Base.size(bm::SnpBitMatrix, k::Integer) = size(bm.B1, k)
 
-function Base.getindex(s::SnpBitMatrix{T}, i::Int, j::Int) where T 
-    x = s.model == ADDITIVE_MODEL ? 
+function Base.getindex(s::SnpBitMatrix{T}, i::Int, j::Int) where T
+    x = s.model == ADDITIVE_MODEL ?
         T(getindex(s.B1, i, j) + getindex(s.B2, i, j)) : T(getindex(s.B1, i, j))
     s.center && (x -= s.μ[j])
     s.scale && (x *= s.σinv[j])
@@ -133,7 +135,7 @@ function _gemv_tile!(c, A, b)
         end
         if Mrem != 0
             _gemv_avx_sized!(
-                gesp(stridedpointer(c), (vstep*Miter,)), 
+                gesp(stridedpointer(c), (vstep*Miter,)),
                 gesp(stridedpointer(A), (vstep*Miter, hstep*n)),
                 gesp(stridedpointer(b), (hstep*n,)),
                 Mrem, hstep
@@ -172,8 +174,8 @@ end
 In-place matrix-vector multiplication.
 """
 function mul!(
-    out::AbstractVector{T}, 
-    s::SnpBitMatrix{T}, 
+    out::AbstractVector{T},
+    s::SnpBitMatrix{T},
     v::AbstractVector{T}) where T <: AbstractFloat
     @assert length(out) == size(s, 1) && length(v) == size(s, 2)
     if s.scale
@@ -188,7 +190,7 @@ function mul!(
         out .+= s.storagev1
     else
         mul!(out, s.B1, w)
-    end   
+    end
     if s.center
         return out .-= dot(s.μ, w)
     else
@@ -202,7 +204,7 @@ end
 In-place matrix-vector multiplication, with transposed `SnpBitMatrix`.
 """
 function mul!(
-    out::AbstractVector{T}, 
+    out::AbstractVector{T},
     st::Union{Transpose{T, SnpBitMatrix{T}}, Adjoint{T, SnpBitMatrix{T}}},
     v::AbstractVector{T}) where T <: AbstractFloat
     s = st.parent
@@ -213,7 +215,7 @@ function mul!(
         out .+= s.storagev2
     else
         mul!(out, transpose(s.B1), v)
-    end   
+    end
     if s.center
         out .-= sum(v) .* s.μ
     end
@@ -228,11 +230,11 @@ end
     Base.copyto!(v, s)
 
 Copy SnpBitMatrix `s` to numeric vector or matrix `v`. If `s` is centered/scaled,
-`v` will be centered/scaled using precomputed column mean `s.μ` and inverse std 
+`v` will be centered/scaled using precomputed column mean `s.μ` and inverse std
 `s.σinv`.
 """
 function Base.copyto!(
-    v::AbstractVecOrMat{T}, 
+    v::AbstractVecOrMat{T},
     s::AbstractSnpBitMatrix
     ) where T <: AbstractFloat
     m, n = size(s, 1), size(s, 2)
@@ -255,5 +257,5 @@ mean `s.μ` and inverse std `s.σinv`.
 - `t::Type{AbstractVecOrMat{T}}`: Vector or matrix type.
 """
 Base.convert(::Type{T}, s::AbstractSnpBitMatrix) where T <: Array = T(s)
-Array{T,N}(s::AbstractSnpBitMatrix) where {T,N} = 
+Array{T,N}(s::AbstractSnpBitMatrix) where {T,N} =
     copyto!(Array{T,N}(undef, size(s)), s)
