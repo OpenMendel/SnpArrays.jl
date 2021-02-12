@@ -1,4 +1,3 @@
-
 # SnpArrays.jl
 
 Data from [*genome-wide association studies (GWAS)*](https://en.wikipedia.org/wiki/Genome-wide_association_study) are often saved as a [**PLINK binary biallelic genotype table**](https://www.cog-genomics.org/plink2/formats#bed) or `.bed` file. To be useful, such files should be accompanied by a `.fam` file, containing metadata on the rows of the table, and a `.bim` file,
@@ -1978,6 +1977,10 @@ In some applications we want to perform linear algebra using SnpArray directly w
 
 `SnpLinAlg` and `SnpBitMatrix` use Chris Elrod's [LoopVectorization.jl](https://github.com/chriselrod/LoopVectorization.jl) internally. It is much faster on machines with AVX support. `CuSnpArray` uses [CUDA.jl](https://juliagpu.gitlab.io/CUDA.jl/) internally.
 
+!!! warning "deprecated SnpBitMatrix"
+    `SnpBitMatrix` is now deprecated in favor of `SnpLinAlg`. 
+    `SnpBitMatrix` will be removed on next minor release.
+    
 The implementation assumes that the matrix corresponding to SnpArray is the matrix of the A2 allele counts. `SnpLinAlg` and `CuSnpArray` impute any missing genotype with its column mean by default. They can also configured to impute missing genotypes with zero. `SnpBitMatrix` can only impute missing values with zero. 
 
 ### Constructor
