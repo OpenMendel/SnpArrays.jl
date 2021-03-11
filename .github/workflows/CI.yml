@@ -77,11 +77,11 @@ jobs:
             Pkg.add("Documenter")
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()'
-      - run: |
-          julia --project=docs -e '
-            using Documenter: doctest
-            using SnpArrays
-            doctest(SnpArrays)'
+#       - run: |
+#           julia --project=docs -e '
+#             using Documenter: doctest
+#             using SnpArrays
+#             doctest(SnpArrays)'
       - run: julia --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
