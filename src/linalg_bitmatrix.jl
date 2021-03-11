@@ -107,67 +107,6 @@ end
 eltype(bm::SnpBitMatrix) = eltype(bm.μ)
 issymmetric(bm::SnpBitMatrix) = issymmetric(bm.B2) && issymmetric(bm.B1)
 
-function _gemv_avx_sized!(c, A, b, rows, cols)
-    @avx for j in 1:cols, i in 1:rows
-        c[i] += A[i, j] * b[j]
-    end
-end
-
-function _gemv_tile!(c, A, b)
-    vstep = 512
-    hstep = 512
-    vstep_log2 = 9
-    hstep_log2 = 9
-    M, N = size(A)
-    Miter = M >>> vstep_log2 # fast div(M, 512)
-    Mrem = M & (vstep-1) # fast rem(M, 512)
-    Niter = N >>> hstep_log2
-    Nrem = N & (hstep-1)
-    GC.@preserve c A b for n in 0:Niter-1
-        for m in 0:Miter-1
-            _gemv_avx_sized!(
-                gesp(stridedpointer(c), (vstep*m,)),
-                gesp(stridedpointer(A), (vstep*m, hstep*n)),
-                gesp(stridedpointer(b), (hstep*n,)),
-                vstep,
-                hstep
-            )
-        end
-        if Mrem != 0
-            _gemv_avx_sized!(
-                gesp(stridedpointer(c), (vstep*Miter,)),
-                gesp(stridedpointer(A), (vstep*Miter, hstep*n)),
-                gesp(stridedpointer(b), (hstep*n,)),
-                Mrem, hstep
-            )
-        end
-    end
-    if Nrem != 0
-        _gemv_avx_sized!(
-            gesp(stridedpointer(c), (0,)),
-            gesp(stridedpointer(A), (0, hstep*Niter)),
-            gesp(stridedpointer(b), (hstep*Niter,)),
-            length(c),
-            Nrem
-        )
-    end
-end
-
-function mul!(c::Vector{T}, A::BitMatrix, b::Vector{T}) where T
-    fill!(c, zero(eltype(c)))
-    _gemv_tile!(c, A, b)
-end
-
-function mul!(c::Vector{T}, A::Union{Transpose{Bool,BitArray{2}}, Adjoint{Bool, BitArray{2}}}, b::Vector{T}) where T
-    tA = transpose(A)
-    fill!(c, zero(eltype(c)))
-    @avx for i in 1:size(tA, 2)
-        for j in 1:size(tA, 1)
-            c[i] += tA[j, i] * b[j]
-        end
-    end
-end
-
 """
     LinearAlgebra.mul!(out, s::SnpBitMatrix, v)
 
