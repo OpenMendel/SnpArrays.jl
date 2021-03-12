@@ -32,7 +32,7 @@ function SnpLinAlg{T}(
     scale::Bool = false,
     impute::Bool = true) where T <: AbstractFloat
     if model == ADDITIVE_MODEL
-        if center || scale
+        if center || scale || impute
             μ = Vector{T}(undef, size(s, 2))
             μ[:] = mean(s; dims=1, model=ADDITIVE_MODEL)
         else
@@ -48,7 +48,7 @@ function SnpLinAlg{T}(
             σinv = T[]
         end
     elseif model == DOMINANT_MODEL
-        if center || scale
+        if center || scale || impute
             μ = Vector{T}(undef, size(s, 2))
             μ[:] = mean(s; dims=1, model=DOMINANT_MODEL)
         else
@@ -64,7 +64,7 @@ function SnpLinAlg{T}(
             σinv = T[]
         end
     elseif model == RECESSIVE_MODEL
-        if center || scale
+        if center || scale || impute
             μ = Vector{T}(undef, size(s, 2))
             μ[:] = mean(s; dims=1, model=RECESSIVE_MODEL)
         else
@@ -333,17 +333,23 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute)
 end
 
 for (_ftn!, _ftn_rem!, expr) in [
-        (:_snparray_ax_additive!, :_snparray_ax_additive_rem!, :(((Aij >= 2) + (Aij == 3)) * v[j])),
-        (:_snparray_ax_dominant!, :_snparray_ax_dominant_rem!, :((Aij >= 2)  * v[j])),
-        (:_snparray_ax_recessive!, :_snparray_ax_recessive_rem!, :((Aij == 3) * v[j])),
-        (:_snparray_ax_additive_meanimpute!, :_snparray_ax_additive_meanimpute_rem!, :(((Aij >= 2) + (Aij == 3) + (Aij == 1) * μ[j]) * v[j])),
-        (:_snparray_ax_dominant_meanimpute!, :_snparray_ax_dominant_meanimpute_rem!, :(((Aij >= 2) + (Aij == 1) * μ[j]) * v[j])),
-        (:_snparray_ax_recessive_meanimpute!, :_snparray_ax_recessive_meanimpute_rem!, :(((Aij == 3) + (Aij == 1) * μ[j]) * v[j]))
+        (:_snparray_ax_additive!, :_snparray_ax_additive_rem!, 
+            :(((Aij >= 2) + (Aij == 3)) * v[j])),
+        (:_snparray_ax_dominant!, :_snparray_ax_dominant_rem!, 
+            :((Aij >= 2)  * v[j])),
+        (:_snparray_ax_recessive!, :_snparray_ax_recessive_rem!, 
+            :((Aij == 3) * v[j])),
+        (:_snparray_ax_additive_meanimpute!, :_snparray_ax_additive_meanimpute_rem!, 
+            :(((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[j]) *  v[j])),
+        (:_snparray_ax_dominant_meanimpute!, :_snparray_ax_dominant_meanimpute_rem!, 
+            :((Aij >= 2) * v[j] + (Aij == 1) * μ[j] * v[j])),
+        (:_snparray_ax_recessive_meanimpute!, :_snparray_ax_recessive_meanimpute_rem!, 
+            :((Aij == 3) * v[j] + (Aij == 1) * μ[j] * v[j]))
     ]
     @eval begin
         function ($_ftn_rem!)(out, s, v, μ)
             maxp = length(out)
-            @avx for j in eachindex(v)
+            for j in eachindex(v)
                 block = s[1, j]
                 for p in 1:maxp
                     Aij = (block >> (2 * (p - 1))) & 3
@@ -356,7 +362,7 @@ for (_ftn!, _ftn_rem!, expr) in [
             k = rows >> 2
             rem = rows & 3
             
-            @avx for j ∈ 1:cols
+            for j ∈ 1:cols
                 for l in 1:k
                     block = s[l, j]
                     
@@ -376,18 +382,24 @@ for (_ftn!, _ftn_rem!, expr) in [
 end
 
 for (_ftn!, _ftn_rem!, expr) in [
-        (:_snparray_atx_additive!, :_snparray_atx_additive_rem!, :(((Aij >= 2) + (Aij == 3)) * v[4 * (l - 1) + p])),
-        (:_snparray_atx_dominant!, :_snparray_atx_dominant_rem!, :((Aij >= 2)  * v[4 * (l - 1) + p])),
-        (:_snparray_atx_recessive!, :_snparray_atx_recessive_rem!, :((Aij == 3) * v[4 * (l - 1) + p])),
-        (:_snparray_atx_additive_meanimpute!, :_snparray_atx_additive_meanimpute_rem!, :(((Aij >= 2) + (Aij == 3) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p])),
-        (:_snparray_atx_dominant_meanimpute!, :_snparray_atx_dominant_meanimpute_rem!, :(((Aij >= 2) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p])),
-        (:_snparray_atx_recessive_meanimpute!, :_snparray_atx_recessive_meanimpute_rem!, :(((Aij == 3) + (Aij == 1) * μ[i]) * v[4 * (l - 1) + p]))
+        (:_snparray_atx_additive!, :_snparray_atx_additive_rem!, 
+            :(((Aij >= 2) + (Aij == 3)) * v[4 * (l - 1) + p])),
+        (:_snparray_atx_dominant!, :_snparray_atx_dominant_rem!, 
+            :((Aij >= 2)  * v[4 * (l - 1) + p])),
+        (:_snparray_atx_recessive!, :_snparray_atx_recessive_rem!, 
+            :((Aij == 3) * v[4 * (l - 1) + p])),
+        (:_snparray_atx_additive_meanimpute!, :_snparray_atx_additive_meanimpute_rem!, 
+            :(((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[i]) *  v[4 * (l - 1) + p])),
+        (:_snparray_atx_dominant_meanimpute!, :_snparray_atx_dominant_meanimpute_rem!, 
+            :((Aij >= 2) * v[4 * (l - 1) + p] + (Aij == 1) * μ[i] * v[4 * (l - 1) + p])),
+        (:_snparray_atx_recessive_meanimpute!, :_snparray_atx_recessive_meanimpute_rem!, 
+            :((Aij == 3) * v[4 * (l - 1) + p] + (Aij == 1) * μ[i] * v[4 * (l - 1) + p]))
     ]
     @eval begin
         function $(_ftn_rem!)(out, s, v, μ)
             maxp = length(v)
             l = 1
-            @avx for i in eachindex(out)
+            for i in eachindex(out)
                 block = s[1, i]
                 for p in 1:maxp
                     Aij = (block >> (2 * (p - 1))) & 3
@@ -400,7 +412,7 @@ for (_ftn!, _ftn_rem!, expr) in [
             k = rows >> 2
             rem = rows & 3
             
-            @avx for i ∈ 1:cols
+            for i ∈ 1:cols
                 for l in 1:k
                     block = s[l, i]
                     
