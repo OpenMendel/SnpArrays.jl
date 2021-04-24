@@ -28,9 +28,9 @@ function vcf2plink(vcffile, plinkprefix)
     nsamples = begin
         vcfio = makestream(vcffile, "r")
         reader = VCF.Reader(vcfio)
-        samples = length(VCF.header(reader).sampleID)
+        samples = length(header(reader).sampleID)
         makestream(plinkprefix * ".fam", "w") do io
-            for (i, id) in enumerate(VCF.header(reader).sampleID)
+            for (i, id) in enumerate(header(reader).sampleID)
                 println(io, "$i\t$id\t0\t0\t0\t0")
             end
         end
@@ -81,8 +81,8 @@ function vcf2plink(vcffile, plinkprefix)
         alt = VCF.alt(record)[1]
         println(bimio, "$chrom\t$id\t$dist\t$pos\t$ref\t$alt")
         
-        gtkey = VCF.findgenokey(record, "GT")
-        for (i, _) in enumerate(VCF.header(reader).sampleID)
+        gtkey = findgenokey(record, "GT")
+        for (i, _) in enumerate(header(reader).sampleID)
             geno = record.genotype[i]
             # dropped field or "." => 0x2e
             if gtkey > lastindex(geno) || geno_ismissing(record, geno[gtkey])
