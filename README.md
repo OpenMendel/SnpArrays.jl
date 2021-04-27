@@ -13,14 +13,14 @@ Linear algebra operations on the PLINK formatted data now support multi-threadin
 
 ## Installation
 
-This package requires Julia v1.4 or later, which can be obtained from
+This package requires Julia v1.5 or later, which can be obtained from
 https://julialang.org/downloads/ or by building Julia from the sources in the
 https://github.com/JuliaLang/julia repository.
 
 The package has not yet been registered and must be installed using the repository location.
 Start julia and use the `]` key to switch to the package manager REPL
 ```julia
-(v1.4) pkg> add https://github.com/OpenMendel/SnpArrays.jl
+(v1.6) pkg> add https://github.com/OpenMendel/SnpArrays.jl
 ```
 Use the backspace key to return to the Julia REPL.
 
