@@ -15,6 +15,7 @@ import StatsBase: counts
 import SpecialFunctions: gamma_inc
 import VectorizationBase: gesp
 import GeneticVariation.VCF
+import Tables: table
 export AbstractSnpArray, AbstractSnpBitMatrix, AbstractSnpLinAlg
 export SnpArray, SnpBitMatrix, SnpLinAlg, SnpData
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
