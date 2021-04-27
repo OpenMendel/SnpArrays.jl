@@ -14,7 +14,6 @@ import Statistics: mean, std, var
 import StatsBase: counts
 import SpecialFunctions: gamma_inc
 import VectorizationBase: gesp
-import GeneticVariation.VCF
 import Tables: table
 export AbstractSnpArray, AbstractSnpBitMatrix, AbstractSnpLinAlg
 export SnpArray, SnpBitMatrix, SnpLinAlg, SnpData
@@ -25,6 +24,7 @@ export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
 export vcf2plink, kinship_pruning
 export ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL
 export CuSnpArray
+import VariantCallFormat: findgenokey, VCF, header
 
 const ADDITIVE_MODEL = Val(1)
 const DOMINANT_MODEL = Val(2)
