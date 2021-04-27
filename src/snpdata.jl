@@ -25,11 +25,13 @@ function SnpData(
     kwargs...)
     
     # load snp info
-    snp_info = DataFrame!(CSV.File(bimnm,  delim='\t', header=SNP_INFO_KEYS, 
-        types=[String, String, Float64, Int, String, String]))
-    
+    snp_info = DataFrame(CSV.File(bimnm,  delim='\t', header=SNP_INFO_KEYS, 
+        types=[String, String, Float64, Int, String, String]); copycols = false)
+
     # load person info
-    person_info = convert(DataFrame, readdlm(famnm, AbstractString))
+    dlmobj = readdlm(famnm, AbstractString)
+    person_info = DataFrame(table(dlmobj, header = Symbol.(:x, axes(dlmobj, 2))))
+    # person_info = convert(DataFrame, readdlm(famnm, AbstractString))
     rename!(person_info, collect(f => t for (f, t) = zip(names(person_info),
                     PERSON_INFO_KEYS)))
 
