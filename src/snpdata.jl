@@ -25,14 +25,10 @@ function SnpData(
     kwargs...)
     
     # load snp info
-    #`DataFrame!(args...; kwargs...)` is deprecated, use `DataFrame(args...; copycols = false, kwargs...)` instead.
     snp_info = DataFrame(CSV.File(bimnm,  delim='\t', header=SNP_INFO_KEYS, 
         types=[String, String, Float64, Int, String, String]); copycols = false)
-    # snp_info = DataFrame!(CSV.File(bimnm,  delim='\t', header=SNP_INFO_KEYS, 
-    #     types=[String, String, Float64, Int, String, String]))
-    
+
     # load person info
-    # `convert(::Type{DataFrame}, A::AbstractMatrix)` is deprecated, use `DataFrame(Tables.table(A, header = Symbol.(:x, axes(A, 2))))` instead.
     dlmobj = readdlm(famnm, AbstractString)
     person_info = DataFrame(table(dlmobj, header = Symbol.(:x, axes(dlmobj, 2))))
     # person_info = convert(DataFrame, readdlm(famnm, AbstractString))
