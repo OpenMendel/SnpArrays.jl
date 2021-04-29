@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>SnpArrays.jl · SnpArrays.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">SnpArrays.jl</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>SnpArrays.jl</a><ul class="internal"><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Example-data"><span>Example data</span></a></li><li><a class="tocitem" href="#SnpArray"><span>SnpArray</span></a></li><li><a class="tocitem" href="#Linear-Algebra"><span>Linear Algebra</span></a></li><li><a class="tocitem" href="#SnpData"><span>SnpData</span></a></li><li><a class="tocitem" href="#VCF-to-PLINK"><span>VCF to PLINK</span></a></li></ul></li><li><a class="tocitem" href="linalg/">Linear algebra of SnpArray</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>SnpArrays.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>SnpArrays.jl</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/OpenMendel/SnpArrays.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="SnpArrays.jl"><a class="docs-heading-anchor" href="#SnpArrays.jl">SnpArrays.jl</a><a id="SnpArrays.jl-1"></a><a class="docs-heading-anchor-permalink" href="#SnpArrays.jl" title="Permalink"></a></h1><p>Data from <a href="https://en.wikipedia.org/wiki/Genome-wide_association_study"><em>genome-wide association studies (GWAS)</em></a> are often saved as a <a href="https://www.cog-genomics.org/plink2/formats#bed"><strong>PLINK binary biallelic genotype table</strong></a> or <code>.bed</code> file. To be useful, such files should be accompanied by a <code>.fam</code> file, containing metadata on the rows of the table, and a <code>.bim</code> file, containing metadata on the columns. The <code>.fam</code> and <code>.bim</code> files are in tab-separated format.</p><p>The table contains the observed allelic type at <code>n</code> <a href="https://en.wikipedia.org/wiki/Single-nucleotide_polymorphism"><em>single nucleotide polymorphism</em></a> (SNP) positions for <code>m</code> individuals. A SNP corresponds to a nucleotide position on the genome where some degree of variation has been observed in a population, with each individual have one of two possible <em>alleles</em> at that position on each of a pair of chromosomes. Three possible genotypes and corresponding coding are</p><table><tr><th style="text-align: center">Genotype</th><th style="text-align: center">Plink/SnpArray</th></tr><tr><td style="text-align: center">A1,A1</td><td style="text-align: center">0x00</td></tr><tr><td style="text-align: center">missing</td><td style="text-align: center">0x01</td></tr><tr><td style="text-align: center">A1,A2</td><td style="text-align: center">0x02</td></tr><tr><td style="text-align: center">A2,A2</td><td style="text-align: center">0x03</td></tr></table><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>This package requires Julia v1.4 or later, which can be obtained from <a href="https://julialang.org/downloads/">https://julialang.org/downloads/</a> or by building Julia from the sources in the <a href="https://github.com/JuliaLang/julia">https://github.com/JuliaLang/julia</a> repository.</p><p>The package has not yet been registered and must be installed using the repository location. Start Julia and use the <code>]</code> key to switch to the package manager REPL</p><pre><code class="language-julia">(@v1.5) pkg&gt; add https://github.com/OpenMendel/SnpArrays.jl</code></pre><p>Use the backspace key to return to the Julia REPL.</p><pre><code class="language-julia">versioninfo()</code></pre><pre><code class="language-none">Julia Version 1.5.0
+Commit 96786e22cc (2020-08-01 23:44 UTC)
+Platform Info:
+  OS: Linux (x86_64-pc-linux-gnu)
+  CPU: Intel(R) Core(TM) i9-9920X CPU @ 3.50GHz
+  WORD_SIZE: 64
+  LIBM: libopenlibm
+  LLVM: libLLVM-9.0.1 (ORCJIT, skylake)
+Environment:
+  JULIA_NUM_THREADS = 8</code></pre><pre><code class="language-julia"># for use in this tutorial
+using SnpArrays, ADMIXTURE, BenchmarkTools, DelimitedFiles, Glob
+Sys.islinux() &amp;&amp; (using CUDA);</code></pre><h2 id="Example-data"><a class="docs-heading-anchor" href="#Example-data">Example data</a><a id="Example-data-1"></a><a class="docs-heading-anchor-permalink" href="#Example-data" title="Permalink"></a></h2><p>There are two example data sets attached to this package. They are availabe in the <code>data</code> folder of the package.</p><pre><code class="language-julia">datapath = normpath(SnpArrays.datadir())</code></pre><pre><code class="language-none">&quot;/home/huazhou/.julia/dev/SnpArrays.jl/data&quot;</code></pre><pre><code class="language-julia">readdir(glob&quot;mouse.*&quot;, datapath)</code></pre><pre><code class="language-none">3-element Array{String,1}:
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.bed&quot;
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.bim&quot;
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.fam&quot;</code></pre><p>Data set <code>EUR_subset</code> contains no missing genotypes. It is located at</p><pre><code class="language-julia">readdir(glob&quot;EUR_subset.*&quot;, datapath)</code></pre><pre><code class="language-none">3-element Array{String,1}:
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/EUR_subset.bed&quot;
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/EUR_subset.bim&quot;
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/EUR_subset.fam&quot;</code></pre><p>Data from recent studies, which have samples from tens of thousands of individuals at over a million SNP positions, would be in the tens or even hundreds of Gb range.</p><h2 id="SnpArray"><a class="docs-heading-anchor" href="#SnpArray">SnpArray</a><a id="SnpArray-1"></a><a class="docs-heading-anchor-permalink" href="#SnpArray" title="Permalink"></a></h2><p><code>SnpArray</code> is the fundamental type for dealing with genotype data in Plink bed file. Each row of <code>SnpArray</code> is a sample and each column a SNP.</p><h3 id="Constructor"><a class="docs-heading-anchor" href="#Constructor">Constructor</a><a id="Constructor-1"></a><a class="docs-heading-anchor-permalink" href="#Constructor" title="Permalink"></a></h3><p>There are various ways to initialize a SnpArray.</p><h4 id="Intitialize-from-Plink-file-set"><a class="docs-heading-anchor" href="#Intitialize-from-Plink-file-set">Intitialize from Plink file set</a><a id="Intitialize-from-Plink-file-set-1"></a><a class="docs-heading-anchor-permalink" href="#Intitialize-from-Plink-file-set" title="Permalink"></a></h4><p>SnpArray can be initialized from the Plink bed file. The corresponding <code>.fam</code> needs to be present, which is used to determine the number of individuals.</p><pre><code class="language-julia">const mouse = SnpArray(SnpArrays.datadir(&quot;mouse.bed&quot;))</code></pre><pre><code class="language-none">1940×10150 SnpArray:
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+ 0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
+    ⋮                             ⋮  ⋱           ⋮                    
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x01  0x01  0x01  0x01  0x01  0x01
+ 0x00  0x00  0x00  0x00  0x03  0x00     0x03  0x03  0x03  0x03  0x03  0x03</code></pre><p>The virtual size of the GWAS data is 1940 observations at each of 10150 SNP positions.</p><pre><code class="language-julia">size(mouse)</code></pre><pre><code class="language-none">(1940, 10150)</code></pre><p>Because the file is memory-mapped opening the file and accessing the data is fast, even for very large .bed files.</p><pre><code class="language-julia">@btime(SnpArray(SnpArrays.datadir(&quot;mouse.bed&quot;)));</code></pre><pre><code class="language-none">  64.547 μs (58 allocations: 389.97 KiB)</code></pre><p>By default, the memory-mapped file is read only, changing entries is not allowed.</p><pre><code class="language-julia">mouse[1, 1] = 0x00</code></pre><pre><code class="language-none">ReadOnlyMemoryError()
+
+
+
+Stacktrace:
+
+ [1] setindex! at ./array.jl:849 [inlined]
+
+ [2] setindex!(::SnpArray, ::UInt8, ::Int64, ::Int64) at /home/huazhou/.julia/dev/SnpArrays.jl/src/snparray.jl:131
+
+ [3] top-level scope at In[9]:1
+
+ [4] include_string(::Function, ::Module, ::String, ::String) at ./loading.jl:1091</code></pre><p>To possibly change genoytpes in a bed file, open with write permission</p><pre><code class="language-julia">mouse = SnpArray(SnpArrays.datadir(&quot;mouse.bed&quot;), &quot;w&quot;)</code></pre><h4 id="Initialize-from-only-bed-file"><a class="docs-heading-anchor" href="#Initialize-from-only-bed-file">Initialize from only bed file</a><a id="Initialize-from-only-bed-file-1"></a><a class="docs-heading-anchor-permalink" href="#Initialize-from-only-bed-file" title="Permalink"></a></h4><p>If only the bed file is present, user is required to supply the number of individuals in the second argument.</p><pre><code class="language-julia">SnpArray(SnpArrays.datadir(&quot;mouse.bed&quot;), 1940)</code></pre><pre><code class="language-none">1940×10150 SnpArray:
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+ 0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
+    ⋮                             ⋮  ⋱           ⋮                    
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x01  0x01  0x01  0x01  0x01  0x01
+ 0x00  0x00  0x00  0x00  0x03  0x00     0x03  0x03  0x03  0x03  0x03  0x03</code></pre><h4 id="Initialize-from-compressed-Plink-files"><a class="docs-heading-anchor" href="#Initialize-from-compressed-Plink-files">Initialize from compressed Plink files</a><a id="Initialize-from-compressed-Plink-files-1"></a><a class="docs-heading-anchor-permalink" href="#Initialize-from-compressed-Plink-files" title="Permalink"></a></h4><p>SnpArray can be initialized from Plink files in compressed formats: <code>gz</code>, <code>zlib</code>, <code>zz</code>, <code>xz</code>, <code>zst</code>, or <code>bz2</code>. For a complete list type</p><pre><code class="language-julia">SnpArrays.ALLOWED_FORMAT</code></pre><p>If you want to support a new compressed format, file an issue.</p><p>Let us first compress the mouse data in gz format. We see gz format takes less than 1/3 storage of original Plink files.</p><pre><code class="language-julia">compress_plink(SnpArrays.datadir(&quot;mouse&quot;), &quot;gz&quot;)
+readdir(glob&quot;mouse.*.gz&quot;, datapath)</code></pre><pre><code class="language-none">3-element Array{String,1}:
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.bed.gz&quot;
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.bim.gz&quot;
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.fam.gz&quot;</code></pre><p>To initialize SnpArray from gzipped Plink file, simply used the bed file with name ending with <code>.bed.gz</code>:</p><pre><code class="language-julia"># requires corresponding `.fam.gz` file
+SnpArray(SnpArrays.datadir(&quot;mouse.bed.gz&quot;))</code></pre><pre><code class="language-none">1940×10150 SnpArray:
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+ 0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
+    ⋮                             ⋮  ⋱           ⋮                    
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x01  0x01  0x01  0x01  0x01  0x01
+ 0x00  0x00  0x00  0x00  0x03  0x00     0x03  0x03  0x03  0x03  0x03  0x03</code></pre><p>or</p><pre><code class="language-julia"># does not require corresponding `.fam.gz` file
+SnpArray(SnpArrays.datadir(&quot;mouse.bed.gz&quot;), 1940)</code></pre><pre><code class="language-none">1940×10150 SnpArray:
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x02  0x02  0x02
+ 0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
+    ⋮                             ⋮  ⋱           ⋮                    
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x01  0x01  0x01  0x01  0x01  0x01
+ 0x00  0x00  0x00  0x00  0x03  0x00     0x03  0x03  0x03  0x03  0x03  0x03</code></pre><pre><code class="language-julia"># clean up
+rm(SnpArrays.datadir(&quot;mouse.bed.gz&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.fam.gz&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.bim.gz&quot;), force=true)</code></pre><h4 id="Initialize-and-create-bed-file"><a class="docs-heading-anchor" href="#Initialize-and-create-bed-file">Initialize and create bed file</a><a id="Initialize-and-create-bed-file-1"></a><a class="docs-heading-anchor-permalink" href="#Initialize-and-create-bed-file" title="Permalink"></a></h4><p>Initialize 5 rows and 3 columns with all (A1, A1) genotype (0x00) and memory-map to a bed file <code>tmp.bed</code></p><pre><code class="language-julia">tmpbf = SnpArray(&quot;tmp.bed&quot;, 5, 3)</code></pre><pre><code class="language-none">5×3 SnpArray:
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00</code></pre><p>Change entries</p><pre><code class="language-julia">tmpbf[1:2, 1:2] .= 0x03
+tmpbf</code></pre><pre><code class="language-none">5×3 SnpArray:
+ 0x03  0x03  0x00
+ 0x03  0x03  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00</code></pre><pre><code class="language-julia">fill!(tmpbf, 0x02)
+tmpbf</code></pre><pre><code class="language-none">5×3 SnpArray:
+ 0x02  0x02  0x02
+ 0x02  0x02  0x02
+ 0x02  0x02  0x02
+ 0x02  0x02  0x02
+ 0x02  0x02  0x02</code></pre><pre><code class="language-julia"># clean up
+rm(&quot;tmp.bed&quot;, force=true)</code></pre><p>Initialize 5 rows and 3 columns with undefined genotypes without memory-mapping to any file</p><pre><code class="language-julia">tmpbf = SnpArray(undef, 5, 3)</code></pre><pre><code class="language-none">5×3 SnpArray:
+ 0x02  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00</code></pre><p>Create a bed file corresponding to an existing SnpArray and memory-map it.</p><pre><code class="language-julia">tmpbf = SnpArray(&quot;tmp.bed&quot;, tmpbf)</code></pre><pre><code class="language-none">5×3 SnpArray:
+ 0x02  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00</code></pre><pre><code class="language-julia">tmpbf[1, 1] = 0x02
+tmpbf</code></pre><pre><code class="language-none">5×3 SnpArray:
+ 0x02  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00
+ 0x00  0x00  0x00</code></pre><pre><code class="language-julia"># clean up
+rm(&quot;tmp.bed&quot;, force=true)</code></pre><h3 id="convert-and-copyto!"><a class="docs-heading-anchor" href="#convert-and-copyto!"><code>convert</code> and <code>copyto!</code></a><a id="convert-and-copyto!-1"></a><a class="docs-heading-anchor-permalink" href="#convert-and-copyto!" title="Permalink"></a></h3><p>Most common usage of SnpArray is to convert genotypes to numeric values for statistical analysis. Conversion rule depends on genetic models (additive, dominant, or recessive), centering, scaling, or imputation.</p><h4 id="convert"><a class="docs-heading-anchor" href="#convert"><code>convert</code></a><a id="convert-1"></a><a class="docs-heading-anchor-permalink" href="#convert" title="Permalink"></a></h4><p><code>convert</code> function has 4 keyword arguments: <code>model</code>, <code>center</code>, <code>scale</code>, and <code>impute</code>.</p><p><code>model</code> keyword specifies the SNP model for conversion. By default <code>convert</code> function translates genotypes according to the <em>additive</em> SNP model, which essentially counts the number of <strong>A2</strong> allele (0, 1 or 2) per genotype. Other SNP models are <em>dominant</em> and <em>recessive</em>, both in terms of the <strong>A2</strong> allele.</p><table><tr><th style="text-align: center">Genotype</th><th style="text-align: center"><code>SnpArray</code></th><th style="text-align: center"><code>model=ADDITIVE_MODEL</code></th><th style="text-align: center"><code>model=DOMINANT_MODEL</code></th><th style="text-align: center"><code>model=RECESSIVE_MODEL</code></th></tr><tr><td style="text-align: center">A1,A1</td><td style="text-align: center">0x00</td><td style="text-align: center">0</td><td style="text-align: center">0</td><td style="text-align: center">0</td></tr><tr><td style="text-align: center">missing</td><td style="text-align: center">0x01</td><td style="text-align: center">NaN</td><td style="text-align: center">NaN</td><td style="text-align: center">NaN</td></tr><tr><td style="text-align: center">A1,A2</td><td style="text-align: center">0x02</td><td style="text-align: center">1</td><td style="text-align: center">1</td><td style="text-align: center">0</td></tr><tr><td style="text-align: center">A2,A2</td><td style="text-align: center">0x03</td><td style="text-align: center">2</td><td style="text-align: center">1</td><td style="text-align: center">1</td></tr></table><p><code>center=true</code> tells <code>convert</code> to center each column by its mean. Default is <code>false</code>.</p><p><code>scale=true</code> tells <code>convert</code> to scale each column by its standard deviation. Default is <code>false</code>.</p><p><code>impute=true</code> tells <code>convert</code> to impute missing genotypes (0x01) by column mean. Default is <code>false</code>.</p><p>Convert whole SnpArray to a Float64 matrix using defaults (<code>model=ADDITIVE_MODEL</code>, <code>center=false</code>, <code>scale=false</code>, <code>impute=false</code>)</p><pre><code class="language-julia">convert(Matrix{Float64}, mouse)</code></pre><pre><code class="language-none">1940×10150 Array{Float64,2}:
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  1.0  …    2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  1.0  1.0  1.0  1.0  1.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       1.0    1.0    1.0    1.0    1.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  1.0  …    2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  1.0       2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       1.0    1.0    1.0    1.0    1.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0  …    0.0    0.0    0.0    0.0    0.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  1.0       2.0    2.0    2.0    2.0    2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       0.0    0.0    0.0    0.0    0.0
+ ⋮                        ⋮              ⋱    ⋮                         
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  1.0  1.0  1.0  1.0  1.0  2.0  …    2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  1.0       2.0    2.0    2.0    2.0    2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  1.0       2.0    2.0    2.0    2.0    2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  1.0  …    2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0  2.0       2.0    2.0    2.0    2.0    2.0
+ 1.0  1.0  1.0  1.0  1.0  1.0  1.0  2.0     NaN    NaN    NaN    NaN    NaN
+ 0.0  0.0  0.0  0.0  2.0  0.0  2.0  0.0       2.0    2.0    2.0    2.0    2.0</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>When <code>convert</code> or <code>copyto!</code> a slice or subarray of SnpArray, using <code>view</code>, <code>@view</code> or <code>views</code> is necessary for both correctness and efficiency. Without view, it&#39;s simply converting the UInt8 coding in original bed file.</p></div></div><p>Convert a column to Float64 vector using defaults (<code>model=ADDITIVE_MODEL</code>, <code>center=false</code>, <code>scale=false</code>, <code>impute=false</code>).</p><pre><code class="language-julia"># convert(Vector{Float64}, view(mouse, :, 1)) # alternative syntax
+# @views convert(Vector{Float64}, mouse[:, 1]) # alternative syntax
+convert(Vector{Float64}, @view(mouse[:, 1]))</code></pre><pre><code class="language-none">1940-element Array{Float64,1}:
+ 1.0
+ 1.0
+ 2.0
+ 1.0
+ 2.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 2.0
+ 2.0
+ 1.0
+ 2.0
+ ⋮
+ 2.0
+ 2.0
+ 1.0
+ 1.0
+ 2.0
+ 1.0
+ 2.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 0.0</code></pre><p>Convert a subarray of SnpArray to Float64 matrix using defaults (<code>model=ADDITIVE_MODEL</code>, <code>center=false</code>, <code>scale=false</code>, <code>impute=false</code>).</p><pre><code class="language-julia">convert(Matrix{Float64}, @view(mouse[1:2:10, 1:2:10]))</code></pre><pre><code class="language-none">5×5 Array{Float64,2}:
+ 1.0  1.0  2.0  2.0  1.0
+ 2.0  2.0  2.0  2.0  2.0
+ 2.0  2.0  2.0  2.0  2.0
+ 1.0  1.0  2.0  2.0  1.0
+ 1.0  2.0  1.0  1.0  1.0</code></pre><p>Different SNP models (<code>ADDITIVE_MODEL</code> vs <code>DOMINANT_MODEL</code> vs <code>RECESSIVE_MODEL</code>)</p><pre><code class="language-julia">@views [convert(Vector{Float64}, mouse[:, 1], model=ADDITIVE_MODEL) convert(Vector{Float64}, mouse[:, 1], model=DOMINANT_MODEL) convert(Vector{Float64}, mouse[:, 1], model=RECESSIVE_MODEL)]</code></pre><pre><code class="language-none">1940×3 Array{Float64,2}:
+ 1.0  1.0  0.0
+ 1.0  1.0  0.0
+ 2.0  1.0  1.0
+ 1.0  1.0  0.0
+ 2.0  1.0  1.0
+ 1.0  1.0  0.0
+ 1.0  1.0  0.0
+ 1.0  1.0  0.0
+ 1.0  1.0  0.0
+ 2.0  1.0  1.0
+ 2.0  1.0  1.0
+ 1.0  1.0  0.0
+ 2.0  1.0  1.0
+ ⋮         
+ 2.0  1.0  1.0
+ 2.0  1.0  1.0
+ 1.0  1.0  0.0
+ 1.0  1.0  0.0
+ 2.0  1.0  1.0
+ 1.0  1.0  0.0
+ 2.0  1.0  1.0
+ 1.0  1.0  0.0
+ 1.0  1.0  0.0
+ 1.0  1.0  0.0
+ 1.0  1.0  0.0
+ 0.0  0.0  0.0</code></pre><p>Center and scale (last column) while <code>convert</code></p><pre><code class="language-julia">convert(Vector{Float64}, @view(mouse[:, end]), center=true, scale=true)</code></pre><pre><code class="language-none">1940-element Array{Float64,1}:
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+  -1.8819155626127624
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+  -1.8819155626127624
+  -4.2359771983402785
+   0.4721460731147541
+  -4.2359771983402785
+   ⋮
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+   0.4721460731147541
+ NaN
+   0.4721460731147541</code></pre><p>Center, scale, and impute (last column) while <code>convert</code></p><pre><code class="language-julia">convert(Vector{Float64}, @view(mouse[:, end]), center=true, scale=true, impute=true)</code></pre><pre><code class="language-none">1940-element Array{Float64,1}:
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+ -1.8819155626127624
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+ -1.8819155626127624
+ -4.2359771983402785
+  0.4721460731147541
+ -4.2359771983402785
+  ⋮
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.4721460731147541
+  0.0
+  0.4721460731147541</code></pre><h4 id="copyto!"><a class="docs-heading-anchor" href="#copyto!"><code>copyto!</code></a><a id="copyto!-1"></a><a class="docs-heading-anchor-permalink" href="#copyto!" title="Permalink"></a></h4><p><code>copyto!</code> is the in-place version of <code>convert</code>. It takes the same keyword arguments (<code>model</code>, <code>center</code>, <code>scale</code>, <code>impute</code>) as <code>convert</code>.</p><p>Copy a column to a Float64 vector using defaults (<code>model=:additive</code>, <code>center=false</code>, <code>scale=false</code>, <code>impute=false</code>).</p><pre><code class="language-julia">v = zeros(size(mouse, 1))
+copyto!(v, @view(mouse[:, 1]))</code></pre><pre><code class="language-none">1940-element Array{Float64,1}:
+ 1.0
+ 1.0
+ 2.0
+ 1.0
+ 2.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 2.0
+ 2.0
+ 1.0
+ 2.0
+ ⋮
+ 2.0
+ 2.0
+ 1.0
+ 1.0
+ 2.0
+ 1.0
+ 2.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 0.0</code></pre><pre><code class="language-julia">@btime(copyto!($v, $@view(mouse[:, 1])));</code></pre><pre><code class="language-none">  2.235 μs (0 allocations: 0 bytes)</code></pre><p>Copy columns using defaults</p><pre><code class="language-julia">v2 = zeros(size(mouse, 1), 2)
+copyto!(v2, @view(mouse[:, 1:2]))</code></pre><pre><code class="language-none">1940×2 Array{Float64,2}:
+ 1.0  1.0
+ 1.0  1.0
+ 2.0  2.0
+ 1.0  1.0
+ 2.0  2.0
+ 1.0  1.0
+ 1.0  1.0
+ 1.0  1.0
+ 1.0  1.0
+ 2.0  2.0
+ 2.0  2.0
+ 1.0  1.0
+ 2.0  2.0
+ ⋮    
+ 2.0  2.0
+ 2.0  2.0
+ 1.0  1.0
+ 1.0  1.0
+ 2.0  2.0
+ 1.0  1.0
+ 2.0  2.0
+ 1.0  1.0
+ 1.0  1.0
+ 1.0  1.0
+ 1.0  1.0
+ 0.0  0.0</code></pre><pre><code class="language-julia"># roughly double the cost of copying 1 column
+@btime(copyto!($v2, $@view(mouse[:, 1:2])));</code></pre><pre><code class="language-none">  4.919 μs (0 allocations: 0 bytes)</code></pre><p>Center and scale</p><pre><code class="language-julia">copyto!(v, @view(mouse[:, 1]), center=true, scale=true)</code></pre><pre><code class="language-none">1940-element Array{Float64,1}:
+ -0.16084075452851265
+ -0.16084075452851265
+  1.2624897581484626
+ -0.16084075452851265
+  1.2624897581484626
+ -0.16084075452851265
+ -0.16084075452851265
+ -0.16084075452851265
+ -0.16084075452851265
+  1.2624897581484626
+  1.2624897581484626
+ -0.16084075452851265
+  1.2624897581484626
+  ⋮
+  1.2624897581484626
+  1.2624897581484626
+ -0.16084075452851265
+ -0.16084075452851265
+  1.2624897581484626
+ -0.16084075452851265
+  1.2624897581484626
+ -0.16084075452851265
+ -0.16084075452851265
+ -0.16084075452851265
+ -0.16084075452851265
+ -1.584171267205488</code></pre><pre><code class="language-julia"># more cost becoz of extra pass for center, scale, and/or impute
+@btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));</code></pre><pre><code class="language-none">  4.859 μs (0 allocations: 0 bytes)</code></pre><p>Looping over all columns</p><pre><code class="language-julia">v = Vector{Float64}(undef, size(mouse, 1))
+function loop_test(v, s)
+    for j in 1:size(s, 2)
+        copyto!(v, @view(s[:, j]))
+    end
+end
+@btime(loop_test($v, $mouse))</code></pre><pre><code class="language-none">  33.304 ms (0 allocations: 0 bytes)</code></pre><p>Copy whole SnpArray</p><pre><code class="language-julia">M = similar(mouse, Float64)
+@btime(copyto!($M, $mouse));</code></pre><pre><code class="language-none">  33.720 ms (0 allocations: 0 bytes)</code></pre><h4 id="Impute-missing-genotypes-using-ADMIXTURE-estimates"><a class="docs-heading-anchor" href="#Impute-missing-genotypes-using-ADMIXTURE-estimates">Impute missing genotypes using ADMIXTURE estimates</a><a id="Impute-missing-genotypes-using-ADMIXTURE-estimates-1"></a><a class="docs-heading-anchor-permalink" href="#Impute-missing-genotypes-using-ADMIXTURE-estimates" title="Permalink"></a></h4><p><code>convert</code> and <code>copyto!</code> can perform more fine-tuned imputation using the ancestry estimates from the <a href="https://github.com/OpenMendel/ADMIXTURE.jl">ADMIXTURE</a> software.</p><p>Step 1: Calculate the ancestry estimate and allele frequencies using ADMIXTURE.jl. Here we assume <span>$K=3$</span> populations.</p><pre><code class="language-julia"># install ADMIXTURE package first 
+using ADMIXTURE
+if isfile(&quot;mouse.3.P&quot;) &amp;&amp; isfile(&quot;mouse.3.Q&quot;)
+    P = readdlm(&quot;mouse.3.P&quot;, &#39; &#39;, Float64) 
+    Q = readdlm(&quot;mouse.3.Q&quot;, &#39; &#39;, Float64)
+else
+    # run ADMIXTURE using 4 threads
+    P, Q = admixture(SnpArrays.datadir(&quot;mouse.bed&quot;), 3, j=4)
+end;</code></pre><pre><code class="language-none">****                   ADMIXTURE Version 1.3.0                  ****
+****                    Copyright 2008-2015                     ****
+****           David Alexander, Suyash Shringarpure,            ****
+****                John  Novembre, Ken Lange                   ****
+****                                                            ****
+****                 Please cite our paper!                     ****
+****   Information at www.genetics.ucla.edu/software/admixture  ****
+
+Parallel execution requested.  Will use 4 threads.
+Random seed: 43
+Point estimation method: Block relaxation algorithm
+Convergence acceleration algorithm: QuasiNewton, 3 secant conditions
+Point estimation will terminate when objective function delta &lt; 0.0001
+Estimation of standard errors disabled; will compute point estimates only.
+
+
+┌ Info: ADMIXTURE command:
+│ `/home/huazhou/.julia/artifacts/316b9c66aef8f67001d54aa86a244d1e769c1e1a/dist/admixture_linux-1.3.0/admixture /home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.bed 3 -j4`
+└ @ ADMIXTURE /home/huazhou/julia_dev/ADMIXTURE.jl/src/ADMIXTURE.jl:57
+┌ Info: Output directory: /home/huazhou/.julia/dev/SnpArrays.jl/docs
+└ @ ADMIXTURE /home/huazhou/julia_dev/ADMIXTURE.jl/src/ADMIXTURE.jl:58
+
+
+Size of G: 1940x10150
+Performing five EM steps to prime main algorithm
+1 (EM) 	Elapsed: 0.754	Loglikelihood: -2.27484e+07	(delta): 8.92872e+06
+2 (EM) 	Elapsed: 0.754	Loglikelihood: -2.21886e+07	(delta): 559814
+3 (EM) 	Elapsed: 0.753	Loglikelihood: -2.20025e+07	(delta): 186060
+4 (EM) 	Elapsed: 0.753	Loglikelihood: -2.1896e+07	(delta): 106495
+5 (EM) 	Elapsed: 0.755	Loglikelihood: -2.18274e+07	(delta): 68590.1
+Initial loglikelihood: -2.18274e+07
+Starting main algorithm
+1 (QN/Block) 	Elapsed: 3.222	Loglikelihood: -2.12515e+07	(delta): 575921
+2 (QN/Block) 	Elapsed: 3.194	Loglikelihood: -2.10686e+07	(delta): 182932
+3 (QN/Block) 	Elapsed: 3.295	Loglikelihood: -2.09068e+07	(delta): 161743
+4 (QN/Block) 	Elapsed: 3.353	Loglikelihood: -2.07604e+07	(delta): 146489
+5 (QN/Block) 	Elapsed: 3.293	Loglikelihood: -2.07231e+07	(delta): 37298.4
+6 (QN/Block) 	Elapsed: 3.299	Loglikelihood: -2.07134e+07	(delta): 9627.91
+7 (QN/Block) 	Elapsed: 3.336	Loglikelihood: -2.07086e+07	(delta): 4866.55
+8 (QN/Block) 	Elapsed: 3.288	Loglikelihood: -2.07075e+07	(delta): 1084.44
+9 (QN/Block) 	Elapsed: 3.293	Loglikelihood: -2.07073e+07	(delta): 211.684
+10 (QN/Block) 	Elapsed: 3.291	Loglikelihood: -2.07072e+07	(delta): 41.0546
+11 (QN/Block) 	Elapsed: 3.289	Loglikelihood: -2.07072e+07	(delta): 7.42558
+12 (QN/Block) 	Elapsed: 3.301	Loglikelihood: -2.07072e+07	(delta): 1.90748
+13 (QN/Block) 	Elapsed: 3.293	Loglikelihood: -2.07072e+07	(delta): 0.390135
+14 (QN/Block) 	Elapsed: 3.3	Loglikelihood: -2.07072e+07	(delta): 0.098405
+15 (QN/Block) 	Elapsed: 3.303	Loglikelihood: -2.07072e+07	(delta): 0.0219686
+16 (QN/Block) 	Elapsed: 3.289	Loglikelihood: -2.07072e+07	(delta): 0.00373476
+17 (QN/Block) 	Elapsed: 3.294	Loglikelihood: -2.07072e+07	(delta): 0.000527754
+18 (QN/Block) 	Elapsed: 3.294	Loglikelihood: -2.07072e+07	(delta): 1.77249e-05
+Summary: 
+Converged in 18 iterations (63.882 sec)
+Loglikelihood: -20707210.979052
+Fst divergences between estimated populations: 
+	Pop0	Pop1	
+Pop0	
+Pop1	0.141	
+Pop2	0.120	0.128	
+Writing output files.</code></pre><p><strong>Step 2</strong>: Impute using ancestry estimates <code>P</code> and <code>Q</code>. Note <code>copyto!</code> and <code>convert</code> assumes <code>P</code> has dimension <code>K x S</code> and <code>Q</code> has dimension <code>K x N</code> where <code>K</code> is number of populations, <code>S</code> is number of SNPs, and <code>N</code> is number of individuals. So we need to transpose the output of <code>admixture</code>.</p><pre><code class="language-julia">Pt = P |&gt; transpose |&gt; Matrix
+Qt = Q |&gt; transpose |&gt; Matrix
+convert(Matrix{Float64}, mouse, Pt, Qt)</code></pre><pre><code class="language-none">1940×10150 Array{Float64,2}:
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  …  2.0      2.0      2.0      2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0     2.0      2.0      2.0      2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0     2.0      2.0      2.0      2.0
+ 1.0  1.0  1.0  1.0  1.0  1.0  1.0     2.0      2.0      2.0      2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0     1.0      1.0      1.0      1.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  …  2.0      2.0      2.0      2.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0     2.0      2.0      2.0      2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0     2.0      2.0      2.0      2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0     2.0      2.0      2.0      2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0     1.0      1.0      1.0      1.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0  …  0.0      0.0      0.0      0.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0     2.0      2.0      2.0      2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0     0.0      0.0      0.0      0.0
+ ⋮                        ⋮         ⋱                             
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0     2.0      2.0      2.0      2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0     2.0      2.0      2.0      2.0
+ 1.0  1.0  1.0  1.0  1.0  1.0  1.0  …  2.0      2.0      2.0      2.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0     2.0      2.0      2.0      2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0     2.0      2.0      2.0      2.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0     2.0      2.0      2.0      2.0
+ 2.0  2.0  2.0  2.0  2.0  2.0  2.0     2.0      2.0      2.0      2.0
+ 1.0  1.0  1.0  1.0  2.0  1.0  2.0  …  2.0      2.0      2.0      2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0     2.0      2.0      2.0      2.0
+ 1.0  1.0  2.0  1.0  1.0  1.0  1.0     2.0      2.0      2.0      2.0
+ 1.0  1.0  1.0  1.0  1.0  1.0  1.0     1.89365  1.89217  1.89207  1.89207
+ 0.0  0.0  0.0  0.0  2.0  0.0  2.0     2.0      2.0      2.0      2.0</code></pre><pre><code class="language-julia"># takes slightly longer because of calculation involving P and Q
+M = similar(mouse, Float64)
+@btime(copyto!($M, $mouse, $Pt, $Qt));</code></pre><pre><code class="language-none">  91.494 ms (0 allocations: 0 bytes)</code></pre><h3 id="Summaries"><a class="docs-heading-anchor" href="#Summaries">Summaries</a><a id="Summaries-1"></a><a class="docs-heading-anchor-permalink" href="#Summaries" title="Permalink"></a></h3><h4 id="Counts"><a class="docs-heading-anchor" href="#Counts">Counts</a><a id="Counts-1"></a><a class="docs-heading-anchor-permalink" href="#Counts" title="Permalink"></a></h4><p>Counts of each the four possible values for each column are returned by <code>counts</code>.`</p><pre><code class="language-julia">counts(mouse, dims=1)</code></pre><pre><code class="language-none">4×10150 Array{Int64,2}:
+  358   359  252   358    33   359  …    56    56    56    56    56    56
+    2     0    4     3     4     1      173   173   162   173   174   175
+ 1003  1004  888  1004   442  1004      242   242   242   242   242   242
+  577   577  796   575  1461   576     1469  1469  1480  1469  1468  1467</code></pre><p>Column 2 has no missing values (code <code>0x01</code>, the second row in the column-counts table). In that SNP position for this sample, 359 indivduals are homozygous allele 1 (<code>G</code> according to the <code>.bim</code> file), 1004 are heterozygous, and 577 are homozygous allele 2 (<code>A</code>).</p><p>The counts by column and by row are cached in the <code>SnpArray</code> object. Accesses after the first are extremely fast.</p><pre><code class="language-julia">@btime(counts($mouse, dims=1));</code></pre><pre><code class="language-none">  3.495 ns (0 allocations: 0 bytes)</code></pre><h4 id="Minor-allele-frequencies"><a class="docs-heading-anchor" href="#Minor-allele-frequencies">Minor allele frequencies</a><a id="Minor-allele-frequencies-1"></a><a class="docs-heading-anchor-permalink" href="#Minor-allele-frequencies" title="Permalink"></a></h4><p>Minor allele frequencies (MAF) for each SNP.</p><pre><code class="language-julia">maf(mouse)</code></pre><pre><code class="language-none">10150-element Array{Float64,1}:
+ 0.4434984520123839
+ 0.4438144329896907
+ 0.359504132231405
+ 0.4439855446566856
+ 0.13119834710743805
+ 0.44404332129963897
+ 0.1412706611570248
+ 0.30299123259412064
+ 0.4445018069179143
+ 0.44424367578729995
+ 0.43427835051546393
+ 0.14075413223140498
+ 0.304639175257732
+ ⋮
+ 0.0527624309392265
+ 0.052980132450331174
+ 0.08079096045197742
+ 0.08253250423968339
+ 0.08253250423968339
+ 0.10022650056625138
+ 0.10016977928692694
+ 0.10016977928692694
+ 0.09955005624296964
+ 0.10016977928692694
+ 0.10022650056625138
+ 0.10028328611898019</code></pre><p>Minor allele (<code>false</code> means A1 is the minor allele; <code>true</code> means A2 is the minor allele) for each SNP.</p><pre><code class="language-julia">minorallele(mouse)</code></pre><pre><code class="language-none">10150-element BitArray{1}:
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ ⋮
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0</code></pre><h4 id="mean-and-var"><a class="docs-heading-anchor" href="#mean-and-var"><code>mean</code> and <code>var</code></a><a id="mean-and-var-1"></a><a class="docs-heading-anchor-permalink" href="#mean-and-var" title="Permalink"></a></h4><p>The package provides methods for the generics <code>mean</code> and <code>var</code> from the <code>Statistics</code> package.</p><pre><code class="language-julia">mean(mouse, dims=1)</code></pre><pre><code class="language-none">1×10150 Array{Float64,2}:
+ 1.113  1.11237  1.28099  1.11203  …  1.8009  1.79966  1.79955  1.79943</code></pre><pre><code class="language-julia">mean(mouse, dims=1, model=DOMINANT_MODEL)</code></pre><pre><code class="language-none">1×10150 Array{Float64,2}:
+ 0.815273  0.814948  0.869835  0.815178  …  0.968308  0.96829  0.968272</code></pre><pre><code class="language-julia">var(mouse, dims=1)</code></pre><pre><code class="language-none">1×10150 Array{Float64,2}:
+ 0.469929  0.470089  0.462605  0.469365  …  0.223714  0.223818  0.223923</code></pre><p>These methods make use of the cached column or row counts and thus are very fast</p><pre><code class="language-julia">@btime(mean($mouse, dims=1));</code></pre><pre><code class="language-none">  9.919 μs (2 allocations: 79.39 KiB)</code></pre><p>The column-wise or row-wise standard deviations are returned by <code>std</code>.</p><pre><code class="language-julia">std(mouse, dims=2)</code></pre><pre><code class="language-none">1940×1 Array{Float64,2}:
+ 0.6504997290784408
+ 0.6379008244533891
+ 0.6558172726141286
+ 0.6532675479248437
+ 0.6744432174014563
+ 0.6519092298111158
+ 0.6779881845456428
+ 0.6955814098050999
+ 0.6437566832989493
+ 0.6505283141088536
+ 0.665444994623426
+ 0.659392039592328
+ 0.6641674726999468
+ ⋮
+ 0.6599158250006595
+ 0.688387450736178
+ 0.6664063015924304
+ 0.6613451651895259
+ 0.6659810347614777
+ 0.6274577846909379
+ 0.6823658517777204
+ 0.6695299551061924
+ 0.710756592739754
+ 0.6387913736114869
+ 0.6736492722732016
+ 0.688855476425891</code></pre><h4 id="Missing-rate"><a class="docs-heading-anchor" href="#Missing-rate">Missing rate</a><a id="Missing-rate-1"></a><a class="docs-heading-anchor-permalink" href="#Missing-rate" title="Permalink"></a></h4><p>Proportion of missing genotypes</p><pre><code class="language-julia">missingrate(mouse, 1)</code></pre><pre><code class="language-none">10150-element Array{Float64,1}:
+ 0.0010309278350515464
+ 0.0
+ 0.002061855670103093
+ 0.0015463917525773195
+ 0.002061855670103093
+ 0.0005154639175257732
+ 0.002061855670103093
+ 0.0005154639175257732
+ 0.0015463917525773195
+ 0.0015463917525773195
+ 0.0
+ 0.002061855670103093
+ 0.0
+ ⋮
+ 0.06701030927835051
+ 0.06597938144329897
+ 0.08762886597938144
+ 0.08814432989690722
+ 0.08814432989690722
+ 0.08969072164948454
+ 0.08917525773195877
+ 0.08917525773195877
+ 0.08350515463917525
+ 0.08917525773195877
+ 0.08969072164948454
+ 0.09020618556701031</code></pre><pre><code class="language-julia">missingrate(mouse, 2)</code></pre><pre><code class="language-none">1940-element Array{Float64,1}:
+ 0.00019704433497536947
+ 0.0
+ 0.018423645320197045
+ 0.0007881773399014779
+ 0.0
+ 0.004236453201970443
+ 0.0051231527093596055
+ 0.00039408866995073894
+ 0.005517241379310344
+ 0.0016748768472906405
+ 0.0
+ 9.852216748768474e-5
+ 0.0004926108374384236
+ ⋮
+ 0.000689655172413793
+ 0.004729064039408867
+ 0.0004926108374384236
+ 0.001083743842364532
+ 0.00019704433497536947
+ 0.0025615763546798028
+ 0.0038423645320197044
+ 0.001379310344827586
+ 0.0064039408866995075
+ 0.002857142857142857
+ 0.0011822660098522167
+ 0.00029556650246305416</code></pre><h4 id="Location-of-the-missing-values"><a class="docs-heading-anchor" href="#Location-of-the-missing-values">Location of the missing values</a><a id="Location-of-the-missing-values-1"></a><a class="docs-heading-anchor-permalink" href="#Location-of-the-missing-values" title="Permalink"></a></h4><p>The positions of the missing data are evaluated by</p><pre><code class="language-julia">mp = missingpos(mouse)</code></pre><pre><code class="language-none">1940×10150 SparseArrays.SparseMatrixCSC{Bool,Int32} with 33922 stored entries:
+  [702 ,     1]  =  1
+  [949 ,     1]  =  1
+  [914 ,     3]  =  1
+  [949 ,     3]  =  1
+  [1604,     3]  =  1
+  [1891,     3]  =  1
+  [81  ,     4]  =  1
+  [990 ,     4]  =  1
+  [1882,     4]  =  1
+  [81  ,     5]  =  1
+  [676 ,     5]  =  1
+  [990 ,     5]  =  1
+  ⋮
+  [1789, 10150]  =  1
+  [1791, 10150]  =  1
+  [1795, 10150]  =  1
+  [1846, 10150]  =  1
+  [1848, 10150]  =  1
+  [1851, 10150]  =  1
+  [1853, 10150]  =  1
+  [1860, 10150]  =  1
+  [1873, 10150]  =  1
+  [1886, 10150]  =  1
+  [1894, 10150]  =  1
+  [1897, 10150]  =  1
+  [1939, 10150]  =  1</code></pre><pre><code class="language-julia">@btime(missingpos($mouse));</code></pre><pre><code class="language-none">  22.649 ms (19272 allocations: 1.80 MiB)</code></pre><p>So, for example, the number of missing data values in each column can be evaluated as</p><pre><code class="language-julia">sum(mp, dims=1)</code></pre><pre><code class="language-none">1×10150 Array{Int64,2}:
+ 2  0  4  3  4  1  4  1  3  3  0  4  0  …  174  173  173  162  173  174  175</code></pre><p>although it is faster, but somewhat more obscure, to use</p><pre><code class="language-julia">view(counts(mouse, dims=1), 2:2, :)</code></pre><pre><code class="language-none">1×10150 view(::Array{Int64,2}, 2:2, :) with eltype Int64:
+ 2  0  4  3  4  1  4  1  3  3  0  4  0  …  174  173  173  162  173  174  175</code></pre><h3 id="Genetic-relationship-matrix-(GRM)"><a class="docs-heading-anchor" href="#Genetic-relationship-matrix-(GRM)">Genetic relationship matrix (GRM)</a><a id="Genetic-relationship-matrix-(GRM)-1"></a><a class="docs-heading-anchor-permalink" href="#Genetic-relationship-matrix-(GRM)" title="Permalink"></a></h3><h4 id="Homogenous-population"><a class="docs-heading-anchor" href="#Homogenous-population">Homogenous population</a><a id="Homogenous-population-1"></a><a class="docs-heading-anchor-permalink" href="#Homogenous-population" title="Permalink"></a></h4><p>For homogenous population, <code>grm</code> function computes the empirical kinship matrix using either the classical genetic relationship matrix, <code>grm(A, model=:GRM)</code>, or the method of moment method, <code>grm(A, model=:MoM)</code>, or the robust method, <code>grm(A, model=:Robust)</code>. See the section <em>Kinship Comparison</em> of the <a href="http://hua-zhou.github.io/media/pdf/Zhou19OpenMendel.pdf">manuscript</a> for the formulae and references for these methods. </p><p>Classical genetic relation matrix</p><pre><code class="language-julia"># grm(mouse, method=:MoM)
+# grm(mouse, method=:Robust)
+g = grm(mouse, method=:GRM)</code></pre><pre><code class="language-none">1940×1940 Array{Float64,2}:
+  0.478301    -0.0331304    0.0135612    …  -0.0347737   -0.0129443
+ -0.0331304    0.422771    -0.0389227        0.0457987    0.00556832
+  0.0135612   -0.0389227    0.509248        -0.0356689   -0.0608705
+  0.0198205    0.00728645  -0.00935362      -0.0302404   -0.0102152
+  0.056747    -0.0163418   -0.00495283      -0.0413347   -0.0415659
+ -0.0165628   -0.0191127   -0.0112181    …   0.0177118   -0.0193087
+  0.123771    -0.0404167    0.00442739       0.00880649  -0.0437565
+ -0.0628362    0.172552    -0.0728312        0.0640027   -0.0281429
+  0.0605018   -0.0260505    0.00398852      -0.00277754  -0.0607773
+  0.108886    -0.0204594   -0.00767711      -0.0210501    0.00343526
+ -0.0142307    0.00270989  -0.0235504    …  -0.0223563   -0.028408
+ -0.0306022    0.197743    -0.00244269       0.0213998   -0.0478472
+ -0.0131463   -0.0226707    0.0223522       -0.037288     0.0493662
+  ⋮                                      ⋱               
+  0.0176725   -0.0165609    0.0378308        0.0238751   -0.0420143
+  0.0024949   -0.0411137    0.0154847       -0.0380656   -0.0650806
+  0.0952286    0.00894298  -0.0163446    …  -0.0202633   -0.0219594
+ -0.0309488   -0.0228342   -0.0478253       -0.014896     0.261623
+ -0.004804    -0.0375168   -0.0211418       -0.0172572    0.0359166
+  0.0076296    0.0481887   -0.0328968        0.0920425   -0.0292548
+  0.070045    -0.0302138    0.000647283      0.00892069  -0.00632566
+  0.0378132   -6.59565e-5   0.00888932   …   0.00230815  -0.0291622
+ -0.00132837   0.00223654   0.0495928       -0.00936248   0.0299075
+  0.0640864   -0.0241218    0.00602283       0.00403413   0.00689551
+ -0.0347737    0.0457987   -0.0356689        0.509228    -0.035215
+ -0.0129443    0.00556832  -0.0608705       -0.035215     0.552712</code></pre><pre><code class="language-julia">@btime(grm($mouse, method=:GRM));</code></pre><pre><code class="language-none">  456.543 ms (15 allocations: 28.95 MiB)</code></pre><p>Using Float32 (single precision) potentially saves memory usage and computation time.</p><pre><code class="language-julia">grm(mouse, method=:GRM, t=Float32)</code></pre><pre><code class="language-none">1940×1940 Array{Float32,2}:
+  0.478301    -0.0331304    0.0135612    …  -0.0347737   -0.0129443
+ -0.0331304    0.422772    -0.0389227        0.0457987    0.00556832
+  0.0135612   -0.0389227    0.509248        -0.0356689   -0.0608705
+  0.0198205    0.00728645  -0.00935361      -0.0302404   -0.0102152
+  0.056747    -0.0163418   -0.00495283      -0.0413347   -0.0415659
+ -0.0165628   -0.0191127   -0.0112181    …   0.0177118   -0.0193087
+  0.123771    -0.0404167    0.0044274        0.0088065   -0.0437565
+ -0.0628362    0.172552    -0.0728312        0.0640027   -0.0281429
+  0.0605018   -0.0260505    0.00398852      -0.00277753  -0.0607773
+  0.108886    -0.0204594   -0.00767711      -0.0210501    0.00343526
+ -0.0142307    0.00270989  -0.0235504    …  -0.0223563   -0.028408
+ -0.0306022    0.197743    -0.00244269       0.0213998   -0.0478472
+ -0.0131463   -0.0226707    0.0223522       -0.037288     0.0493662
+  ⋮                                      ⋱               
+  0.0176725   -0.016561     0.0378308        0.0238751   -0.0420143
+  0.0024949   -0.0411137    0.0154847       -0.0380656   -0.0650806
+  0.0952286    0.00894298  -0.0163446    …  -0.0202633   -0.0219594
+ -0.0309488   -0.0228342   -0.0478253       -0.014896     0.261623
+ -0.00480403  -0.0375168   -0.0211418       -0.0172572    0.0359166
+  0.0076296    0.0481887   -0.0328968        0.0920425   -0.0292547
+  0.070045    -0.0302138    0.000647274      0.00892069  -0.00632567
+  0.0378132   -6.59605f-5   0.00888932   …   0.00230816  -0.0291622
+ -0.00132836   0.00223653   0.0495928       -0.00936246   0.0299075
+  0.0640864   -0.0241219    0.00602283       0.00403414   0.0068955
+ -0.0347737    0.0457987   -0.0356689        0.509228    -0.035215
+ -0.0129443    0.00556832  -0.0608705       -0.035215     0.552712</code></pre><pre><code class="language-julia">@btime(grm($mouse, method=:GRM, t=Float32));</code></pre><pre><code class="language-none">  168.607 ms (16 allocations: 14.60 MiB)</code></pre><p>By default, <code>grm</code> exlcudes SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument <code>minmaf</code>.</p><pre><code class="language-julia"># compute GRM excluding SNPs with MAF≤0.05 
+grm(mouse, minmaf=0.05)</code></pre><pre><code class="language-none">1940×1940 Array{Float64,2}:
+  0.478556    -0.0331783    0.013541     …  -0.0348225   -0.0129761
+ -0.0331783    0.422993    -0.0389741        0.0457975    0.00554753
+  0.013541    -0.0389741    0.50952         -0.0357183   -0.0609305
+  0.0203209    0.00777944  -0.00887047      -0.0297696   -0.00972836
+  0.0567523   -0.0163798   -0.00498406      -0.0413874   -0.0416146
+ -0.0166009   -0.0191523   -0.0112531    …   0.0176939   -0.0193442
+  0.123816    -0.0404689    0.00440171       0.0087834   -0.0438065
+ -0.0629017    0.172626    -0.0729026        0.0640123   -0.0281836
+  0.0605093   -0.0260942    0.00396257      -0.00280748  -0.0608373
+  0.108922    -0.0204998   -0.00770996      -0.0210909    0.00341321
+ -0.0142674    0.00268319  -0.0235927    …  -0.0223978   -0.0284489
+ -0.0306486    0.197832    -0.00247243       0.0213842   -0.0478996
+ -0.0131824   -0.0227124    0.0223371       -0.0373384    0.0493713
+  ⋮                                      ⋱               
+  0.0176546   -0.016599     0.0378249        0.0238609   -0.0420633
+  0.00246808  -0.0411663    0.0154656       -0.0381165   -0.0651432
+  0.0952566    0.00891997  -0.0163826    …  -0.0203036   -0.0219965
+ -0.0309912   -0.0228718   -0.0478777       -0.0149289    0.261754
+ -0.00483514  -0.0375673   -0.0211827       -0.0172957    0.0359138
+  0.00770862   0.0482917   -0.0328417        0.0921714   -0.0292961
+  0.0700582   -0.03026      0.000619365      0.00889767  -0.00635348
+  0.0378313   -7.02155e-5   0.00889036   …   0.0023053   -0.0291795
+ -0.00133338   0.00223364   0.0496179       -0.00937223   0.0299252
+  0.0641201   -0.0241403    0.00602217       0.0040323    0.00689958
+ -0.0348225    0.0457975   -0.0357183        0.509501    -0.0352599
+ -0.0129761    0.00554753  -0.0609305       -0.0352599    0.553015</code></pre><p>To specify specific SNPs for calculating empirical kinship, use the <code>cinds</code> keyword (default is <code>nothing</code>). When <code>cinds</code> is specified, <code>minmaf</code> is ignored.</p><pre><code class="language-julia"># GRM using every other SNP
+grm(mouse, cinds=1:2:size(mouse, 2))</code></pre><pre><code class="language-none">1940×1940 Array{Float64,2}:
+  0.477       -0.0307774     0.0118026   …  -0.0320301    -0.0125113
+ -0.0307774    0.425085     -0.0367459       0.0480442     0.00519065
+  0.0118026   -0.0367459     0.505038       -0.0385129    -0.0631557
+  0.0166017    0.00614789   -0.00919695     -0.0399744    -0.0104884
+  0.05724     -0.0122148    -0.00543377     -0.0395663    -0.0372998
+ -0.0193129   -0.0224378    -0.009277    …   0.0153785    -0.0220184
+  0.12194     -0.0410682     0.00274307      0.00796748   -0.0441578
+ -0.0624031    0.173985     -0.0724784       0.0663191    -0.0294243
+  0.0627626   -0.0288615     0.00265615     -0.00449877   -0.0579702
+  0.110878    -0.0232715    -0.00881604     -0.021272      0.00169016
+ -0.00800735  -0.00149824   -0.019791    …  -0.024124     -0.0289397
+ -0.0272944    0.19894      -0.00534771      0.0209384    -0.0511051
+ -0.011388    -0.0281003     0.0273853      -0.0360047     0.0459359
+  ⋮                                      ⋱                
+  0.0169431   -0.0136989     0.0340794       0.0272811    -0.041189
+  0.00201325  -0.0426611     0.0124353      -0.0387982    -0.0656181
+  0.097587     0.0058123    -0.0160698   …  -0.021457     -0.023226
+ -0.0342014   -0.0211246    -0.0490112      -0.0129575     0.256552
+ -0.00324255  -0.0423482    -0.0192699      -0.0149015     0.0339388
+  0.00575353   0.0464237    -0.0294694       0.0924759    -0.0275451
+  0.0748725   -0.0258461    -0.00141068      0.0115232    -0.00486589
+  0.0386555    0.000612169   0.00959997  …  -0.000357284  -0.0334687
+ -0.00343056   0.0120673     0.0455375      -0.0103798     0.0336959
+  0.0656909   -0.0193469     0.00600815      0.00188545    0.00726181
+ -0.0320301    0.0480442    -0.0385129       0.513285     -0.0317963
+ -0.0125113    0.00519065   -0.0631557      -0.0317963     0.54471</code></pre><h4 id="Inhomogenous/admixed-populations"><a class="docs-heading-anchor" href="#Inhomogenous/admixed-populations">Inhomogenous/admixed populations</a><a id="Inhomogenous/admixed-populations-1"></a><a class="docs-heading-anchor-permalink" href="#Inhomogenous/admixed-populations" title="Permalink"></a></h4><p>For inhomogenous/admixed population, we recommend first estimate the ancestry and pupulation allele frequencies using the ADMIXTURE software. See <a href="https://github.com/OpenMendel/ADMIXTURE.jl">ADMIXTURE.jl</a> for usage. Then compute the kinship coefficients using the <code>P</code> (allele frequencies) and <code>Q</code> (ancestry fractions) matrix from the output of ADMIXTURE. This is essentially what the <a href="http://faculty.washington.edu/tathornt/software/REAP">REAP software</a> does, except our implementation runs much faster than REAP (&gt;50 fold speedup). </p><pre><code class="language-julia"># first read in the P and Q matrix output from ADMIXTURE and tranpose them
+Pt = readdlm(&quot;mouse.3.P&quot;, &#39; &#39;, Float64) |&gt; transpose |&gt; Matrix
+Qt = readdlm(&quot;mouse.3.Q&quot;, &#39; &#39;, Float64) |&gt; transpose |&gt; Matrix;</code></pre><pre><code class="language-julia">SnpArrays.grm_admixture(mouse, Pt, Qt)</code></pre><pre><code class="language-none">convert genotype: 0.17 seconds
+Φ = GG&#39;: 0.35 seconds
+convert G to {0,1} matrix: 0.01 seconds
+S = GG&#39;: 0.12 seconds
+
+
+
+
+
+1940×1940 Array{Float64,2}:
+  0.459157     -0.0156932    -0.00323859  …  -0.0241031     0.0122942
+ -0.0156932     0.382541     -0.00891406      0.00213633    0.0256827
+ -0.00323859   -0.00891406    0.488814       -0.0171977    -0.046833
+  0.00309653    0.0202298    -0.0243852      -0.0176487     0.000560896
+  0.0332112     0.00312467   -0.0272922      -0.0327539    -0.0122725
+ -0.0358109    -0.00853754   -0.0271514   …   0.0243008    -0.00138403
+  0.121113     -0.0392918     0.00165843      0.0108529    -0.0377002
+ -0.0449198     0.10156      -0.0339267       0.0239007    -0.0152297
+  0.0448066    -0.00136634   -0.0145567       0.00912358   -0.0448302
+  0.0907813     0.0141714    -0.0255689      -0.0029764     0.00990252
+  0.00337646    0.0022767    -0.00875798  …  -0.0258833    -0.0459812
+ -0.0177262     0.145082      0.030058       -0.0133903    -0.0327256
+  0.000957255  -0.00906896    0.029328       -0.0270566     0.0232713
+  ⋮                                       ⋱                
+ -0.00488405    0.000742107   0.0151453       0.0414035    -0.0193764
+ -0.0206988    -0.0165347    -0.0109314      -0.0255689    -0.0508723
+  0.0604747     0.0196284    -0.0426789   …  -0.0174935     0.027048
+ -0.00510927   -0.00671173   -0.0330136      -0.0063972     0.21654
+  0.0203133    -0.0184515    -0.0104571      -0.000598233  -0.020399
+  0.0143139     0.012726     -0.0201427       0.0734971    -0.0175891
+  0.0431031    -0.0226697    -0.0277297       0.0145732     0.0375869
+  0.00723518    0.010699     -0.0187391   …   0.00859219    0.00929042
+ -0.0282601     0.0197691     0.0164642       0.0038118     0.048468
+  0.0376865    -0.0080739    -0.0201107       0.0180008     0.0385872
+ -0.0241031     0.00213633   -0.0171977       0.501371     -0.0266087
+  0.0122942     0.0256827    -0.046833       -0.0266087     0.511511</code></pre><pre><code class="language-julia"># clean up
+rm(&quot;mouse.3.P&quot;, force = true)
+rm(&quot;mouse.3.Q&quot;, force = true)</code></pre><h3 id="Filtering"><a class="docs-heading-anchor" href="#Filtering">Filtering</a><a id="Filtering-1"></a><a class="docs-heading-anchor-permalink" href="#Filtering" title="Permalink"></a></h3><p>Before GWAS, we often need to filter SNPs and/or samples according to genotyping success rates, minor allele frequencies, and Hardy-Weinberg Equilibrium test. This can be achieved by the <code>filter</code> function.</p><article class="docstring"><header><a class="docstring-binding" id="SnpArrays.filter" href="#SnpArrays.filter"><code>SnpArrays.filter</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">SnpArrays.filter(s)</code></pre><p>Filter a SnpArray according to genotyping success rate, minor allele frequencies,  and/or Hardy-Weinberg test.</p><p><strong>Input</strong></p><ul><li><code>s</code>: a SnpArray or Plink file name without the bim, fam, bed suffix.</li></ul><p><strong>Keyword argument</strong></p><ul><li><code>min_success_rate_per_row</code>: Threshold for SNP genotyping success rate. Default 0.98. </li><li><code>min_success_rate_per_col</code>: Threshold for person genotyping success rate. Default 0.98. </li><li><code>min_maf</code>: Minimum minor allele frequency. Default 0.01.</li><li><code>min_hwe_pval</code>: Minimum p-value for Hardy-Weinberg test. Default 0 (not filter HWE).</li><li><code>maxiters</code>: Maximum number of filtering iterations. Default is 5.</li><li><code>verbose</code>: Show progress.</li></ul><p><strong>Output</strong></p><ul><li><code>rmask</code>: BitVector indicating rows after filtering.</li><li><code>cmask</code>: BitVector indicating columns after filtering.</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/OpenMendel/SnpArrays.jl/blob/b1fdcaccdc0642111af744bec30efa552cc5659e/src/filter.jl#L1-L21">source</a></section><section><div><pre><code class="language-none">SnpArrays.filter(src, rowinds, colinds; des = src * &quot;.filtered&quot;)</code></pre><p>Filter <code>src</code> Plink files according to row indices <code>rowinds</code> and column indices  <code>colinds</code> and write to a new set of Plink files <code>des</code>.</p><p><strong>Input</strong></p><ul><li><code>src</code>: source Plink file name without suffix &quot;.bed&quot;, &quot;.fam&quot; or &quot;.bim&quot;.</li><li><code>rowinds</code>: row indices.</li><li><code>colinds</code>: column indices.</li></ul><p><strong>Keyword arguments</strong></p><ul><li><code>des</code>: output Plink file name; default is <code>src * &quot;.filtered&quot;</code>.</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/OpenMendel/SnpArrays.jl/blob/b1fdcaccdc0642111af744bec30efa552cc5659e/src/filter.jl#L102-L115">source</a></section><section><div><pre><code class="language-none">SnpArrays.filter(srcbedfile, srcbimfile, srcfamfile, rowinds, colinds; des = src * &quot;.filtered&quot;)</code></pre><p>Filter Plink files  with .gz format or differently named bim and bed files according to row indices  <code>rowinds</code> and column indices <code>colinds</code> and write to a new set of Plink files <code>des</code>.</p><p><strong>Input</strong></p><ul><li><code>srcbedfile</code>: bed file name with suffix such as .bed or .bed.gz.</li><li><code>srcbimfile</code>: bed file name with suffix such as .bim or .bim.gz.</li><li><code>srcfamfile</code>: bed file name with suffix such as .fam or .fam.gz.</li><li><code>rowinds</code>: row indices.</li><li><code>colinds</code>: column indices.</li></ul><p><strong>Keyword arguments</strong></p><ul><li><code>des</code>: output Plink file name; default is <code>src * &quot;.filtered&quot;</code>.</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/OpenMendel/SnpArrays.jl/blob/b1fdcaccdc0642111af744bec30efa552cc5659e/src/filter.jl#L296-L311">source</a></section></article><p>By default, it outputs row and column index vectors such that sample-wise and SNP-wise genotyping success rate are at least 0.98 and minor allele frequencies are at least 0.01. User can opt to filter according to Hardy-Weinberg test by setting the minumum p-value <code>min_hwe_pval</code>.</p><pre><code class="language-julia">rowmask, colmask =  SnpArrays.filter(mouse)</code></pre><pre><code class="language-none">(Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1  …  1, 1, 1, 1, 1, 1, 1, 1, 1, 1], Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1  …  0, 0, 0, 0, 0, 0, 0, 0, 0, 0])</code></pre><pre><code class="language-julia">count(rowmask), count(colmask)</code></pre><pre><code class="language-none">(1931, 10072)</code></pre><pre><code class="language-julia">@btime(SnpArrays.filter($mouse, min_success_rate_per_row=0.999, min_success_rate_per_col=0.999));</code></pre><pre><code class="language-none">  81.107 ms (11459 allocations: 171.28 MiB)</code></pre><p>One may use the <code>rowmask</code> and <code>colmask</code> to filter and save filtering result as Plink files.</p><pre><code class="language-julia">SnpArrays.filter(SnpArrays.datadir(&quot;mouse&quot;), rowmask, colmask)</code></pre><h4 id="Filter-Plink-files"><a class="docs-heading-anchor" href="#Filter-Plink-files">Filter Plink files</a><a id="Filter-Plink-files-1"></a><a class="docs-heading-anchor-permalink" href="#Filter-Plink-files" title="Permalink"></a></h4><p>Filter a set of Plink files according to row indices and column indices. By result, filtered Plink files are saved as <code>srcname.filtered.bed</code>, <code>srcname.filtered.fam</code>, and <code>srcname.filtered.bim</code>, where <code>srcname</code> is the source Plink file name. You can also specify destimation file name using keyword <code>des</code>.</p><pre><code class="language-julia">SnpArrays.filter(SnpArrays.datadir(&quot;mouse&quot;), 1:5, 1:5)</code></pre><pre><code class="language-none">5×5 SnpArray:
+ 0x02  0x02  0x02  0x02  0x03
+ 0x02  0x02  0x03  0x02  0x02
+ 0x03  0x03  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02
+ 0x03  0x03  0x03  0x03  0x03</code></pre><pre><code class="language-julia"># clean up
+rm(SnpArrays.datadir(&quot;mouse.filtered.bed&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.filtered.fam&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.filtered.bim&quot;), force=true)</code></pre><p>Filter a set of Plink files according to logical vectors.</p><pre><code class="language-julia">SnpArrays.filter(SnpArrays.datadir(&quot;mouse&quot;), rowmask, colmask)</code></pre><pre><code class="language-none">1931×10072 SnpArray:
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x02  0x03  0x02  0x02  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x03  0x00  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x00  0x00  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x00  0x00  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x03  0x02  0x02  0x02  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02  …  0x03  0x00  0x00  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x00  0x03  0x00  0x00
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x00  0x03  0x03  0x00  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x00  0x03  0x00  0x00  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x03  0x02  0x02  0x02  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03  …  0x03  0x03  0x00  0x03  0x00  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x00  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x00  0x00  0x03  0x03  0x03
+    ⋮                             ⋮  ⋱                             ⋮  
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x00  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03  …  0x03  0x03  0x03  0x00  0x00  0x00
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x00  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x00  0x03  0x00  0x00  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x00  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x00  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03  …  0x02  0x03  0x03  0x00  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x00  0x03  0x03  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x00  0x00  0x03  0x00  0x03
+ 0x02  0x02  0x03  0x02  0x02  0x02     0x03  0x03  0x00  0x03  0x03  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x00  0x00  0x03  0x03  0x03
+ 0x00  0x00  0x00  0x00  0x03  0x00  …  0x03  0x03  0x00  0x03  0x00  0x03</code></pre><pre><code class="language-julia">readdir(glob&quot;mouse.filtered.*&quot;, datapath)</code></pre><pre><code class="language-none">3-element Array{String,1}:
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.filtered.bed&quot;
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.filtered.bim&quot;
+ &quot;/home/huazhou/.julia/dev/SnpArrays.jl/data/mouse.filtered.fam&quot;</code></pre><pre><code class="language-julia"># clean up
+rm(SnpArrays.datadir(&quot;mouse.filtered.bed&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.filtered.fam&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.filtered.bim&quot;), force=true)</code></pre><h3 id="Concatenating-SnpArrays"><a class="docs-heading-anchor" href="#Concatenating-SnpArrays">Concatenating <code>SnpArray</code>s</a><a id="Concatenating-SnpArrays-1"></a><a class="docs-heading-anchor-permalink" href="#Concatenating-SnpArrays" title="Permalink"></a></h3><p>Concatenation of <code>SnpArray</code>s is implemented in <code>hcat</code>, <code>vcat</code>, and <code>hvcat</code> functions. By default, the resulting <code>.bed</code> file is saved as a file beginning with <code>tmp_</code> in the working directory. You can specify destination using keyword <code>des</code>. </p><p>For concatenation, <code>SnpArray</code> arguments do not deal with <code>.fam</code> or <code>.bim</code> files at all. You can use <code>SnpData</code> as the arguments to create those files (see below).</p><pre><code class="language-julia">s = SnpArrays.filter(SnpArrays.datadir(&quot;mouse&quot;), 1:2, 1:3)
+s</code></pre><pre><code class="language-none">2×3 SnpArray:
+ 0x02  0x02  0x02
+ 0x02  0x02  0x03</code></pre><pre><code class="language-julia">all(s .== [[0x02 0x02 0x02];
+[0x02 0x02 0x03]])</code></pre><pre><code class="language-none">true</code></pre><p>Standard concatenation works just like any other arrays. However, a temporary file is created as a side effect.</p><pre><code class="language-julia">[s s s]</code></pre><pre><code class="language-none">2×9 SnpArray:
+ 0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x03  0x02  0x02  0x03  0x02  0x02  0x03</code></pre><pre><code class="language-julia">[s; s; s]</code></pre><pre><code class="language-none">6×3 SnpArray:
+ 0x02  0x02  0x02
+ 0x02  0x02  0x03
+ 0x02  0x02  0x02
+ 0x02  0x02  0x03
+ 0x02  0x02  0x02
+ 0x02  0x02  0x03</code></pre><pre><code class="language-julia">[s s s; s s s]</code></pre><pre><code class="language-none">4×9 SnpArray:
+ 0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x03  0x02  0x02  0x03  0x02  0x02  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x03  0x02  0x02  0x03  0x02  0x02  0x03</code></pre><pre><code class="language-julia">readdir(glob&quot;tmp_*&quot;, &quot;.&quot;)</code></pre><pre><code class="language-none">3-element Array{String,1}:
+ &quot;./tmp_hcat_arr_1.bed&quot;
+ &quot;./tmp_hvcat_arr_1.bed&quot;
+ &quot;./tmp_vcat_arr_1.bed&quot;</code></pre><p>In order to set the destination <code>.bed</code> file, you can add the keyword argument <code>des</code>.</p><pre><code class="language-julia">hcat(s, s, s; des=SnpArrays.datadir(&quot;mouse.test.hcat&quot;))</code></pre><pre><code class="language-none">2×9 SnpArray:
+ 0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x03  0x02  0x02  0x03  0x02  0x02  0x03</code></pre><pre><code class="language-julia">vcat(s, s, s; des=SnpArrays.datadir(&quot;mouse.test.vcat&quot;))</code></pre><pre><code class="language-none">6×3 SnpArray:
+ 0x02  0x02  0x02
+ 0x02  0x02  0x03
+ 0x02  0x02  0x02
+ 0x02  0x02  0x03
+ 0x02  0x02  0x02
+ 0x02  0x02  0x03</code></pre><pre><code class="language-julia">hvcat((3, 3), s, s, s, s, s, s; des=SnpArrays.datadir(&quot;mouse.test.hvcat&quot;))</code></pre><pre><code class="language-none">4×9 SnpArray:
+ 0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x03  0x02  0x02  0x03  0x02  0x02  0x03
+ 0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02  0x02
+ 0x02  0x02  0x03  0x02  0x02  0x03  0x02  0x02  0x03</code></pre><pre><code class="language-julia"># clean up
+rm(SnpArrays.datadir(&quot;mouse.filtered.bed&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.filtered.fam&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.filtered.bim&quot;), force=true)
+tmplist = readdir(glob&quot;tmp_*.bed&quot;, &quot;.&quot;)
+for f in tmplist
+    rm(f, force=true)
+end
+rm(SnpArrays.datadir(&quot;mouse.test.hcat.bed&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.test.vcat.bed&quot;), force=true)
+rm(SnpArrays.datadir(&quot;mouse.test.hvcat.bed&quot;), force=true)</code></pre><h2 id="Linear-Algebra"><a class="docs-heading-anchor" href="#Linear-Algebra">Linear Algebra</a><a id="Linear-Algebra-1"></a><a class="docs-heading-anchor-permalink" href="#Linear-Algebra" title="Permalink"></a></h2><p>In some applications we want to perform linear algebra using SnpArray directly without expanding it to numeric matrix. This is achieved in three different <code>struct</code>s:</p><ol><li>Direct operations on a plink-formatted <code>SnpArray</code>: <code>SnpLinAlg</code></li><li>Operations on transformed <code>BitMatrix</code>es: <code>SnpBitMatrix</code></li><li>Direct operations on a plink-formatted data on an Nvidia GPU: <code>CuSnpArray</code>.</li></ol><p><code>SnpLinAlg</code> and <code>SnpBitMatrix</code> use Chris Elrod&#39;s <a href="https://github.com/chriselrod/LoopVectorization.jl">LoopVectorization.jl</a> internally. It is much faster on machines with AVX support. <code>CuSnpArray</code> uses <a href="https://juliagpu.gitlab.io/CUDA.jl/">CUDA.jl</a> internally.</p><div class="admonition is-warning"><header class="admonition-header">deprecated SnpBitMatrix</header><div class="admonition-body"><p><code>SnpBitMatrix</code> is now deprecated in favor of <code>SnpLinAlg</code>.  <code>SnpBitMatrix</code> will be removed on next minor release.</p></div></div><p>The implementation assumes that the matrix corresponding to SnpArray is the matrix of the A2 allele counts. <code>SnpLinAlg</code> and <code>CuSnpArray</code> impute any missing genotype with its column mean by default. They can also configured to impute missing genotypes with zero. <code>SnpBitMatrix</code> can only impute missing values with zero. </p><h3 id="Constructor-2"><a class="docs-heading-anchor" href="#Constructor-2">Constructor</a><a class="docs-heading-anchor-permalink" href="#Constructor-2" title="Permalink"></a></h3><p>First let&#39;s load a data set without missing genotypes.</p><pre><code class="language-julia">const EUR = SnpArray(SnpArrays.datadir(&quot;EUR_subset.bed&quot;))</code></pre><pre><code class="language-none">379×54051 SnpArray:
+ 0x03  0x03  0x03  0x02  0x02  0x03  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x02  0x03  0x02  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x03  0x03  0x03     0x02  0x02  0x02  0x03  0x03  0x02
+ 0x03  0x03  0x03  0x00  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x00  0x03  0x03     0x02  0x02  0x02  0x03  0x03  0x03
+ 0x02  0x03  0x03  0x03  0x03  0x03  …  0x03  0x03  0x03  0x03  0x03  0x02
+ 0x02  0x03  0x03  0x02  0x02  0x03     0x03  0x03  0x02  0x02  0x03  0x03
+ 0x02  0x03  0x03  0x03  0x02  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x00  0x02  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x03  0x03  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x02  0x03  0x03  …  0x03  0x03  0x02  0x02  0x03  0x03
+ 0x03  0x03  0x03  0x02  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x02
+ 0x03  0x02  0x03  0x02  0x02  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+    ⋮                             ⋮  ⋱     ⋮                             ⋮
+ 0x03  0x03  0x03  0x00  0x02  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x02  0x02  0x03     0x02  0x02  0x02  0x03  0x02  0x03
+ 0x03  0x03  0x03  0x02  0x02  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x03  0x03  0x02  0x03  0x03  …  0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x00  0x00  0x03     0x02  0x02  0x02  0x03  0x03  0x03
+ 0x02  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x02  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x02  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x03  0x03  0x03  0x03  0x03  …  0x03  0x03  0x02  0x02  0x03  0x03
+ 0x03  0x03  0x03  0x00  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x02  0x03  0x03  0x02  0x00  0x02     0x03  0x03  0x03  0x03  0x03  0x03
+ 0x03  0x03  0x03  0x02  0x02  0x03     0x03  0x03  0x03  0x03  0x03  0x03</code></pre><p>To instantiate a SnpLinAlg based on SnpArray,</p><pre><code class="language-julia">const EURsla = SnpLinAlg{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true)
+const EURsla_ = SnpLinAlg{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true, impute=false)
+const EURbm = SnpBitMatrix{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true)</code></pre><pre><code class="language-none">379×54051 SnpBitMatrix{Float64}:
+  0.46516   0.163517  0.306468  -0.0298581  …   0.342518   0.163517   0.23281
+  0.46516  -6.0338    0.306468  -0.0298581      0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468   1.38467        0.342518   0.163517  -4.17894
+  0.46516   0.163517  0.306468  -1.44439        0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468  -1.44439        0.342518   0.163517   0.23281
+ -1.91722   0.163517  0.306468   1.38467    …   0.342518   0.163517  -4.17894
+ -1.91722   0.163517  0.306468  -0.0298581     -2.7483     0.163517   0.23281
+ -1.91722   0.163517  0.306468   1.38467        0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468  -1.44439        0.342518   0.163517   0.23281
+ -1.91722   0.163517  0.306468  -0.0298581      0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468  -0.0298581  …  -2.7483     0.163517   0.23281
+  0.46516   0.163517  0.306468  -0.0298581      0.342518   0.163517  -4.17894
+  0.46516  -6.0338    0.306468  -0.0298581      0.342518   0.163517   0.23281
+  ⋮                                         ⋱                         ⋮
+  0.46516   0.163517  0.306468  -1.44439        0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468  -0.0298581      0.342518  -6.0338     0.23281
+  0.46516   0.163517  0.306468  -0.0298581      0.342518   0.163517   0.23281
+ -1.91722   0.163517  0.306468  -0.0298581  …   0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468  -1.44439        0.342518   0.163517   0.23281
+ -1.91722   0.163517  0.306468   1.38467        0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468  -0.0298581      0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468  -0.0298581      0.342518   0.163517   0.23281
+ -1.91722   0.163517  0.306468   1.38467    …  -2.7483     0.163517   0.23281
+  0.46516   0.163517  0.306468  -1.44439        0.342518   0.163517   0.23281
+ -1.91722   0.163517  0.306468  -0.0298581      0.342518   0.163517   0.23281
+  0.46516   0.163517  0.306468  -0.0298581      0.342518   0.163517   0.23281</code></pre><p>The constructor shares the same keyword arguments as the <code>convert</code> or <code>copyto!</code> functions. The type parameter, <code>Float64</code> in this example, indicates the SnpLinAlg acts like a Float64 matrix. SnpLinAlg directly uses the SnpArray for computation. </p><p>On the other hand, memory usage of SnpBitMatrix should be similar to the SnpArray, or equivalently bed file size, if <code>model=ADDITIVE_MODEL</code>, or half of that of SnpArray if <code>model=DOMINANT_MODEL</code> or <code>model=RECESSIVE_MODEL</code>.</p><pre><code class="language-julia">Base.summarysize(EUR), Base.summarysize(EURsla), Base.summarysize(EURbm)</code></pre><pre><code class="language-none">(6876757, 8177245, 6421960)</code></pre><h3 id="mul!"><a class="docs-heading-anchor" href="#mul!"><code>mul!</code></a><a id="mul!-1"></a><a class="docs-heading-anchor-permalink" href="#mul!" title="Permalink"></a></h3><p>SnpLinAlg and SnpBitMatrix act similar to a regular matrix and responds to <code>size</code>, <code>eltype</code>, and matrix-vector multiplications.</p><pre><code class="language-julia">@show size(EURsla)
+@show eltype(EURsla)
+@show typeof(EURsla) &lt;: AbstractMatrix;
+
+@show size(EURbm)
+@show eltype(EURbm)
+@show typeof(EURbm) &lt;: AbstractMatrix;</code></pre><pre><code class="language-none">size(EURsla) = (379, 54051)
+eltype(EURsla) = Float64
+typeof(EURsla) &lt;: AbstractMatrix = true
+size(EURbm) = (379, 54051)
+eltype(EURbm) = Float64
+typeof(EURbm) &lt;: AbstractMatrix = true</code></pre><p>Matrix-vector multiplications with SnpLinAlg and SnpBitMatrix are mathematically equivalent to the corresponding Float matrix contained from <code>convert</code> or <code>copyto!</code> a SnpArray.</p><pre><code class="language-julia">using LinearAlgebra
+v1 = randn(size(EUR, 1))
+v2 = randn(size(EUR, 2))
+A = convert(Matrix{Float64}, EUR, model=ADDITIVE_MODEL, center=true, scale=true);</code></pre><pre><code class="language-julia">norm(EURsla * v2 -  A * v2)</code></pre><pre><code class="language-none">3.110386368926456e-11</code></pre><pre><code class="language-julia">norm(EURsla&#39; * v1 - A&#39; * v1)</code></pre><pre><code class="language-none">2.445144256864899e-11</code></pre><pre><code class="language-julia">norm(EURbm * v2 -  A * v2)</code></pre><pre><code class="language-none">3.3662156610454995e-11</code></pre><pre><code class="language-julia">norm(EURbm&#39; * v1 - A&#39; * v1)</code></pre><pre><code class="language-none">6.847067637430217e-12</code></pre><p>See Linear Algebra page for performance comparison among BLAS, SnpLinAlg, and SnpBitMatrix. In general, SnpLinAlg and SnpBitMatrix operations are at least twice faster than the corresponding Matrix{Float64}-vector multiplication. </p><p>In general, computing <span>$Ax$</span> is more effective in SnpLinAlg, and computing <span>$A^T x$</span> is faster in SnpBitMatrix. Note that SnpLinAlg does not allocate additional memory, and can impute missing values with column means. See Linear Algebra page for more information.</p><p>In a test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 fold faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.</p><p><code>SnpBitMatrix</code> can be created from a subarray of SnpArray.</p><pre><code class="language-julia">EURsub = @view EUR[1:2:100, 1:2:100]
+EURsubbm = SnpBitMatrix{Float64}(EURsub, model=ADDITIVE_MODEL, center=true, scale=true);</code></pre><pre><code class="language-julia">Base.summarysize(EURsubbm)</code></pre><pre><code class="language-none">2600</code></pre><pre><code class="language-julia">@show size(EURsubbm)
+@show eltype(EURsubbm)
+@show typeof(EURsubbm) &lt;: AbstractMatrix;</code></pre><pre><code class="language-none">size(EURsubbm) = (50, 50)
+eltype(EURsubbm) = Float64
+typeof(EURsubbm) &lt;: AbstractMatrix = true</code></pre><pre><code class="language-julia">using LinearAlgebra
+v1 = randn(size(EURsub, 1))
+v2 = randn(size(EURsub, 2))
+A = convert(Matrix{Float64}, EURsub, model=ADDITIVE_MODEL, center=true, scale=true)
+norm(EURsubbm * v2 -  A * v2)</code></pre><pre><code class="language-none">6.684589123597768e-14</code></pre><pre><code class="language-julia">norm(EURsubbm&#39; * v1 - A&#39; * v1)</code></pre><pre><code class="language-none">1.823659961779917e-13</code></pre><h3 id="copyto!-and-convert"><a class="docs-heading-anchor" href="#copyto!-and-convert"><code>copyto!</code> and <code>convert</code></a><a id="copyto!-and-convert-1"></a><a class="docs-heading-anchor-permalink" href="#copyto!-and-convert" title="Permalink"></a></h3><p><code>copyto!</code> and <code>convert</code> are also supported on <code>SnpLinAlg</code>s and <code>SnpBitMatrix</code>s, but without the <code>impute</code>, <code>scale</code>, <code>center</code> keyword arguments. The destination array will be scaled/centered if the <code>SnpLinAlg</code>/<code>SnpBitMatrix</code> were scaled/centered. </p><pre><code class="language-julia">v = zeros(size(EUR, 1), 10)
+copyto!(v, @view(EURsla[:, 1:2:20]))</code></pre><pre><code class="language-none">379×10 Array{Float64,2}:
+  0.46516  0.306468  -0.539104  -0.370294  …   0.238721   0.551318   0.301719
+  0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
+  0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
+  0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
+  0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
+ -1.91722  0.306468   0.97438   -0.370294  …   0.238721   0.551318   0.301719
+ -1.91722  0.306468  -0.539104  -1.83218      -4.06963    0.551318   0.301719
+ -1.91722  0.306468  -0.539104  -0.370294      0.238721  -1.53818    0.301719
+  0.46516  0.306468  -0.539104  -0.370294     -4.06963    0.551318   0.301719
+ -1.91722  0.306468   0.97438   -0.370294      0.238721   0.551318  -3.16348
+  0.46516  0.306468   0.97438    1.09159   …   0.238721  -1.53818    0.301719
+  0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
+  0.46516  0.306468  -0.539104   1.09159       0.238721   0.551318   0.301719
+  ⋮                                        ⋱                        
+  0.46516  0.306468  -0.539104  -0.370294      0.238721   0.551318   0.301719
+  0.46516  0.306468  -0.539104  -0.370294      0.238721   0.551318   0.301719
+  0.46516  0.306468  -0.539104  -0.370294     -4.06963    0.551318   0.301719
+ -1.91722  0.306468   0.97438   -0.370294  …   0.238721   0.551318   0.301719
+  0.46516  0.306468  -2.05259   -0.370294      0.238721   0.551318   0.301719
+ -1.91722  0.306468   0.97438   -0.370294      0.238721  -1.53818    0.301719
+  0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
+  0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
+ -1.91722  0.306468   0.97438   -0.370294  …   0.238721   0.551318   0.301719
+  0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
+ -1.91722  0.306468  -2.05259   -1.83218       0.238721   0.551318   0.301719
+  0.46516  0.306468  -0.539104  -0.370294      0.238721   0.551318   0.301719</code></pre><pre><code class="language-julia">A = convert(Matrix{Float64}, EUR)
+norm(v * ones(10) - A[:, 1:2:20] * ones(10))</code></pre><pre><code class="language-none">6.691799632605305e-15</code></pre><h3 id="GPU-support:-CuSnpArray"><a class="docs-heading-anchor" href="#GPU-support:-CuSnpArray">GPU support: CuSnpArray</a><a id="GPU-support:-CuSnpArray-1"></a><a class="docs-heading-anchor-permalink" href="#GPU-support:-CuSnpArray" title="Permalink"></a></h3><p>On machines with Nvidia GPU, matrix-vector multiplications can be performed on it via CuSnpArray. The input vectors should be CuVectors. </p><pre><code class="language-julia">ENV[&quot;JULIA_CUDA_USE_BINARYBUILDER&quot;] = &quot;false&quot; # will use local CUDA installation
+using CUDA, Adapt
+out1 = randn(size(EUR, 1))
+out2 = randn(size(EUR, 2))
+v1 = randn(size(EUR, 1))
+v2 = randn(size(EUR, 2))
+v1_d = adapt(CuVector{Float64}, v1) # sends data to GPU
+v2_d = adapt(CuVector{Float64}, v2)
+out1_d = adapt(CuVector{Float64}, out1)
+out2_d = adapt(CuVector{Float64}, out2)
+
+const EURcu = CuSnpArray{Float64}(EUR; model=ADDITIVE_MODEL, center=true, scale=true);</code></pre><pre><code class="language-julia">@btime mul!($out1_d, $EURcu, $v2_d);</code></pre><pre><code class="language-none">  15.023 ms (98 allocations: 2.41 KiB)</code></pre><pre><code class="language-julia">@btime mul!($out2_d, transpose($EURcu), $v1_d);</code></pre><pre><code class="language-none">  488.026 μs (162 allocations: 5.28 KiB)</code></pre><p>The operations are parallelized along the output dimension, hence the GPU was not fully utilized in the first case. With 100-time larger data, 30 to 50-fold speedup were observed for both cases with Nvidia Titan V. See linear algebra page for more information.</p><p>Let&#39;s check correctness of the result.</p><pre><code class="language-julia">norm(collect(EURcu&#39; * v1_d) -  EURbm&#39; * v1)</code></pre><pre><code class="language-none">1.6074725741184302e-11</code></pre><h2 id="SnpData"><a class="docs-heading-anchor" href="#SnpData">SnpData</a><a id="SnpData-1"></a><a class="docs-heading-anchor-permalink" href="#SnpData" title="Permalink"></a></h2><p>We can create a <code>SnpData</code>, which has a <code>SnpArray</code> with information on SNP and subject appended.</p><h3 id="Constructor-3"><a class="docs-heading-anchor" href="#Constructor-3">Constructor</a><a class="docs-heading-anchor-permalink" href="#Constructor-3" title="Permalink"></a></h3><pre><code class="language-julia">EUR_data = SnpData(SnpArrays.datadir(&quot;EUR_subset&quot;))</code></pre><pre><code class="language-none">SnpData(people: 379, snps: 54051,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: /home/huazhou/.julia/dev/SnpArrays.jl/src/../data/EUR_subset.bed
+srcbim: /home/huazhou/.julia/dev/SnpArrays.jl/src/../data/EUR_subset.bim
+srcfam: /home/huazhou/.julia/dev/SnpArrays.jl/src/../data/EUR_subset.fam
+)</code></pre><h3 id="Filter"><a class="docs-heading-anchor" href="#Filter">Filter</a><a id="Filter-1"></a><a class="docs-heading-anchor-permalink" href="#Filter" title="Permalink"></a></h3><p>We can filter SnpData by functions <code>f_person</code> and <code>f_snp</code>. <code>f_person</code> applies to the field <code>person_info</code> and selects persons (rows) for which <code>f_person</code> is <code>true</code>.<code>f_snp</code> applies to the field <code>snp_info</code> and selects snps (columns) for which <code>f_snp</code> is <code>true</code>. The first argument can be either a <code>SnpData</code> or an <code>AbstractString</code>.</p><pre><code class="language-julia">SnpArrays.filter(EUR_data; des=&quot;tmp.filter.chr.17&quot;, f_snp = x -&gt; x[:chromosome]==&quot;17&quot;)</code></pre><pre><code class="language-none">SnpData(people: 379, snps: 11041,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp.filter.chr.17.bed
+srcbim: tmp.filter.chr.17.bim
+srcfam: tmp.filter.chr.17.fam
+)</code></pre><pre><code class="language-julia">SnpArrays.filter(SnpArrays.datadir(&quot;EUR_subset&quot;); des=&quot;tmp.filter.chr.17&quot;, f_snp = x -&gt; x[:chromosome]==&quot;17&quot;)</code></pre><pre><code class="language-none">SnpData(people: 379, snps: 11041,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp.filter.chr.17.bed
+srcbim: tmp.filter.chr.17.bim
+srcfam: tmp.filter.chr.17.fam
+)</code></pre><pre><code class="language-julia">SnpArrays.filter(EUR_data; des=&quot;tmp.filter.sex.male&quot;, f_person = x -&gt; x[:sex] == &quot;1&quot;)</code></pre><pre><code class="language-none">SnpData(people: 178, snps: 54051,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 3   │ 7        │ HG00103  │ 0        │ 0        │ 1        │ 1         │
+│ 4   │ 10       │ HG00108  │ 0        │ 0        │ 1        │ 1         │
+│ 5   │ 11       │ HG00109  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 14       │ HG00112  │ 0        │ 0        │ 1        │ 1         │
+…,
+srcbed: tmp.filter.sex.male.bed
+srcbim: tmp.filter.sex.male.bim
+srcfam: tmp.filter.sex.male.fam
+)</code></pre><p>Both <code>f_person</code> and <code>f_snp</code> can be used at the same time.</p><pre><code class="language-julia">SnpArrays.filter(EUR_data; des=&quot;tmp.filter.chr.17.sex.male&quot;, f_person = x -&gt; x[:sex] == &quot;1&quot;, f_snp = x -&gt; x[:chromosome] == &quot;17&quot;)</code></pre><pre><code class="language-none">SnpData(people: 178, snps: 11041,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 3   │ 7        │ HG00103  │ 0        │ 0        │ 1        │ 1         │
+│ 4   │ 10       │ HG00108  │ 0        │ 0        │ 1        │ 1         │
+│ 5   │ 11       │ HG00109  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 14       │ HG00112  │ 0        │ 0        │ 1        │ 1         │
+…,
+srcbed: tmp.filter.chr.17.sex.male.bed
+srcbim: tmp.filter.chr.17.sex.male.bim
+srcfam: tmp.filter.chr.17.sex.male.fam
+)</code></pre><h3 id="Split"><a class="docs-heading-anchor" href="#Split">Split</a><a id="Split-1"></a><a class="docs-heading-anchor-permalink" href="#Split" title="Permalink"></a></h3><p>We can split <code>SnpData</code> by SNP&#39;s choromosomes or each person&#39;s sex or phenotype using <code>split_plink</code>. Again, the first argument can be an <code>SnpData</code> or an <code>AbstractString</code>.</p><pre><code class="language-julia">splitted = SnpArrays.split_plink(SnpArrays.datadir(&quot;EUR_subset&quot;), :chromosome; prefix=&quot;tmp.split.chr.&quot;)</code></pre><pre><code class="language-none">Dict{AbstractString,SnpData} with 6 entries:
+  &quot;21&quot; =&gt; SnpData(people: 379, snps: 5813,…
+  &quot;17&quot; =&gt; SnpData(people: 379, snps: 11041,…
+  &quot;19&quot; =&gt; SnpData(people: 379, snps: 9690,…
+  &quot;20&quot; =&gt; SnpData(people: 379, snps: 9327,…
+  &quot;22&quot; =&gt; SnpData(people: 379, snps: 5938,…
+  &quot;18&quot; =&gt; SnpData(people: 379, snps: 12242,…</code></pre><p>Let&#39;s take a SnpArray for chromosome 17.</p><pre><code class="language-julia">piece = splitted[&quot;17&quot;]</code></pre><pre><code class="language-none">SnpData(people: 379, snps: 11041,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp.split.chr.17.bed
+srcbim: tmp.split.chr.17.bim
+srcfam: tmp.split.chr.17.fam
+)</code></pre><pre><code class="language-julia">@assert all(piece.snp_info[!, :chromosome].== &quot;17&quot;)</code></pre><pre><code class="language-julia">splitted_sex = SnpArrays.split_plink(EUR_data, :sex; prefix=&quot;tmp.split.sex.&quot;)</code></pre><pre><code class="language-none">Dict{AbstractString,SnpData} with 2 entries:
+  &quot;1&quot; =&gt; SnpData(people: 178, snps: 54051,…
+  &quot;2&quot; =&gt; SnpData(people: 201, snps: 54051,…</code></pre><h3 id="Concatenation"><a class="docs-heading-anchor" href="#Concatenation">Concatenation</a><a id="Concatenation-1"></a><a class="docs-heading-anchor-permalink" href="#Concatenation" title="Permalink"></a></h3><p><code>hcat</code>, <code>vcat</code>, and <code>hvcat</code> are also implemented for <code>SnpData</code>. All of <code>.bed</code>, <code>.bim</code>, <code>.fam</code> files are created. Simple concatenation expression can be used (with the side effect of creation of temporary plink files). One may also set the desitination using the keyword argument <code>des</code>. </p><pre><code class="language-julia">[piece piece]</code></pre><pre><code class="language-none">SnpData(people: 379, snps: 22082,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp_hcat_1.bed
+srcbim: tmp_hcat_1.bim
+srcfam: tmp_hcat_1.fam
+)</code></pre><pre><code class="language-julia">[piece; piece]</code></pre><pre><code class="language-none">SnpData(people: 758, snps: 11041,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp_vcat_1.bed
+srcbim: tmp_vcat_1.bim
+srcfam: tmp_vcat_1.fam
+)</code></pre><pre><code class="language-julia">[piece piece; piece piece]</code></pre><pre><code class="language-none">SnpData(people: 758, snps: 22082,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp_hvcat1.bed
+srcbim: tmp_hvcat1.bim
+srcfam: tmp_hvcat1.fam
+)</code></pre><pre><code class="language-julia">hcat(piece, piece; des=&quot;tmp.hcat&quot;)</code></pre><pre><code class="language-none">SnpData(people: 379, snps: 22082,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp.hcat.bed
+srcbim: tmp.hcat.bim
+srcfam: tmp.hcat.fam
+)</code></pre><pre><code class="language-julia">vcat(piece, piece; des=&quot;tmp.vcat&quot;)</code></pre><pre><code class="language-none">SnpData(people: 758, snps: 11041,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp.vcat.bed
+srcbim: tmp.vcat.bim
+srcfam: tmp.vcat.fam
+)</code></pre><pre><code class="language-julia">hvcat((2,2), piece, piece, piece, piece; des=&quot;tmp.hvcat&quot;)</code></pre><pre><code class="language-none">SnpData(people: 758, snps: 22082,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp.hvcat.bed
+srcbim: tmp.hvcat.bim
+srcfam: tmp.hvcat.fam
+)</code></pre><h3 id="Merge"><a class="docs-heading-anchor" href="#Merge">Merge</a><a id="Merge-1"></a><a class="docs-heading-anchor-permalink" href="#Merge" title="Permalink"></a></h3><p>We can merge the splitted dictionary back into one SnpData using <code>merge_plink</code>.</p><pre><code class="language-julia">merged = SnpArrays.merge_plink(&quot;tmp.merged&quot;, splitted) # write_plink is included here</code></pre><pre><code class="language-none">  0.056015 seconds (98.16 k allocations: 7.223 MiB)
+  0.035861 seconds (122.92 k allocations: 11.498 MiB)
+  0.038899 seconds (130.58 k allocations: 8.695 MiB)
+
+
+
+
+
+SnpData(people: 379, snps: 54051,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp.merged.bim
+srcbim: tmp.merged.bed
+srcfam: tmp.merged.fam
+)</code></pre><p>You can also merge the plink formatted files based on their common prefix.</p><pre><code class="language-julia">merged_from_splitted_files = merge_plink(&quot;tmp.split.chr&quot;; des = &quot;tmp.merged.2&quot;)</code></pre><pre><code class="language-none">  0.165377 seconds (562.86 k allocations: 30.022 MiB, 39.41% gc time)
+  0.001048 seconds (691 allocations: 2.101 MiB)
+  0.002526 seconds (12 allocations: 4.897 MiB)
+  0.000520 seconds (12 allocations: 1.650 MiB)
+
+
+
+
+
+SnpData(people: 379, snps: 54051,
+snp_info: 
+│ Row │ chromosome │ snpid       │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String      │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼─────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 17         │ rs34151105  │ 0.0              │ 1665     │ T       │ C       │
+│ 2   │ 17         │ rs143500173 │ 0.0              │ 2748     │ T       │ A       │
+│ 3   │ 17         │ rs113560219 │ 0.0              │ 4702     │ T       │ C       │
+│ 4   │ 17         │ rs1882989   │ 5.6e-5           │ 15222    │ G       │ A       │
+│ 5   │ 17         │ rs8069133   │ 0.000499         │ 32311    │ G       │ A       │
+│ 6   │ 17         │ rs112221137 │ 0.000605         │ 36405    │ G       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid      │ father   │ mother   │ sex      │ phenotype │
+│     │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstrac… │ Abstract… │
+├─────┼──────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 1   │ 1        │ HG00096  │ 0        │ 0        │ 1        │ 1         │
+│ 2   │ 2        │ HG00097  │ 0        │ 0        │ 2        │ 1         │
+│ 3   │ 3        │ HG00099  │ 0        │ 0        │ 2        │ 1         │
+│ 4   │ 4        │ HG00100  │ 0        │ 0        │ 2        │ 1         │
+│ 5   │ 5        │ HG00101  │ 0        │ 0        │ 1        │ 1         │
+│ 6   │ 6        │ HG00102  │ 0        │ 0        │ 2        │ 1         │
+…,
+srcbed: tmp.merged.2.bim
+srcbim: tmp.merged.2.bed
+srcfam: tmp.merged.2.fam
+)</code></pre><h3 id="Reorder"><a class="docs-heading-anchor" href="#Reorder">Reorder</a><a id="Reorder-1"></a><a class="docs-heading-anchor-permalink" href="#Reorder" title="Permalink"></a></h3><p>Order of subjects can be changed using the function <code>reorder!</code>.</p><pre><code class="language-julia">const mouse_prefix = SnpArrays.datadir(&quot;mouse&quot;)
+run(`cp $(mouse_prefix * &quot;.bed&quot;) mouse_reorder.bed`)
+run(`cp $(mouse_prefix * &quot;.bim&quot;) mouse_reorder.bim`)
+run(`cp $(mouse_prefix * &quot;.fam&quot;) mouse_reorder.fam`)</code></pre><pre><code class="language-none">Process(`[4mcp[24m [4m/home/huazhou/.julia/dev/SnpArrays.jl/src/../data/mouse.fam[24m [4mmouse_reorder.fam[24m`, ProcessExited(0))</code></pre><pre><code class="language-julia">mouse_data = SnpData(mouse_prefix)
+mouse_toreorder = SnpData(&quot;mouse_reorder&quot;, &quot;r+&quot;)
+m, n = size(mouse_toreorder.snparray)</code></pre><pre><code class="language-none">(1940, 10150)</code></pre><p>For example, the below randomly permutes subjects.</p><pre><code class="language-julia">using Random
+ind = randperm(m)
+SnpArrays.reorder!(mouse_toreorder, ind)</code></pre><pre><code class="language-julia">mouse_toreorder</code></pre><pre><code class="language-none">SnpData(people: 1940, snps: 10150,
+snp_info: 
+│ Row │ chromosome │ snpid      │ genetic_distance │ position │ allele1 │ allele2 │
+│     │ String     │ String     │ Float64          │ Int64    │ Cat…    │ Cat…    │
+├─────┼────────────┼────────────┼──────────────────┼──────────┼─────────┼─────────┤
+│ 1   │ 1          │ rs3683945  │ 0.0              │ 0        │ A       │ G       │
+│ 2   │ 1          │ rs3707673  │ 0.1              │ 1        │ G       │ A       │
+│ 3   │ 1          │ rs6269442  │ 0.11751          │ 2        │ A       │ G       │
+│ 4   │ 1          │ rs6336442  │ 0.135771         │ 3        │ A       │ G       │
+│ 5   │ 1          │ rs13475700 │ 0.24268          │ 5        │ A       │ C       │
+│ 6   │ 1          │ rs3658242  │ 0.251925         │ 6        │ A       │ T       │
+…,
+person_info: 
+│ Row │ fid      │ iid        │ father       │ mother       │ sex      │ phenotype │
+│     │ Abstrac… │ AbstractS… │ AbstractStr… │ AbstractStr… │ Abstrac… │ Abstract… │
+├─────┼──────────┼────────────┼──────────────┼──────────────┼──────────┼───────────┤
+│ 1   │ 1_1      │ A048097274 │ H4.2:C5.1(4) │ H4.2:G1.1(7) │ 1        │ -9        │
+│ 2   │ 1_3      │ A064095000 │ E5.4:H3.3(6) │ E5.4:D3.3(6) │ 2        │ -9        │
+│ 3   │ 1_48     │ A064048791 │ F2.5:A4.4(2) │ F2.5:E2.4(4) │ 1        │ -9        │
+│ 4   │ 1_58     │ A063516577 │ B1.5:E1.4(4) │ B1.5:A1.4(5) │ 1        │ -9        │
+│ 5   │ 1_1      │ A066891006 │ E4.3:H4.2(4) │ E4.3:D3.2(3) │ 2        │ -9        │
+│ 6   │ 1_49     │ A063812087 │ A2.5:D2.4(4) │ A2.5:H3.4(2) │ 1        │ -9        │
+…,
+srcbed: mouse_reorder.bed
+srcbim: mouse_reorder.bim
+srcfam: mouse_reorder.fam
+)</code></pre><p>This functionality mainly targets Cox regression, where sorting subjects in decreasing order of (censored) survival time results in more efficient implementation.</p><h2 id="VCF-to-PLINK"><a class="docs-heading-anchor" href="#VCF-to-PLINK">VCF to PLINK</a><a id="VCF-to-PLINK-1"></a><a class="docs-heading-anchor-permalink" href="#VCF-to-PLINK" title="Permalink"></a></h2><p>SnpArrays.jl includes a function to transform a (gzipped) VCF file to PLINK-formatted files. This function drops multi-allelic variants and variants with missing identifier.</p><pre><code class="language-julia"># Download an example VCF file
+isfile(&quot;test.08Jun17.d8b.vcf.gz&quot;) || download(&quot;http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz&quot;, 
+    joinpath(pwd(), &quot;test.08Jun17.d8b.vcf.gz&quot;));</code></pre><pre><code class="language-julia">vcf2plink(&quot;test.08Jun17.d8b.vcf.gz&quot;, &quot;test.08Jun17.d8b&quot;)</code></pre><pre><code class="language-none">191×1354 SnpArray:
+ 0x00  0x00  0x00  0x00  0x02  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x02  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x02  0x02  0x00
+ 0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00  …  0x00  0x00  0x00  0x02  0x02  0x00
+ 0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x02  0x02  0x00
+    ⋮                             ⋮  ⋱                 ⋮              
+ 0x00  0x00  0x00  0x00  0x02  0x00     0x00  0x00  0x00  0x02  0x02  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x00  0x00  0x00
+ 0x00  0x00  0x00  0x00  0x00  0x00  …  0x00  0x00  0x00  0x00  0x00  0x00</code></pre><pre><code class="language-julia"># clean up
+for ft in [&quot;bim&quot;, &quot;fam&quot;, &quot;bed&quot;]
+    rm(&quot;tmp.filter.chr.17.&quot; * ft, force=true)
+    rm(&quot;tmp.filter.sex.male.&quot; * ft, force=true)
+    rm(&quot;tmp.filter.chr.17.sex.male.&quot; * ft, force=true)
+    for k in keys(splitted)
+        rm(&quot;tmp.split.chr.$(k).&quot; * ft, force=true)
+    end
+    for k in keys(splitted_sex)
+        rm(&quot;tmp.split.sex.$(k).&quot; * ft, force=true)
+    end
+    rm(&quot;tmp.merged.&quot; * ft, force=true)
+    rm(&quot;tmp.merged.2.&quot; * ft, force=true)
+    
+    rm(&quot;tmp.hcat.&quot; * ft, force=true)
+    rm(&quot;tmp.vcat.&quot; * ft, force=true)
+    rm(&quot;tmp.hvcat.&quot; * ft, force=true)
+
+    tmplist = glob(&quot;tmp_*&quot; * ft)
+    for f in tmplist
+        rm(f, force=true)
+    end
+end
+tmplist = readdir(glob&quot;tmp_*.bed&quot;, &quot;.&quot;)
+for f in tmplist
+    rm(f, force=true)
+end
+rm(&quot;mouse_reorder.bim&quot;, force=true)
+rm(&quot;mouse_reorder.bed&quot;, force=true)
+rm(&quot;mouse_reorder.fam&quot;, force=true)
+rm(&quot;mouse_reorder.reordered.fam&quot;, force=true)
+rm(&quot;test.08Jun17.d8b.vcf.gz&quot;, force=true)
+rm(&quot;test.08Jun17.d8b.bed&quot;, force=true)
+rm(&quot;test.08Jun17.d8b.bim&quot;, force=true)
+rm(&quot;test.08Jun17.d8b.fam&quot;, force=true)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="linalg/">Linear algebra of SnpArray »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 29 April 2021 16:01">Thursday 29 April 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
