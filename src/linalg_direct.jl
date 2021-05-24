@@ -94,6 +94,7 @@ eltype(bm::SnpLinAlg) = eltype(bm.μ)
 
 function Base.getindex(s::SnpLinAlg{T}, i::Int, j::Int) where T
     x = SnpArrays.convert(T, getindex(s.s, i, j), s.model)
+    s.impute && isnan(x) && return s.μ[j]
     s.center && (x -= s.μ[j])
     s.scale && (x *= s.σinv[j])
     return x
