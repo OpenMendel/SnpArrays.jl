@@ -294,9 +294,15 @@ end
 
 @testset "copyto SnpLinAlg" begin
 for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, Float64]
-    mousela = SnpLinAlg{t}(mouse, model=ADDITIVE_MODEL, center=true, scale=true)
-    v = copyto!(zeros(1), @view(mousela[702]))
+    # imputing missing data
+    mousela = SnpLinAlg{t}(mouse, model=ADDITIVE_MODEL, center=true, scale=true, impute=true)
+    v = copyto!(zeros(1), @view(mousela[702])) # missing entry
+    @test isapprox(v[1], 1.113003134727478, atol=1e-6)
+    # not imputing missing data
+    mousela = SnpLinAlg{t}(mouse, model=ADDITIVE_MODEL, center=true, scale=true, impute=false)
+    v = copyto!(zeros(1), @view(mousela[702])) # missing entry
     @test isnan(v[1])
+    # no missing data
     EURla = SnpLinAlg{t}(EUR, model=model, center=true, scale=true)
     EURtrue = convert(Matrix{t}, EUR, model=model, center=true, scale=true)
     EURtest = copyto!(zeros(t, size(EUR)), EURla)
