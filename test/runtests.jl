@@ -375,7 +375,7 @@ end
 
 @testset "lin. alg. direct zeroimpute (Miter > 0)" begin
     EUR11 = [EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR]
-    EUR11la = SnpLinAlg{Float64}(EUR10, model=ADDITIVE_MODEL, impute=true, center=true, scale=true)
+    EUR11la = SnpLinAlg{Float64}(EUR11, model=ADDITIVE_MODEL, impute=true, center=true, scale=true)
     v = rand(size(EUR11la, 2))
     vtest = EUR11la * v
     vtrue = convert(Matrix{Float64}, EUR11la) * v
