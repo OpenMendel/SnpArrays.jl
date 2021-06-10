@@ -350,7 +350,7 @@ for (_ftn!, _ftn_rem!, expr) in [
     @eval begin
         function ($_ftn_rem!)(out, s, v, μ)
             maxp = length(out)
-            for j in eachindex(v)
+            @avx for j in eachindex(v)
                 block = s[1, j]
                 for p in 1:maxp
                     Aij = (block >> (2 * (p - 1))) & 3
@@ -362,11 +362,11 @@ for (_ftn!, _ftn_rem!, expr) in [
         function ($_ftn!)(out, s, v, rows, cols, μ)
             k = rows >> 2
             rem = rows & 3
-            
-            for j ∈ 1:cols
+
+            @avx for j ∈ 1:cols
                 for l in 1:k
                     block = s[l, j]
-                    
+
                     for p in 1:4
                         Aij = (block >> (2 * (p - 1))) & 3
                         out[4 * (l - 1) + p] += $expr
@@ -400,7 +400,7 @@ for (_ftn!, _ftn_rem!, expr) in [
         function $(_ftn_rem!)(out, s, v, μ)
             maxp = length(v)
             l = 1
-            for i in eachindex(out)
+            @avx for i in eachindex(out)
                 block = s[1, i]
                 for p in 1:maxp
                     Aij = (block >> (2 * (p - 1))) & 3
@@ -408,12 +408,12 @@ for (_ftn!, _ftn_rem!, expr) in [
                 end
             end
         end
-        
+
         function $(_ftn!)(out, s, v, rows, cols, μ)
             k = rows >> 2
             rem = rows & 3
-            
-            for i ∈ 1:cols
+
+            @avx for i ∈ 1:cols
                 for l in 1:k
                     block = s[l, i]
                     

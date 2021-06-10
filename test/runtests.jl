@@ -373,6 +373,15 @@ for t in [Float32, Float64]
 end
 end
 
+@testset "lin. alg. direct zeroimpute (Miter > 0)" begin
+    EUR11 = [EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR]
+    EUR11la = SnpLinAlg{Float64}(EUR11, model=ADDITIVE_MODEL, impute=true, center=true, scale=true)
+    v = rand(size(EUR11la, 2))
+    vtest = EUR11la * v
+    vtrue = convert(Matrix{Float64}, EUR11la) * v
+    @test norm(vtest - vtrue) < 5e-4
+end
+
 if get(ENV,"JULIA_SNPARRAYS_TEST_CUDA","") == "true"
     using CUDA, Adapt
     @testset "lin. alg. cuda" begin
