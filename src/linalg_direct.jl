@@ -152,13 +152,13 @@ In-place matrix-matrix multiplication.
 function mul!(
     out::AbstractMatrix{T}, 
     sla::SnpLinAlg{T}, 
-    v::AbstractMatrix{T}) where T <: AbstractFloat
-    @assert size(out, 1) == size(sla, 1) && size(out, 2) == size(v, 2) && size(sla, 2) == size(v, 1)
+    V::AbstractMatrix{T}) where T <: AbstractFloat
+    @assert size(out, 1) == size(sla, 1) && size(out, 2) == size(V, 2) && size(sla, 2) == size(V, 1)
 
     fill!(out, zero(eltype(out)))
     s = sla.s
 
-    _snparray_AX_tile!(out, s.data, w, sla.model, sla.μ, sla.impute)
+    _snparray_AX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute)
 end
 
 """
@@ -271,8 +271,10 @@ end
 function _snparray_AX_tile!(C, A, B, model, μ, impute)
     vstep = 1024
     hstep = 1024
+    pstep = 1024
     vstep_log2 = 10
     hstep_log2 = 10
+    pstep_log2 = 10
 
     if !impute
         if model == ADDITIVE_MODEL
@@ -292,63 +294,72 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
         end
     end
     
-    fill!(C, zero(UInt8))
+    fill!(C, zero(UInt8)) #why UInt8?
 
-    M = length(c) >> 2
+    M = size(C, 1) >> 2
     N = size(A, 2)
     P = size(C, 2)
     Miter = M >>> vstep_log2 # fast div(M, vstep_log2)
     Mrem = M & (vstep - 1) # fast rem(M, vstep)
     Niter = N >>> hstep_log2
     Nrem = N & (hstep - 1)
-    Piter = P >>> hstep_log2
-    Prem = P & (hstep - 1)
+    Piter = P >>> pstep_log2
+    Prem = P & (pstep - 1)
     taskarray = Array{Any}(undef, Miter + 1)
     fill!(taskarray, nothing)
+    println("M = $M, Miter = $Miter, Mrem = $Mrem")
+    println("N = $N, Niter = $Niter, Nrem = $Nrem")
+    println("P = $P, Piter = $Piter, Prem = $Prem")
     @_sync begin
-        GC.@preserve C A B for n in 0:Niter - 1
-            for m in 0:Miter - 1
-                for p in 0:Piter - 1
-                    wait(taskarray[m+1])
-                    taskarray[m+1] = @_spawn _ftn!(
+        GC.@preserve C A B for p in 0:Piter - 1
+            for n in 0:Niter - 1
+                for m in 0:Miter - 1
+                    # wait(taskarray[m+1])
+                    # taskarray[m+1] = @_spawn _ftn!(
+                    _ftn!(
                         gesp(stridedpointer(C), (4 * vstep * m, pstep * p)),
                         gesp(stridedpointer(A), (vstep * m, hstep * n)),
                         gesp(stridedpointer(B), (hstep * n, pstep * p)),
                         vstep << 2, hstep, pstep, μ
                     )
                 end
+                if Mrem != 0
+                    println("pstep = $pstep, p = $p")
+                    println(4 * vstep * Miter + 1)
+                    wait(taskarray[Miter+1])
+                    taskarray[Miter+1] = @_spawn _ftn!(
+                        @view(C[4 * vstep * Miter + 1:end, pstep * p]), 
+                        @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
+                        @view(B[hstep * n + 1:hstep * (n + 1), pstep * p]),
+                        size(C, 1) - 4 * vstep * Miter, hstep, pstep, μ
+                    )
+                end
             end
-            if Mrem != 0
-                wait(taskarray[Miter+1])
-                taskarray[Miter+1] = @_spawn _ftn!(
-                    @view(C[4 * vstep * Miter + 1:end]), 
-                    @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
-                    @view(B[hstep * n + 1:hstep * (n + 1)]),
-                    length(c) - 4 * vstep * Miter, hstep, μ
-                )
+            if Nrem != 0
+                for m in 0:Miter-1
+                    wait(taskarray[m+1])
+                    taskarray[m+1] = @_spawn _ftn!(
+                        @view(C[4 * vstep * m + 1:4 * vstep * (m + 1)]),
+                        @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
+                        @view(BLAS[hstep * Niter + 1:end]),
+                        vstep << 2, 
+                        Nrem, μ
+                    )
+                end
+                if Mrem != 0
+                    wait(taskarray[Miter + 1])
+                    taskarray[Miter + 1] = @_spawn _ftn!(
+                        @view(C[4 * vstep * Miter+1:end]),
+                        @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
+                        @view(BitSet[hstep * Niter + 1:end]),
+                        length(c) - 4 * vstep * Miter,
+                        Nrem, μ
+                    )
+                end
             end
         end
-        if Nrem != 0
-            for m in 0:Miter-1
-                wait(taskarray[m+1])
-                taskarray[m+1] = @_spawn _ftn!(
-                    @view(C[4 * vstep * m + 1:4 * vstep * (m + 1)]),
-                    @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
-                    @view(BLAS[hstep * Niter + 1:end]),
-                    vstep << 2, 
-                    Nrem, μ
-                )
-            end
-            if Mrem != 0
-                wait(taskarray[Miter + 1])
-                taskarray[Miter + 1] = @_spawn _ftn!(
-                    @view(C[4 * vstep * Miter+1:end]),
-                    @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
-                    @view(BitSet[hstep * Niter + 1:end]),
-                    length(c) - 4 * vstep * Miter,
-                    Nrem, μ
-                )
-            end
+        if Prem != 0
+            # todo
         end
     end
 end
@@ -574,12 +585,11 @@ for (_ftn!, _ftn_rem!, expr) in [
                             out[4 * (l - 1) + p, c] += $expr
                         end
                     end
-
                 end
             end
-            if rem != 0
-                ($_ftn_rem!)(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), V, μ)
-            end
+            # if rem != 0
+            #     ($_ftn_rem!)(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), V, μ)
+            # end
             nothing
         end
     end
