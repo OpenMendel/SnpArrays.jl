@@ -574,15 +574,13 @@ for (_ftn!, _ftn_rem!, expr) in [
             rem = srows & 3 # fast rem(srows, 4)
 
             # out[i, c] = s[i, j] * V[j, c] for j in 1:scols
-            @avx for c in 1:Vcols
+            for c in 1:Vcols
                 for j in 1:scols
                     for l in 1:k
                         block = s[l, j]
                         for p in 1:4
                             Aij = (block >> (2 * (p - 1))) & 3
-                            # out[4 * (l - 1) + p, c] += 1 # works with @avx
-                            # out[4 * (l - 1) + p, c] += ((Aij >= 2) + (Aij == 3)) * V[j, c] #doesn't work with @avx
-                            out[4 * (l - 1) + p, c] += $expr #doesn't work with @avx
+                            out[4 * (l - 1) + p, c] += $expr
                         end
                     end
                 end
