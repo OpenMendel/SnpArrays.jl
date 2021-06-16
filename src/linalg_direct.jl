@@ -572,16 +572,16 @@ for (_ftn!, _ftn_rem!, expr) in [
         function ($_ftn!)(out, s, V, srows, scols, Vcols, μ)
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
+            packedstride = size(s, 1)
 
-            # out[i, c] = s[i, j] * V[j, c] for j in 1:scols
-            for c in 1:Vcols
-                for j in 1:scols
-                    for l in 1:k
-                        block = s[l, j]
-                        for p in 1:4
-                            Aij = (block >> (2 * (p - 1))) & 3
-                            out[4 * (l - 1) + p, c] += $expr
-                        end
+            # out[i, c] = s[i, j] * V[j, c] for j in 1:n
+            @avx for c in 1:scols
+                for j in 1:Vcols
+                    for i in 1:srows
+                        l = 2 * ((i-1) & 3)
+                        block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
+                        Aij = (block >> l) & 3
+                        out[i, c] += $expr
                     end
                 end
             end
