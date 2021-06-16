@@ -314,9 +314,8 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
         GC.@preserve C A B for p in 0:Piter - 1
             for n in 0:Niter - 1
                 for m in 0:Miter - 1
-                    # wait(taskarray[m+1])
-                    # taskarray[m+1] = @_spawn _ftn!(
-                    _ftn!(
+                    wait(taskarray[m+1])
+                    taskarray[m+1] = @_spawn _ftn!(
                         gesp(stridedpointer(C), (4 * vstep * m, pstep * p)),
                         gesp(stridedpointer(A), (vstep * m, hstep * n)),
                         gesp(stridedpointer(B), (hstep * n, pstep * p)),
@@ -324,13 +323,11 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
                     )
                 end
                 if Mrem != 0
-                    println("pstep = $pstep, p = $p")
-                    println(4 * vstep * Miter + 1)
                     wait(taskarray[Miter+1])
                     taskarray[Miter+1] = @_spawn _ftn!(
-                        @view(C[4 * vstep * Miter + 1:end, pstep * p]), 
+                        @view(C[4 * vstep * Miter + 1:end, pstep * p + 1:end]), 
                         @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
-                        @view(B[hstep * n + 1:hstep * (n + 1), pstep * p]),
+                        @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:end]),
                         size(C, 1) - 4 * vstep * Miter, hstep, pstep, μ
                     )
                 end
@@ -560,33 +557,37 @@ for (_ftn!, _ftn_rem!, expr) in [
             :((Aij == 3) * V[j, c] + (Aij == 1) * μ[j] * V[j, c]))
     ]
     @eval begin
-        function ($_ftn_rem!)(out, s, V, μ)
-            maxp = length(out)
-            @avx for j in eachindex(V)
-                block = s[1, j]
-                for p in 1:maxp
-                    Aij = (block >> (2 * (p - 1))) & 3
-                    out[p] += $expr
-                end
-            end
-        end
+        # TODO
+        # function ($_ftn_rem!)(out, s, V, μ)
+        #     maxp = length(out)
+        #     @avx for j in eachindex(V)
+        #         block = s[1, j]
+        #         for p in 1:maxp
+        #             Aij = (block >> (2 * (p - 1))) & 3
+        #             out[p] += $expr
+        #         end
+        #     end
+        # end
 
         function ($_ftn!)(out, s, V, srows, scols, Vcols, μ)
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
 
             # out[i, c] = s[i, j] * V[j, c] for j in 1:scols
-            @avx for j in 1:scols
-                for l in 1:k
-                    block = s[l, j]
-                    for c in 1:Vcols
+            @avx for c in 1:Vcols
+                for j in 1:scols
+                    for l in 1:k
+                        block = s[l, j]
                         for p in 1:4
                             Aij = (block >> (2 * (p - 1))) & 3
-                            out[4 * (l - 1) + p, c] += $expr
+                            # out[4 * (l - 1) + p, c] += 1 # works with @avx
+                            # out[4 * (l - 1) + p, c] += ((Aij >= 2) + (Aij == 3)) * V[j, c] #doesn't work with @avx
+                            out[4 * (l - 1) + p, c] += $expr #doesn't work with @avx
                         end
                     end
                 end
             end
+            # TODO
             # if rem != 0
             #     ($_ftn_rem!)(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), V, μ)
             # end
