@@ -356,7 +356,48 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
             end
         end
         if Prem != 0
-            # todo
+            for n in 0:Niter - 1
+                for m in 0:Miter - 1
+                    wait(taskarray[m+1])
+                    taskarray[m+1] = @_spawn _ftn!(
+                        @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]), 
+                        @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
+                        @view(B[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
+                        vstep << 2, hstep, Prem, μ
+                    )
+                end
+                if Mrem != 0
+                    wait(taskarray[Miter+1])
+                    taskarray[Miter+1] = @_spawn _ftn!(
+                        @view(C[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]), 
+                        @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
+                        @view(B[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
+                        size(C, 1) - 4 * vstep * Miter, hstep, Prem, μ
+                    )
+                end
+            end
+            if Nrem != 0
+                for m in 0:Miter-1
+                    wait(taskarray[m+1])
+                    taskarray[m+1] = @_spawn _ftn!(
+                        @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
+                        @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
+                        @view(B[hstep * Niter + 1:end, pstep * p + 1, pstep * Piter + 1:end]),
+                        vstep << 2, 
+                        Nrem, Prem, μ
+                    )
+                end
+                if Mrem != 0
+                    wait(taskarray[Miter + 1])
+                    taskarray[Miter + 1] = @_spawn _ftn!(
+                        @view(C[4 * vstep * Miter+1:end, pstep * Piter + 1:end]),
+                        @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
+                        @view(B[hstep * Niter + 1:end, pstep * Piter + 1:end]),
+                        size(C, 1) - 4 * vstep * Miter,
+                        Nrem, Prem, μ
+                    )
+                end
+            end
         end
     end
 end
