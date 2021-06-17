@@ -316,18 +316,21 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
                 for m in 0:Miter - 1
                     wait(taskarray[m+1])
                     taskarray[m+1] = @_spawn _ftn!(
-                        gesp(stridedpointer(C), (4 * vstep * m, pstep * p)),
-                        gesp(stridedpointer(A), (vstep * m, hstep * n)),
-                        gesp(stridedpointer(B), (hstep * n, pstep * p)),
+                        # gesp(stridedpointer(C), (4 * vstep * m, pstep * p)),
+                        # gesp(stridedpointer(A), (vstep * m, hstep * n)),
+                        # gesp(stridedpointer(B), (hstep * n, pstep * p)),
+                        @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]), 
+                        @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
+                        @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
                         vstep << 2, hstep, pstep, μ
                     )
                 end
                 if Mrem != 0
                     wait(taskarray[Miter+1])
                     taskarray[Miter+1] = @_spawn _ftn!(
-                        @view(C[4 * vstep * Miter + 1:end, pstep * p + 1:end]), 
+                        @view(C[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]), 
                         @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
-                        @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:end]),
+                        @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
                         size(C, 1) - 4 * vstep * Miter, hstep, pstep, μ
                     )
                 end
@@ -613,10 +616,11 @@ for (_ftn!, _ftn_rem!, expr) in [
         function ($_ftn!)(out, s, V, srows, scols, Vcols, μ)
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
-            packedstride = size(s, 1)
+            # packedstride = size(s, 1) # size() doesn't work with gesp
+            packedstride = k + rem # size() doesn't work with gesp
 
             # compute out[i, c] = s[i, j] * V[j, c] for j in 1:n
-            @avx for c in 1:Vcols
+            for c in 1:Vcols
                 for j in 1:scols
                     for i in 1:srows
                         l = 2 * ((i-1) & 3)
