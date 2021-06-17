@@ -336,21 +336,21 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
                 for m in 0:Miter-1
                     wait(taskarray[m+1])
                     taskarray[m+1] = @_spawn _ftn!(
-                        @view(C[4 * vstep * m + 1:4 * vstep * (m + 1)]),
+                        @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
-                        @view(BLAS[hstep * Niter + 1:end]),
+                        @view(B[hstep * Niter + 1:end, pstep * p + 1, pstep * p + 1:pstep * (p + 1)]),
                         vstep << 2, 
-                        Nrem, μ
+                        Nrem, pstep, μ
                     )
                 end
                 if Mrem != 0
                     wait(taskarray[Miter + 1])
                     taskarray[Miter + 1] = @_spawn _ftn!(
-                        @view(C[4 * vstep * Miter+1:end]),
+                        @view(C[4 * vstep * Miter+1:end, pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
-                        @view(BitSet[hstep * Niter + 1:end]),
-                        length(c) - 4 * vstep * Miter,
-                        Nrem, μ
+                        @view(B[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
+                        size(C, 1) - 4 * vstep * Miter,
+                        Nrem, pstep, μ
                     )
                 end
             end
@@ -574,9 +574,9 @@ for (_ftn!, _ftn_rem!, expr) in [
             rem = srows & 3 # fast rem(srows, 4)
             packedstride = size(s, 1)
 
-            # out[i, c] = s[i, j] * V[j, c] for j in 1:n
-            @avx for c in 1:scols
-                for j in 1:Vcols
+            # compute out[i, c] = s[i, j] * V[j, c] for j in 1:n
+            @avx for c in 1:Vcols
+                for j in 1:scols
                     for i in 1:srows
                         l = 2 * ((i-1) & 3)
                         block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
