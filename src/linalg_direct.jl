@@ -307,9 +307,6 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled)
     Prem = P & (pstep - 1)
     taskarray = Array{Any}(undef, Miter + 1)
     fill!(taskarray, nothing)
-    println("M = $M, Miter = $Miter, Mrem = $Mrem")
-    println("N = $N, Niter = $Niter, Nrem = $Nrem")
-    println("P = $P, Piter = $Piter, Prem = $Prem")
     @_sync begin
         GC.@preserve C A B for p in 0:Piter - 1
             for n in 0:Niter - 1
