@@ -313,9 +313,6 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled)
                 for m in 0:Miter - 1
                     wait(taskarray[m+1])
                     taskarray[m+1] = @_spawn _ftn!(
-                        # gesp(stridedpointer(C), (4 * vstep * m, pstep * p)),
-                        # gesp(stridedpointer(A), (vstep * m, hstep * n)),
-                        # gesp(stridedpointer(B), (hstep * n, pstep * p)),
                         @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
@@ -613,7 +610,6 @@ for (_ftn!, _ftn_rem!, expr) in [
         function ($_ftn!)(out, s, V, srows, scols, Vcols, μ)
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
-            packedstride = size(s, 1) # size() doesn't work with gesp
 
             # compute out[i, c] = s[i, j] * V[j, c] for j in 1:n
             @avx for c in 1:Vcols
