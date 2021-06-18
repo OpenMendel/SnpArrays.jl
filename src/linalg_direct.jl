@@ -135,7 +135,7 @@ function mul!(
     fill!(out, zero(eltype(out)))
     s = sla.s
 
-    _snparray_ax_tile!(out, s.data, w, sla.model, sla.μ, sla.impute)
+    _snparray_ax_tile!(out, s.data, w, sla.model, sla.μ, sla.impute, s.m)
 
     if sla.center
         return out .-= dot(sla.μ, w)
@@ -175,7 +175,7 @@ function mul!(
     s = sla.s
     fill!(out, zero(eltype(out)))
 
-    _snparray_atx_tile!(out, s.data, v, sla.model, sla.μ, sla.impute)
+    _snparray_atx_tile!(out, s.data, v, sla.model, sla.μ, sla.impute, s.m)
     if sla.center
         out .-= sum(v) .* sla.μ
     end
@@ -188,7 +188,7 @@ end
 
 wait(::Nothing) = nothing
 
-function _snparray_ax_tile!(c, A, b, model, μ, impute)
+function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
     vstep = 1024
     hstep = 1024
     vstep_log2 = 10
@@ -216,8 +216,8 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute)
 
     M = length(c) >> 2
     N = size(A, 2)
-    Miter = M >>> vstep_log2 # fast div(M, 512)
-    Mrem = M & (vstep - 1) # fast rem(M, 512)
+    Miter = M >>> vstep_log2 # fast div(M, 1024)
+    Mrem = rows_filled & (vstep >> 2 - 1) # fast rem(rows_filled, 4vstep)
     Niter = N >>> hstep_log2
     Nrem = N & (hstep - 1)
     taskarray = Array{Any}(undef, Miter + 1)
@@ -405,7 +405,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
     end
 end
 
-function _snparray_atx_tile!(c, A, b, model, μ, impute)
+function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
     vstep = 2048
     hstep = 2048
     vstep_log2 = 11
@@ -433,8 +433,8 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute)
 
     M = length(b) >> 2
     N = size(A, 2)
-    Miter = M >>> vstep_log2 # fast div(M, 512)
-    Mrem = M & (vstep - 1) # fast rem(M, 512)
+    Miter = M >>> vstep_log2 # fast div(M, 1024)
+    Mrem = rows_filled & (vstep >> 2 - 1) # fast rem(rows_filled, 4vstep)
     Niter = N >>> hstep_log2
     Nrem = N & (hstep - 1)
 
