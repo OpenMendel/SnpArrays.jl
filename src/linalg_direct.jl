@@ -158,7 +158,7 @@ function mul!(
     fill!(out, zero(eltype(out)))
     s = sla.s
 
-    _snparray_AX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute)
+    _snparray_AX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m)
 end
 
 """
@@ -268,7 +268,7 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
     end
 end
 
-function _snparray_AX_tile!(C, A, B, model, μ, impute)
+function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled)
     vstep = 1024
     hstep = 1024
     pstep = 1024
@@ -299,8 +299,8 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
     M = size(C, 1) >> 2
     N = size(A, 2)
     P = size(C, 2)
-    Miter = M >>> vstep_log2 # fast div(M, vstep_log2)
-    Mrem = M & (vstep - 1) # fast rem(M, vstep)
+    Miter = M >>> vstep_log2 # fast div(M, 1024)
+    Mrem = rows_filled & (vstep >> 2 - 1) # fast rem(rows_filled, 4vstep)
     Niter = N >>> hstep_log2
     Nrem = N & (hstep - 1)
     Piter = P >>> pstep_log2
@@ -341,7 +341,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
                     taskarray[m+1] = @_spawn _ftn!(
                         @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
-                        @view(B[hstep * Niter + 1:end, pstep * p + 1, pstep * p + 1:pstep * (p + 1)]),
+                        @view(B[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
                         vstep << 2, 
                         Nrem, pstep, μ
                     )
@@ -385,7 +385,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute)
                     taskarray[m+1] = @_spawn _ftn!(
                         @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
-                        @view(B[hstep * Niter + 1:end, pstep * p + 1, pstep * Piter + 1:end]),
+                        @view(B[hstep * Niter + 1:end, pstep * Piter + 1:end]),
                         vstep << 2, 
                         Nrem, Prem, μ
                     )
@@ -616,16 +616,14 @@ for (_ftn!, _ftn_rem!, expr) in [
         function ($_ftn!)(out, s, V, srows, scols, Vcols, μ)
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
-            # packedstride = size(s, 1) # size() doesn't work with gesp
-            packedstride = k + rem # size() doesn't work with gesp
+            packedstride = size(s, 1) # size() doesn't work with gesp
 
             # compute out[i, c] = s[i, j] * V[j, c] for j in 1:n
-            for c in 1:Vcols
+            @avx for c in 1:Vcols
                 for j in 1:scols
                     for i in 1:srows
-                        l = 2 * ((i-1) & 3)
-                        block = s[(j-1) * packedstride + ((i-1) >> 2) + 1]
-                        Aij = (block >> l) & 3
+                        ip3 = i + 3
+                        Aij = (s[ip3 >> 2, j] >> ((ip3 & 0x03) << 1)) & 0x03
                         out[i, c] += $expr
                     end
                 end
