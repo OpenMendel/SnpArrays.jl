@@ -469,7 +469,7 @@ for (_ftn!, _ftn_rem!, expr) in [
         (:_snparray_ax_recessive!, :_snparray_ax_recessive_rem!, 
             :((Aij == 3) * v[j])),
         (:_snparray_ax_additive_meanimpute!, :_snparray_ax_additive_meanimpute_rem!, 
-            :(((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[j]))),
+            :(((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[j]) * v[j])),
         (:_snparray_ax_dominant_meanimpute!, :_snparray_ax_dominant_meanimpute_rem!, 
             :((Aij >= 2) * v[j] + (Aij == 1) * μ[j] * v[j])),
         (:_snparray_ax_recessive_meanimpute!, :_snparray_ax_recessive_meanimpute_rem!, 
