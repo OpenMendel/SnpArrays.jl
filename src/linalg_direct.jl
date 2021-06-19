@@ -575,17 +575,16 @@ for (_ftn!, _ftn_rem!, expr) in [
             :((Aij == 3) * V[j, c] * σinv[j] + (Aij == 1) * μ[j] * V[j, c] * σinv[j]))
     ]
     @eval begin
-        # TODO
-        # function ($_ftn_rem!)(out, s, V, μ)
-        #     maxp = length(out)
-        #     @avx for j in eachindex(V)
-        #         block = s[1, j]
-        #         for p in 1:maxp
-        #             Aij = (block >> (2 * (p - 1))) & 3
-        #             out[p] += $expr
-        #         end
-        #     end
-        # end
+        function ($_ftn_rem!)(out, s, V, μ, σinv, c)
+            maxp = size(out, 1)
+            @avx for j in 1:size(V, 1)
+                block = s[1, j]
+                for p in 1:maxp
+                    Aij = (block >> (2 * (p - 1))) & 3
+                    out[p, c] += $expr
+                end
+            end
+        end
 
         function ($_ftn!)(out, s, V, srows, scols, Vcols, μ, σinv)
             k = srows >> 2 # fast div(srows, 4)
@@ -599,11 +598,35 @@ for (_ftn!, _ftn_rem!, expr) in [
                         Aij = (s[ip3 >> 2, j] >> ((ip3 & 0x03) << 1)) & 0x03
                         out[i, c] += $expr
                     end
+                    # for l in 1:k
+                    #     block = s[l, j]
+
+                    #     # manual unrolling is correct without @avx loop but wrong with @avx
+                    #     Aij = (block >> 0) & 0x03
+                    #     out[4*(l - 1) + 1, c] += $expr
+
+                    #     Aij = (block >> 2) & 0x03
+                    #     out[4*(l - 1) + 2, c] += $expr
+
+                    #     Aij = (block >> 4) & 0x03
+                    #     out[4*(l - 1) + 3, c] += $expr
+
+                    #     Aij = (block >> 6) & 0x03
+                    #     out[4*(l - 1) + 4, c] += $expr
+
+                    #     # this works without @avx but throws `vashr` error with @avx
+                    #     # for p in 1:4
+                    #     #     Aij = (block >> (2 * (p - 1))) & 3
+                    #     #     out[4*(l - 1) + 4 + p, c] += $expr
+                    #     # end
+                    # end
                 end
             end
-            # TODO
             # if rem != 0
-            #     ($_ftn_rem!)(@view(out[4k + 1:end]), @view(s[k + 1:k + 1, :]), V, μ)
+            #     for c in 1:Vcols
+            #         ($_ftn_rem!)(@view(out[4k + 1:end, :]), @view(s[k + 1:k + 1, :]),
+            #             V, @view(μ[4k+1:end]), @view(σinv[4k+1:end]), c)
+            #     end
             # end
             nothing
         end
