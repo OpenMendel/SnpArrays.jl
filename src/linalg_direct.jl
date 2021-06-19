@@ -591,43 +591,44 @@ for (_ftn!, _ftn_rem!, expr) in [
             rem = srows & 3 # fast rem(srows, 4)
 
             # compute out[i, c] = s[i, j] * V[j, c] for j in 1:n
-            @avx for c in 1:Vcols
+            for c in 1:Vcols
                 for j in 1:scols
+                    # no unrolling: correct
                     for i in 1:srows
                         ip3 = i + 3
                         Aij = (s[ip3 >> 2, j] >> ((ip3 & 0x03) << 1)) & 0x03
                         out[i, c] += $expr
                     end
+
+                    # manual unrolling is correct without @avx loop but wrong with @avx
                     # for l in 1:k
                     #     block = s[l, j]
-
-                    #     # manual unrolling is correct without @avx loop but wrong with @avx
                     #     Aij = (block >> 0) & 0x03
                     #     out[4*(l - 1) + 1, c] += $expr
-
                     #     Aij = (block >> 2) & 0x03
                     #     out[4*(l - 1) + 2, c] += $expr
-
                     #     Aij = (block >> 4) & 0x03
                     #     out[4*(l - 1) + 3, c] += $expr
-
                     #     Aij = (block >> 6) & 0x03
                     #     out[4*(l - 1) + 4, c] += $expr
+                    # end
 
-                    #     # this works without @avx but throws `vashr` error with @avx
-                    #     # for p in 1:4
-                    #     #     Aij = (block >> (2 * (p - 1))) & 3
-                    #     #     out[4*(l - 1) + 4 + p, c] += $expr
-                    #     # end
+                    # this works without @avx but throws `vashr` error with @avx
+                    # for l in 1:k
+                    #     block = s[l, j]
+                    #     for p in 1:4
+                    #         Aij = (block >> (2 * (p - 1))) & 3
+                    #         out[4*(l - 1) + p, c] += $expr
+                    #     end
                     # end
                 end
             end
-            # if rem != 0
-            #     for c in 1:Vcols
-            #         ($_ftn_rem!)(@view(out[4k + 1:end, :]), @view(s[k + 1:k + 1, :]),
-            #             V, @view(μ[4k+1:end]), @view(σinv[4k+1:end]), c)
-            #     end
-            # end
+            if rem != 0
+                for c in 1:Vcols
+                    ($_ftn_rem!)(@view(out[4k + 1:end, :]), @view(s[k + 1:k + 1, :]),
+                        V, @view(μ[4k+1:end]), @view(σinv[4k+1:end]), c)
+                end
+            end
             nothing
         end
     end
