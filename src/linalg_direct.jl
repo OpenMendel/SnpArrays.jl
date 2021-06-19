@@ -162,8 +162,9 @@ function mul!(
     _snparray_AX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.storagev2)
 
     if sla.center
+        σinv = sla.storagev2
         @avx for i in 1:size(out, 1), j in 1:size(out, 2), k in 1:size(V, 1)
-            out[i, j] -= sla.μ[k] * V[k, j]
+            out[i, j] -= sla.μ[k] * V[k, j] * σinv[k]
         end
     end
     return out
@@ -504,7 +505,7 @@ for (_ftn!, _ftn_rem!, expr) in [
         (:_snparray_ax_recessive!, :_snparray_ax_recessive_rem!, 
             :((Aij == 3) * v[j])),
         (:_snparray_ax_additive_meanimpute!, :_snparray_ax_additive_meanimpute_rem!, 
-            :(((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[j]) *  v[j])),
+            :(((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[j]))),
         (:_snparray_ax_dominant_meanimpute!, :_snparray_ax_dominant_meanimpute_rem!, 
             :((Aij >= 2) * v[j] + (Aij == 1) * μ[j] * v[j])),
         (:_snparray_ax_recessive_meanimpute!, :_snparray_ax_recessive_meanimpute_rem!, 
@@ -597,17 +598,17 @@ end
 
 for (_ftn!, _ftn_rem!, expr) in [
         (:_snparray_AX_additive!, :_snparray_AX_additive_rem!, 
-            :(((Aij >= 2) + (Aij == 3)) * V[j, c])),
+            :(((Aij >= 2) + (Aij == 3)) * V[j, c] * σinv[j])),
         (:_snparray_AX_dominant!, :_snparray_AX_dominant_rem!, 
-            :((Aij >= 2)  * V[j, c])),
+            :((Aij >= 2) * V[j, c] * σinv[j])),
         (:_snparray_AX_recessive!, :_snparray_AX_recessive_rem!, 
-            :((Aij == 3) * V[j, c])),
+            :((Aij == 3) * V[j, c] * σinv[j])),
         (:_snparray_AX_additive_meanimpute!, :_snparray_AX_additive_meanimpute_rem!, 
-            :(((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[j]) *  V[j, c])),
+            :((((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[j]) * V[j, c]) * σinv[j])),
         (:_snparray_AX_dominant_meanimpute!, :_snparray_AX_dominant_meanimpute_rem!, 
-            :((Aij >= 2) * V[j, c] + (Aij == 1) * μ[j] * V[j, c])),
+            :((Aij >= 2) * V[j, c] * σinv[j] + (Aij == 1) * μ[j] * V[j, c] * σinv[j])),
         (:_snparray_AX_recessive_meanimpute!, :_snparray_AX_recessive_meanimpute_rem!, 
-            :((Aij == 3) * V[j, c] + (Aij == 1) * μ[j] * V[j, c]))
+            :((Aij == 3) * V[j, c] * σinv[j] + (Aij == 1) * μ[j] * V[j, c] * σinv[j]))
     ]
     @eval begin
         # TODO
