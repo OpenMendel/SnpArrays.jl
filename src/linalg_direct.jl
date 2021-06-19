@@ -117,7 +117,7 @@ macro _sync(ex)
 end
 
 """
-    LinearAlgebra.mul!(out, s::SnpLinAlg, v)
+    LinearAlgebra.mul!(out, sla::SnpLinAlg, v)
 
 In-place matrix-vector multiplication.
 """
@@ -145,7 +145,7 @@ function mul!(
 end
 
 """
-    LinearAlgebra.mul!(out, s::SnpLinAlg, v)
+    LinearAlgebra.mul!(out, sla::SnpLinAlg, V)
 
 In-place matrix-matrix multiplication.
 """
@@ -230,7 +230,7 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
                     gesp(stridedpointer(c), (4 * vstep * m,)),
                     gesp(stridedpointer(A), (vstep * m, hstep * n)),
                     gesp(stridedpointer(b), (hstep * n,)),
-                    vstep << 2, hstep, μ
+                    vstep << 2, hstep, @view(μ[hstep * n + 1:hstep * (n + 1)])
                 )
             end
             if Mrem != 0
@@ -239,7 +239,8 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
                     @view(c[4 * vstep * Miter + 1:end]), 
                     @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                     @view(b[hstep * n + 1:hstep * (n + 1)]),
-                    length(c) - 4 * vstep * Miter, hstep, μ
+                    length(c) - 4 * vstep * Miter, hstep,
+                    @view(μ[hstep * n + 1:hstep * (n + 1)])
                 )
             end
         end
@@ -251,7 +252,7 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
                     @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                     @view(b[hstep * Niter + 1:end]),
                     vstep << 2, 
-                    Nrem, μ
+                    Nrem, @view(μ[hstep * Niter + 1:end])
                 )
             end
             if Mrem != 0
@@ -261,14 +262,14 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
                     @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                     @view(b[hstep * Niter + 1:end]),
                     length(c) - 4 * vstep * Miter,
-                    Nrem, μ
+                    Nrem, @view(μ[hstep * Niter + 1:end])
                 )
             end
         end
     end
 end
 
-function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled)
+function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
     vstep = 1024
     hstep = 1024
     pstep = 1024
@@ -442,7 +443,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
                     gesp(stridedpointer(c), (hstep * n,)),
                     gesp(stridedpointer(A), (vstep * m, hstep * n)),
                     gesp(stridedpointer(b), (4 * vstep * m,)),
-                    vstep << 2, hstep, μ
+                    vstep << 2, hstep, @view(μ[hstep * n + 1:hstep * (n + 1)])
                 )
             end
             if Nrem != 0
@@ -451,7 +452,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
                     @view(c[hstep * Niter + 1:end]),
                     @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                     @view(b[4 * vstep * m + 1:4 * vstep * (m + 1)]),
-                    vstep << 2, Nrem, μ
+                    vstep << 2, Nrem, @view(μ[hstep * Niter + 1:end])
                 )
             end
 
@@ -464,7 +465,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
                     @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                     @view(b[4 * vstep * Miter + 1:end]),
                     length(b) - 4 * vstep * Miter,
-                    hstep, μ
+                    hstep, @view(μ[hstep * n + 1:hstep * (n + 1)])
                 )
             end
             if Nrem != 0
@@ -474,7 +475,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
                     @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                     @view(b[4 * vstep * Miter + 1:end]),
                     length(b) - 4 * vstep * Miter,
-                    Nrem, μ
+                    Nrem, @view(μ[hstep * Niter + 1:end])
                 )
             end
         end
