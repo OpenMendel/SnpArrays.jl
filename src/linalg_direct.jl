@@ -31,53 +31,17 @@ function SnpLinAlg{T}(
     center::Bool = false,
     scale::Bool = false,
     impute::Bool = true) where T <: AbstractFloat
+    μ = dropdims(mean(s; dims=1, model=model), dims=1)
+    σinv = Vector{T}(undef, size(s, 2))
     if model == ADDITIVE_MODEL
-        if center || scale || impute
-            μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s; dims=1, model=ADDITIVE_MODEL)
-        else
-            μ = T[]
+        @inbounds @simd for j in 1:size(s, 2)
+            σinv[j] = sqrt(μ[j] * (1 - μ[j] / 2))
+            σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
         end
-        if scale
-            σinv = Vector{T}(undef, size(s, 2))
-            @inbounds @simd for j in 1:size(s, 2)
-                σinv[j] = sqrt(μ[j] * (1 - μ[j] / 2))
-                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
-            end
-        else
-            σinv = T[]
-        end
-    elseif model == DOMINANT_MODEL
-        if center || scale || impute
-            μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s; dims=1, model=DOMINANT_MODEL)
-        else
-            μ = T[]
-        end
-        if scale
-            σinv = Vector{T}(undef, size(s, 2))
-            @inbounds @simd for j in 1:size(s, 2)
-                σinv[j] = sqrt(μ[j] * (1 - μ[j]))
-                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
-            end
-        else
-            σinv = T[]
-        end
-    elseif model == RECESSIVE_MODEL
-        if center || scale || impute
-            μ = Vector{T}(undef, size(s, 2))
-            μ[:] = mean(s; dims=1, model=RECESSIVE_MODEL)
-        else
-            μ = T[]
-        end
-        if scale
-            σinv = Vector{T}(undef, size(s, 2))
-            @inbounds @simd for j in 1:size(s, 2)
-                σinv[j] = sqrt(μ[j] * (1 - μ[j]))
-                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
-            end
-        else
-            σinv = T[]
+    elseif model == DOMINANT_MODEL || model == RECESSIVE_MODEL
+        @inbounds @simd for j in 1:size(s, 2)
+            σinv[j] = sqrt(μ[j] * (1 - μ[j]))
+            σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
         end
     else
         throw(ArgumentError("unrecognized model $model"))
