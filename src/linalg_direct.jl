@@ -241,12 +241,12 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
 end
 
 function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
-    vstep = 1024
-    hstep = 1024
-    pstep = 1024
-    vstep_log2 = 10
-    hstep_log2 = 10
-    pstep_log2 = 10
+    vstep = 256
+    hstep = 256
+    pstep = 256
+    vstep_log2 = 8
+    hstep_log2 = 8
+    pstep_log2 = 8
 
     if !impute
         if model == ADDITIVE_MODEL
@@ -461,6 +461,148 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
     end
 end
 
+
+function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
+    vstep = 256
+    hstep = 256
+    pstep = 256
+    vstep_log2 = 8
+    hstep_log2 = 8
+    pstep_log2 = 8
+
+    if !impute
+        if model == ADDITIVE_MODEL
+            _ftn! = _snparray_AtX_additive!
+        elseif model == DOMINANT_MODEL
+            _ftn! = _snparray_AtX_dominant!
+        else
+            _ftn! = _snparray_AtX_recessive!
+        end
+    else
+        if model == ADDITIVE_MODEL
+            _ftn! = _snparray_AtX_additive_meanimpute!
+        elseif model == DOMINANT_MODEL
+            _ftn! = _snparray_AtX_dominant_meanimpute!
+        else
+            _ftn! = _snparray_AtX_recessive_meanimpute!
+        end
+    end
+
+    M = size(C, 1) >> 2
+    N = size(A, 2)
+    P = size(C, 2)
+    Miter = M >>> vstep_log2 # fast div(M, 1024)
+    Mrem = rows_filled & (vstep >> 2 - 1) # fast rem(rows_filled, 4vstep)
+    Niter = N >>> hstep_log2
+    Nrem = N & (hstep - 1)
+    Piter = P >>> pstep_log2
+    Prem = P & (pstep - 1)
+    taskarray = Array{Any}(undef, Niter + 1)
+    fill!(taskarray, nothing)
+    @_sync begin
+        GC.@preserve C A B for p in 0:Piter - 1
+            for m in 0:Miter - 1
+                for n in 0:Niter - 1
+                    wait(taskarray[n + 1])
+                    taskarray[n + 1] = @_spawn _ftn!(
+                        @view(C[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]), 
+                        @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
+                        @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
+                        vstep << 2, hstep, pstep, 
+                        @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(σinv[hstep * n + 1:hstep * (n + 1)])
+                    )
+                end
+                if Nrem != 0
+                    wait(taskarray[Niter + 1])
+                    taskarray[Miter + 1] = @_spawn _ftn!(
+                        @view(C[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]), 
+                        @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
+                        @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
+                        vstep << 2, Nrem, pstep,
+                        @view(μ[hstep * Niter + 1:end]),
+                        @view(σinv[hstep * Niter + 1:end])
+                    )
+                end
+            end
+            if Mrem != 0
+                for n in 0:Niter - 1
+                    wait(taskarray[n + 1])
+                    taskarray[n + 1] = @_spawn _ftn!(
+                        @view(C[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
+                        @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
+                        @view(B[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]),
+                        size(C, 1) - 4 * vstep * Miter, hstep, pstep,
+                        @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(σinv[hstep * n + 1:hstep * (n + 1)])
+                    )
+                end
+                if Nrem != 0
+                    wait(taskarray[Niter + 1])
+                    taskarray[Miter + 1] = @_spawn _ftn!(
+                        @view(C[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
+                        @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
+                        @view(B[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]),
+                        size(C, 1) - 4 * vstep * Miter, Nrem, pstep,
+                        @view(μ[hstep * Niter + 1:end]),
+                        @view(σinv[hstep * Niter + 1:end])
+                    )
+                end
+            end
+        end
+        if Prem != 0
+            for m in 0:Miter - 1
+                for n in 0:Niter - 1
+                    wait(taskarray[n + 1])
+                    taskarray[m+1] = @_spawn _ftn!(
+                        @view(C[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]), 
+                        @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
+                        @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
+                        vstep << 2, hstep, Prem,
+                        @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(σinv[hstep * n + 1:hstep * (n + 1)])
+                    )
+                end
+                if Nrem != 0
+                    wait(taskarray[Niter+1])
+                    taskarray[Niter + 1] = @_spawn _ftn!(
+                        @view(C[hstep * Niter + 1:end, pstep * Piter + 1:end]), 
+                        @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
+                        @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
+                        vstep << 2, Nrem, Prem,
+                        @view(μ[hstep * Niter + 1:end]),
+                        @view(σinv[hstep * Niter + 1:end])
+                    )
+                end
+            end
+            if Mrem != 0
+                for n in 0:Niter - 1
+                    wait(taskarray[n + 1])
+                    taskarray[n + 1] = @_spawn _ftn!(
+                        @view(C[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
+                        @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
+                        @view(B[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]),
+                        size(C, 1) - 4 * vstep * Miter, hstep, Prem,
+                        @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(σinv[hstep * n + 1:hstep * (n + 1)])
+                    )
+                end
+                if Nrem != 0
+                    wait(taskarray[Niter + 1])
+                    taskarray[Miter + 1] = @_spawn _ftn!(
+                        @view(C[hstep * Niter + 1:end, pstep * Piter + 1:end]),
+                        @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
+                        @view(B[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]),
+                        size(C, 1) - 4 * vstep * Miter, Nrem, Prem,
+                        @view(μ[hstep * Niter + 1:end]),
+                        @view(σinv[hstep * Niter + 1:end])
+                    )
+                end
+            end
+        end
+    end
+end
+
 for (_ftn!, _ftn_rem!, expr) in [
         (:_snparray_ax_additive!, :_snparray_ax_additive_rem!, 
             :(((Aij >= 2) + (Aij == 3)) * v[j])),
@@ -559,7 +701,6 @@ for (_ftn!, _ftn_rem!, expr) in [
     end
 end
 
-
 for (_ftn!, _ftn_rem!, expr) in [
         (:_snparray_AX_additive!, :_snparray_AX_additive_rem!, 
             :(((Aij >= 2) + (Aij == 3)) * V[j, c] * σinv[j])),
@@ -606,6 +747,59 @@ for (_ftn!, _ftn_rem!, expr) in [
                 for c in 1:Vcols
                     ($_ftn_rem!)(@view(out[4k + 1:end, :]), @view(s[k + 1:k + 1, :]),
                         V, @view(μ[4k+1:end]), @view(σinv[4k+1:end]), c)
+                end
+            end
+            nothing
+        end
+    end
+end
+
+for (_ftn!, _ftn_rem!, expr) in [
+    (:_snparray_AtX_additive!, :_snparray_AtX_additive_rem!, 
+        :(((Aij >= 2) + (Aij == 3)) * V[4 * (l - 1) + p, c] * σinv[i])),
+    (:_snparray_AtX_dominant!, :_snparray_AtX_dominant_rem!, 
+        :((Aij >= 2) * V[4 * (l - 1) + p, c] * σinv[i])),
+    (:_snparray_AtX_recessive!, :_snparray_AtX_recessive_rem!, 
+        :((Aij == 3) * V[4 * (l - 1) + p, c] * σinv[i])),
+    (:_snparray_AtX_additive_meanimpute!, :_snparray_AtX_additive_meanimpute_rem!, 
+        :((((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[i]) * V[4 * (l - 1) + p, c]) * σinv[i])),
+    (:_snparray_AtX_dominant_meanimpute!, :_snparray_AtX_dominant_meanimpute_rem!, 
+        :((Aij >= 2) * V[4 * (l - 1) + p, c] * σinv[i] + (Aij == 1) * μ[i] * V[4 * (l - 1) + p, c] * σinv[i])),
+    (:_snparray_AtX_recessive_meanimpute!, :_snparray_AtX_recessive_meanimpute_rem!, 
+        :((Aij == 3) * V[4 * (l - 1) + p, c] * σinv[i] + (Aij == 1) * μ[i] * V[4 * (l - 1) + p, c] * σinv[i]))
+]
+    @eval begin
+        function ($_ftn_rem!)(out, s, V, μ, σinv, c)
+            maxp = size(out, 1)
+            l = 1
+            @avx for i in 1:size(out, 1)
+                block = s[1, i]
+                for p in 1:maxp
+                    Aij = (block >> (2 * (p - 1))) & 3
+                    out[i, c] += $expr
+                end
+            end
+        end
+
+        function ($_ftn!)(out, s, V, srows, scols, Vcols, μ, σinv)
+            k = srows >> 2 # fast div(srows, 4)
+            rem = srows & 3 # fast rem(srows, 4)
+
+            @avx for c in 1:Vcols
+                for i in 1:scols
+                    for l in 1:k
+                        block = s[l, i]
+                        for p in 1:4
+                            Aij = (block >> (2 * (p - 1))) & 3
+                            out[i, c] += $expr
+                        end
+                    end
+                end
+            end
+            if rem != 0
+                for c in 1:Vcols
+                    ($_ftn_rem!)(out, @view(s[k + 1:k + 1, :]),
+                        @view(V[4k + 1:end, :]), μ, σinv, c)
                 end
             end
             nothing
