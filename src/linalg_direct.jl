@@ -418,7 +418,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
         GC.@preserve c A b for m in 0:Miter - 1
             for n in 0:Niter - 1
                 wait(taskarray[n + 1])
-                @_spawn _ftn!(
+                taskarray[n + 1] = @_spawn _ftn!(
                     gesp(stridedpointer(c), (hstep * n,)),
                     gesp(stridedpointer(A), (vstep * m, hstep * n)),
                     gesp(stridedpointer(b), (4 * vstep * m,)),
@@ -427,7 +427,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
             end
             if Nrem != 0
                 wait(taskarray[Niter + 1])
-                @_spawn _ftn!(
+                taskarray[Niter + 1] = @_spawn _ftn!(
                     @view(c[hstep * Niter + 1:end]),
                     @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                     @view(b[4 * vstep * m + 1:4 * vstep * (m + 1)]),
@@ -439,7 +439,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
         if Mrem != 0
             for n in 0:Niter - 1
                 wait(taskarray[n + 1])
-                @_spawn _ftn!(
+                taskarray[n + 1] = @_spawn _ftn!(
                     @view(c[hstep * n + 1:hstep * (n + 1)]),
                     @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                     @view(b[4 * vstep * Miter + 1:end]),
@@ -449,7 +449,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
             end
             if Nrem != 0
                 wait(taskarray[Niter + 1])
-                @_spawn _ftn!(
+                taskarray[Niter + 1] = @_spawn _ftn!(
                     @view(c[hstep * Niter + 1:end]),
                     @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                     @view(b[4 * vstep * Miter + 1:end]),
