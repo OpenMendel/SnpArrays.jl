@@ -159,6 +159,32 @@ function mul!(
     end
 end
 
+"""
+    LinearAlgebra.mul!(out, st::Union{Transpose{T, SnpLinAlg{T}}, Adjoint{T, SnpLinAlg{T}}}, V)
+
+In-place matrix-matrix multiplication, with transposed `SnpLinAlg`.
+"""
+function mul!(
+    out::AbstractMatrix{T}, 
+    st::Union{Transpose{T, SnpLinAlg{T}}, Adjoint{T, SnpLinAlg{T}}},
+    V::AbstractMatrix{T}) where T <: AbstractFloat
+    sla = st.parent
+    @assert size(out, 1) == size(sla, 2) && size(out, 2) == size(V, 2) && size(sla, 1) == size(V, 1)
+
+    s = sla.s
+    fill!(out, zero(eltype(out)))
+
+    sla.storagev2 .= sla.scale ? sla.σinv : one(T)
+    _snparray_AtX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.storagev2)
+
+    # if sla.center
+    #     σinv = sla.storagev2
+    #     @avx for i in 1:size(out, 1), j in 1:size(out, 2), k in 1:size(V, 1)
+    #         out[i, j] -= sla.μ[k] * V[k, j] * σinv[k]
+    #     end
+    # end
+end
+
 wait(::Nothing) = nothing
 
 function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
@@ -462,12 +488,12 @@ end
 
 
 function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
-    vstep = 256
-    hstep = 256
-    pstep = 256
-    vstep_log2 = 8
-    hstep_log2 = 8
-    pstep_log2 = 8
+    vstep = 1024
+    hstep = 1024
+    pstep = 1024
+    vstep_log2 = 10
+    hstep_log2 = 10
+    pstep_log2 = 10
 
     if !impute
         if model == ADDITIVE_MODEL
