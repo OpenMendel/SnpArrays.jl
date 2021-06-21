@@ -127,7 +127,7 @@ function mul!(
 
     if sla.center
         σinv = sla.storagev2
-        @avx for i in 1:size(out, 1), j in 1:size(out, 2), k in 1:size(V, 1)
+        @avx for j in 1:size(out, 2), i in 1:size(out, 1), k in 1:size(V, 1)
             out[i, j] -= sla.μ[k] * V[k, j] * σinv[k]
         end
     end
@@ -177,12 +177,12 @@ function mul!(
     sla.storagev2 .= sla.scale ? sla.σinv : one(T)
     _snparray_AtX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.storagev2)
 
-    # if sla.center
-    #     σinv = sla.storagev2
-    #     @avx for i in 1:size(out, 1), j in 1:size(out, 2), k in 1:size(V, 1)
-    #         out[i, j] -= sla.μ[k] * V[k, j] * σinv[k]
-    #     end
-    # end
+    if sla.center
+        σinv = sla.storagev2
+        @avx for j in 1:size(out, 2), i in 1:size(out, 1), k in 1:size(V, 1)
+            out[i, j] -= sla.μ[i] * V[k, j] * σinv[i]
+        end
+    end
 end
 
 wait(::Nothing) = nothing
