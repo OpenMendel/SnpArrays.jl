@@ -582,7 +582,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
             for m in 0:Miter - 1
                 for n in 0:Niter - 1
                     wait(taskarray[n + 1])
-                    taskarray[n+1] = @_spawn _ftn!(
+                    taskarray[n + 1] = @_spawn _ftn!(
                         @view(C[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
@@ -592,7 +592,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                     )
                 end
                 if Nrem != 0
-                    wait(taskarray[Niter+1])
+                    wait(taskarray[Niter + 1])
                     taskarray[Niter + 1] = @_spawn _ftn!(
                         @view(C[hstep * Niter + 1:end, pstep * Piter + 1:end]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
@@ -661,15 +661,17 @@ for (_ftn!, _ftn_rem!, expr) in [
             k = rows >> 2
             rem = rows & 3
 
-            @avx for j ∈ 1:cols
-                for l in 1:k
-                    block = s[l, j]
+            if k ≥ 1 # avoid avxing over empty collection
+                @avx for j ∈ 1:cols
+                    for l in 1:k
+                        block = s[l, j]
 
-                    for p in 1:4
-                        Aij = (block >> (2 * (p - 1))) & 3
-                        out[4 * (l - 1) + p] += $expr
+                        for p in 1:4
+                            Aij = (block >> (2 * (p - 1))) & 3
+                            out[4 * (l - 1) + p] += $expr
+                        end
+
                     end
-
                 end
             end
             if rem != 0
@@ -711,13 +713,15 @@ for (_ftn!, _ftn_rem!, expr) in [
             k = rows >> 2
             rem = rows & 3
 
-            @avx for i ∈ 1:cols
-                for l in 1:k
-                    block = s[l, i]
-                    
-                    for p in 1:4
-                        Aij = (block >> (2 * (p - 1))) & 3
-                        out[i] += $expr
+            if k ≥ 1 # avoid avxing over empty collection
+                @avx for i ∈ 1:cols
+                    for l in 1:k
+                        block = s[l, i]
+                        
+                        for p in 1:4
+                            Aij = (block >> (2 * (p - 1))) & 3
+                            out[i] += $expr
+                        end
                     end
                 end
             end
@@ -760,13 +764,15 @@ for (_ftn!, _ftn_rem!, expr) in [
             rem = srows & 3 # fast rem(srows, 4)
 
             # compute out[i, c] = s[i, j] * V[j, c] for j in 1:n
-            @avx for c in 1:Vcols
-                for j in 1:scols
-                    for l in 1:k
-                        block = s[l, j]
-                        for p in 1:4
-                            Aij = (block >> (2 * (p - 1))) & 3
-                            out[4*(l - 1) + p, c] += $expr
+            if k ≥ 1 # avoid avxing over empty collection
+                @avx for c in 1:Vcols
+                    for j in 1:scols
+                        for l in 1:k
+                            block = s[l, j]
+                            for p in 1:4
+                                Aij = (block >> (2 * (p - 1))) & 3
+                                out[4*(l - 1) + p, c] += $expr
+                            end
                         end
                     end
                 end
@@ -813,29 +819,16 @@ for (_ftn!, _ftn_rem!, expr) in [
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
 
-            for c in 1:Vcols
-                for i in 1:scols
-                    for l in 1:k
-                        block = s[l, i]
-                        # unroll crashes julia
-                        for p in 1:4
-                            Aij = (block >> (2 * (p - 1))) & 3
-                            out[i, c] += $expr
+            if k ≥ 1 # avoid avxing over empty collection
+                @avx for c in 1:Vcols
+                    for i in 1:scols
+                        for l in 1:k
+                            block = s[l, i]
+                            for p in 1:4
+                                Aij = (block >> (2 * (p - 1))) & 3
+                                out[i, c] += $expr
+                            end
                         end
-                        
-                        # manually unroll with avx gives wrong answer
-                        # p = 1
-                        # Aij = (block >> (2 * (p - 1))) & 3
-                        # out[i, c] += $expr
-                        # p = 2
-                        # Aij = (block >> (2 * (p - 1))) & 3
-                        # out[i, c] += $expr
-                        # p = 3
-                        # Aij = (block >> (2 * (p - 1))) & 3
-                        # out[i, c] += $expr
-                        # p = 4
-                        # Aij = (block >> (2 * (p - 1))) & 3
-                        # out[i, c] += $expr
                     end
                 end
             end
