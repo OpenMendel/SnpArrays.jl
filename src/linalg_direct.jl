@@ -188,7 +188,7 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
     M = length(c) >> 2
     N = size(A, 2)
     Miter = M >>> vstep_log2 # fast div(M, 1024)
-    Mrem = rows_filled & (vstep >> 2 - 1) # fast rem(rows_filled, 4vstep)
+    Mrem = rows_filled & (vstep << 2 - 1) # fast rem(rows_filled, 4vstep)
     Niter = N >>> hstep_log2
     Nrem = N & (hstep - 1)
     taskarray = Array{Any}(undef, Miter + 1)
@@ -270,7 +270,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
     N = size(A, 2)
     P = size(C, 2)
     Miter = M >>> vstep_log2 # fast div(M, 1024)
-    Mrem = rows_filled & (vstep >> 2 - 1) # fast rem(rows_filled, 4vstep)
+    Mrem = rows_filled & (vstep << 2 - 1) # fast rem(rows_filled, 4vstep)
     Niter = N >>> hstep_log2
     Nrem = N & (hstep - 1)
     Piter = P >>> pstep_log2
@@ -408,10 +408,9 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
     M = length(b) >> 2
     N = size(A, 2)
     Miter = M >>> vstep_log2 # fast div(M, 1024)
-    Mrem = rows_filled & (vstep >> 2 - 1) # fast rem(rows_filled, 4vstep)
+    Mrem = rows_filled & (vstep << 2 - 1) # fast rem(rows_filled, 4vstep)
     Niter = N >>> hstep_log2
     Nrem = N & (hstep - 1)
-
     taskarray = Array{Any}(undef, Niter+1)
     fill!(taskarray, nothing)
     @_sync begin
@@ -488,17 +487,20 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
         end
     end
 
-    M = size(C, 1) >> 2
+    M = size(B, 1) >> 2
     N = size(A, 2)
     P = size(C, 2)
     Miter = M >>> vstep_log2 # fast div(M, 1024)
-    Mrem = rows_filled & (vstep >> 2 - 1) # fast rem(rows_filled, 4vstep)
+    Mrem = rows_filled & (vstep << 2 - 1) # fast rem(rows_filled, 4vstep)
     Niter = N >>> hstep_log2
     Nrem = N & (hstep - 1)
     Piter = P >>> pstep_log2
     Prem = P & (pstep - 1)
     taskarray = Array{Any}(undef, Niter + 1)
     fill!(taskarray, nothing)
+    println("M = $M, Miter = $Miter, Mrem = $Mrem")
+    println("N = $N, Niter = $Niter, Nrem = $Nrem")
+    println("P = $P, Piter = $Piter, Prem = $Prem")
     @_sync begin
         GC.@preserve C A B for p in 0:Piter - 1
             for m in 0:Miter - 1
