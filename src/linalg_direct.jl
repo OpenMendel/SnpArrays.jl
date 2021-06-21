@@ -173,6 +173,7 @@ function mul!(
 
     s = sla.s
     fill!(out, zero(eltype(out)))
+    sla.impute && error("Currently A'X does not support impute=true keyword, please impute manually for now")
 
     sla.storagev2 .= sla.scale ? sla.σinv : one(T)
     _snparray_AtX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.storagev2)
