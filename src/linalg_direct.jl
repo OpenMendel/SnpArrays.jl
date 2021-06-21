@@ -543,7 +543,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                 end
                 if Nrem != 0
                     wait(taskarray[Niter + 1])
-                    taskarray[Miter + 1] = @_spawn _ftn!(
+                    taskarray[Niter + 1] = @_spawn _ftn!(
                         @view(C[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
@@ -560,18 +560,18 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(C[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                         @view(B[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]),
-                        size(C, 1) - 4 * vstep * Miter, hstep, pstep,
+                        size(B, 1) - 4 * vstep * Miter, hstep, pstep,
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
                 if Nrem != 0
                     wait(taskarray[Niter + 1])
-                    taskarray[Miter + 1] = @_spawn _ftn!(
+                    taskarray[Niter + 1] = @_spawn _ftn!(
                         @view(C[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                         @view(B[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]),
-                        size(C, 1) - 4 * vstep * Miter, Nrem, pstep,
+                        size(B, 1) - 4 * vstep * Miter, Nrem, pstep,
                         @view(μ[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
@@ -582,7 +582,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
             for m in 0:Miter - 1
                 for n in 0:Niter - 1
                     wait(taskarray[n + 1])
-                    taskarray[m+1] = @_spawn _ftn!(
+                    taskarray[n+1] = @_spawn _ftn!(
                         @view(C[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
@@ -610,18 +610,18 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(C[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
                         @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                         @view(B[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]),
-                        size(C, 1) - 4 * vstep * Miter, hstep, Prem,
+                        size(B, 1) - 4 * vstep * Miter, hstep, Prem,
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
                 if Nrem != 0
                     wait(taskarray[Niter + 1])
-                    taskarray[Miter + 1] = @_spawn _ftn!(
+                    taskarray[Niter + 1] = @_spawn _ftn!(
                         @view(C[hstep * Niter + 1:end, pstep * Piter + 1:end]),
                         @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                         @view(B[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]),
-                        size(C, 1) - 4 * vstep * Miter, Nrem, Prem,
+                        size(B, 1) - 4 * vstep * Miter, Nrem, Prem,
                         @view(μ[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
@@ -798,7 +798,7 @@ for (_ftn!, _ftn_rem!, expr) in [
 ]
     @eval begin
         function ($_ftn_rem!)(out, s, V, μ, σinv, c)
-            maxp = size(out, 1)
+            maxp = size(V, 1)
             l = 1
             @avx for i in 1:size(out, 1)
                 block = s[1, i]
@@ -813,14 +813,29 @@ for (_ftn!, _ftn_rem!, expr) in [
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
 
-            @avx for c in 1:Vcols
+            for c in 1:Vcols
                 for i in 1:scols
                     for l in 1:k
                         block = s[l, i]
+                        # unroll crashes julia
                         for p in 1:4
                             Aij = (block >> (2 * (p - 1))) & 3
                             out[i, c] += $expr
                         end
+                        
+                        # manually unroll with avx gives wrong answer
+                        # p = 1
+                        # Aij = (block >> (2 * (p - 1))) & 3
+                        # out[i, c] += $expr
+                        # p = 2
+                        # Aij = (block >> (2 * (p - 1))) & 3
+                        # out[i, c] += $expr
+                        # p = 3
+                        # Aij = (block >> (2 * (p - 1))) & 3
+                        # out[i, c] += $expr
+                        # p = 4
+                        # Aij = (block >> (2 * (p - 1))) & 3
+                        # out[i, c] += $expr
                     end
                 end
             end
