@@ -125,12 +125,6 @@ function mul!(
 
     _snparray_AX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.storagev2)
 
-    if sla.center
-        σinv = sla.storagev2
-        @avx for j in 1:size(out, 2), i in 1:size(out, 1), k in 1:size(V, 1)
-            out[i, j] -= sla.μ[k] * V[k, j] * σinv[k]
-        end
-    end
     return out
 end
 
@@ -173,7 +167,6 @@ function mul!(
 
     s = sla.s
     fill!(out, zero(eltype(out)))
-    sla.impute && error("Currently A'X does not support impute=true keyword, please impute manually for now")
 
     sla.storagev2 .= sla.scale ? sla.σinv : one(T)
     _snparray_AtX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.storagev2)
@@ -733,17 +726,17 @@ end
 
 for (_ftn!, _ftn_rem!, expr) in [
         (:_snparray_AX_additive!, :_snparray_AX_additive_rem!, 
-            :(((Aij >= 2) + (Aij == 3)) * V[j, c] * σinv[j])),
+            :(((Aij >= 2) + (Aij == 3) - μ[j]) * σinv[j] * V[j, c])),
         (:_snparray_AX_dominant!, :_snparray_AX_dominant_rem!, 
-            :((Aij >= 2) * V[j, c] * σinv[j])),
+            :(((Aij >= 2) - μ[j]) * σinv[j] * V[j, c])),
         (:_snparray_AX_recessive!, :_snparray_AX_recessive_rem!, 
-            :((Aij == 3) * V[j, c] * σinv[j])),
+            :(((Aij == 3) - μ[j])* σinv[j] * V[j, c])),
         (:_snparray_AX_additive_meanimpute!, :_snparray_AX_additive_meanimpute_rem!, 
-            :((((Aij >= 2) * 1.0 + (Aij == 3) * 1.0 + (Aij == 1) * μ[j]) * V[j, c]) * σinv[j])),
+            :(((((Aij >= 2) + (Aij == 3) - μ[j]) + (Aij == 1) * μ[j]) * σinv[j] * V[j, c]))),
         (:_snparray_AX_dominant_meanimpute!, :_snparray_AX_dominant_meanimpute_rem!, 
-            :((Aij >= 2) * V[j, c] * σinv[j] + (Aij == 1) * μ[j] * V[j, c] * σinv[j])),
-        (:_snparray_AX_recessive_meanimpute!, :_snparray_AX_recessive_meanimpute_rem!, 
-            :((Aij == 3) * V[j, c] * σinv[j] + (Aij == 1) * μ[j] * V[j, c] * σinv[j]))
+            :(((Aij >= 2) - μ[j]) * σinv[j] * V[j, c] + (Aij == 1) * μ[j] * σinv[j] * V[j, c])),
+            (:_snparray_AX_recessive_meanimpute!, :_snparray_AX_recessive_meanimpute_rem!, 
+            :(((Aij == 3) - μ[j]) * V[j, c] * σinv[j] + (Aij == 1) * μ[j] * σinv[j] * V[j, c]))
     ]
     @eval begin
         function ($_ftn_rem!)(out, s, V, μ, σinv, c)
