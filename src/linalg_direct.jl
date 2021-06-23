@@ -756,7 +756,7 @@ for (_ftn!, _ftn_rem!, expr) in [
         (:_snparray_AX_dominant!, :_snparray_AX_dominant_rem!, 
             :(((Aij >= 2) - μ[j]) * σinv[j] * V[j, c])),
         (:_snparray_AX_recessive!, :_snparray_AX_recessive_rem!, 
-            :(((Aij == 3) - μ[j])* σinv[j] * V[j, c])),
+            :(((Aij == 3) - μ[j]) * σinv[j] * V[j, c])),
         (:_snparray_AX_additive_meanimpute!, :_snparray_AX_additive_meanimpute_rem!, 
             :(((((Aij >= 2) + (Aij == 3) - μ[j]) + (Aij == 1) * μ[j]) * σinv[j] * V[j, c]))),
         (:_snparray_AX_dominant_meanimpute!, :_snparray_AX_dominant_meanimpute_rem!, 
@@ -797,7 +797,7 @@ for (_ftn!, _ftn_rem!, expr) in [
             if rem != 0
                 for c in 1:Vcols
                     ($_ftn_rem!)(@view(out[4k + 1:end, :]), @view(s[k + 1:k + 1, :]),
-                        V, @view(μ[4k+1:end]), @view(σinv[4k+1:end]), c)
+                        V, μ, σinv, c)
                 end
             end
             nothing
