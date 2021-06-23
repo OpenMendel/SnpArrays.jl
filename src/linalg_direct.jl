@@ -31,17 +31,50 @@ function SnpLinAlg{T}(
     center::Bool = false,
     scale::Bool = false,
     impute::Bool = true) where T <: AbstractFloat
-    μ = dropdims(mean(s; dims=1, model=model), dims=1)
-    σinv = Vector{T}(undef, size(s, 2))
     if model == ADDITIVE_MODEL
-        @inbounds @simd for j in 1:size(s, 2)
-            σinv[j] = sqrt(μ[j] * (1 - μ[j] / 2))
-            σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
+        if center || scale || impute
+            μ = dropdims(mean(s; dims=1, model=model), dims=1)
+        else
+            μ = zeros(T, size(s, 2))
         end
-    elseif model == DOMINANT_MODEL || model == RECESSIVE_MODEL
-        @inbounds @simd for j in 1:size(s, 2)
-            σinv[j] = sqrt(μ[j] * (1 - μ[j]))
-            σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
+        if scale
+            σinv = Vector{T}(undef, size(s, 2))
+            @inbounds @simd for j in 1:size(s, 2)
+                σinv[j] = sqrt(μ[j] * (1 - μ[j] / 2))
+                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
+            end
+        else
+            σinv = ones(T, size(s, 2))
+        end
+    elseif model == DOMINANT_MODEL
+        if center || scale || impute
+            μ = dropdims(mean(s; dims=1, model=model), dims=1)
+        else
+            μ = zeros(T, size(s, 2))
+        end
+        if scale
+            σinv = Vector{T}(undef, size(s, 2))
+            @inbounds @simd for j in 1:size(s, 2)
+                σinv[j] = sqrt(μ[j] * (1 - μ[j]))
+                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
+            end
+        else
+            σinv = ones(T, size(s, 2))
+        end
+    elseif model == RECESSIVE_MODEL
+        if center || scale || impute
+            μ = dropdims(mean(s; dims=1, model=model), dims=1)
+        else
+            μ = zeros(T, size(s, 2))
+        end
+        if scale
+            σinv = Vector{T}(undef, size(s, 2))
+            @inbounds @simd for j in 1:size(s, 2)
+                σinv[j] = sqrt(μ[j] * (1 - μ[j]))
+                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
+            end
+        else
+            σinv = ones(T, size(s, 2))
         end
     else
         throw(ArgumentError("unrecognized model $model"))
@@ -119,11 +152,10 @@ function mul!(
     V::AbstractMatrix{T}) where T <: AbstractFloat
     @assert size(out, 1) == size(sla, 1) && size(out, 2) == size(V, 2) && size(sla, 2) == size(V, 1)
 
-    sla.storagev2 .= sla.scale ? sla.σinv : one(T)
     fill!(out, zero(eltype(out)))
     s = sla.s
 
-    _snparray_AX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.storagev2)
+    _snparray_AX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.σinv)
 
     return out
 end
@@ -167,9 +199,8 @@ function mul!(
 
     s = sla.s
     fill!(out, zero(eltype(out)))
-    sla.storagev2 .= sla.scale ? sla.σinv : one(T)
 
-    _snparray_AtX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.storagev2)
+    _snparray_AtX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.σinv)
 
     return out
 end
