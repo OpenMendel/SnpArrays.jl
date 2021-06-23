@@ -1,3 +1,4 @@
+
 # SnpArrays.jl
 
 Data from [*genome-wide association studies (GWAS)*](https://en.wikipedia.org/wiki/Genome-wide_association_study) are often saved as a [**PLINK binary biallelic genotype table**](https://www.cog-genomics.org/plink2/formats#bed) or `.bed` file. To be useful, such files should be accompanied by a `.fam` file, containing metadata on the rows of the table, and a `.bim` file,
@@ -30,16 +31,14 @@ Use the backspace key to return to the Julia REPL.
 versioninfo()
 ```
 
-    Julia Version 1.5.0
-    Commit 96786e22cc (2020-08-01 23:44 UTC)
+    Julia Version 1.6.0
+    Commit f9720dc2eb (2021-03-24 12:55 UTC)
     Platform Info:
-      OS: Linux (x86_64-pc-linux-gnu)
-      CPU: Intel(R) Core(TM) i9-9920X CPU @ 3.50GHz
+      OS: macOS (x86_64-apple-darwin19.6.0)
+      CPU: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
       WORD_SIZE: 64
       LIBM: libopenlibm
-      LLVM: libLLVM-9.0.1 (ORCJIT, skylake)
-    Environment:
-      JULIA_NUM_THREADS = 8
+      LLVM: libLLVM-11.0.1 (ORCJIT, skylake)
 
 
 
@@ -2031,13 +2030,12 @@ To instantiate a SnpLinAlg based on SnpArray,
 ```julia
 const EURsla = SnpLinAlg{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true)
 const EURsla_ = SnpLinAlg{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true, impute=false)
-const EURbm = SnpBitMatrix{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale=true)
 ```
 
 
 
 
-    379×54051 SnpBitMatrix{Float64}:
+    379×54051 SnpLinAlg{Float64}:
       0.46516   0.163517  0.306468  -0.0298581  …   0.342518   0.163517   0.23281
       0.46516  -6.0338    0.306468  -0.0298581      0.342518   0.163517   0.23281
       0.46516   0.163517  0.306468   1.38467        0.342518   0.163517  -4.17894
@@ -2068,46 +2066,37 @@ const EURbm = SnpBitMatrix{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scal
 
 
 The constructor shares the same keyword arguments as the `convert` or `copyto!` functions. The type parameter, `Float64` in this example, indicates the SnpLinAlg acts like a Float64 matrix.
-SnpLinAlg directly uses the SnpArray for computation. 
-
-On the other hand, memory usage of SnpBitMatrix should be similar to the SnpArray, or equivalently bed file size, if `model=ADDITIVE_MODEL`, or half of that of SnpArray if `model=DOMINANT_MODEL` or `model=RECESSIVE_MODEL`.
+SnpLinAlg directly uses the SnpArray for computation and does not expand into full numeric array. 
 
 
 ```julia
-Base.summarysize(EUR), Base.summarysize(EURsla), Base.summarysize(EURbm)
+Base.summarysize(EUR), Base.summarysize(EURsla)
 ```
 
 
 
 
-    (6876757, 8177245, 6421960)
+    (6876757, 8177245)
 
 
 
 ### `mul!`
 
-SnpLinAlg and SnpBitMatrix act similar to a regular matrix and responds to `size`, `eltype`, and matrix-vector multiplications.
+SnpLinAlg act similar to a regular matrix and responds to `size`, `eltype`, SnpLinAlg-vector multiplication, and SnpLinAlg-matrix multiplications. Other linear algebra operations (e.g. `qr()`) should work on a SnpLinAlg, but will be much slower. 
 
 
 ```julia
 @show size(EURsla)
 @show eltype(EURsla)
 @show typeof(EURsla) <: AbstractMatrix;
-
-@show size(EURbm)
-@show eltype(EURbm)
-@show typeof(EURbm) <: AbstractMatrix;
 ```
 
     size(EURsla) = (379, 54051)
     eltype(EURsla) = Float64
     typeof(EURsla) <: AbstractMatrix = true
-    size(EURbm) = (379, 54051)
-    eltype(EURbm) = Float64
-    typeof(EURbm) <: AbstractMatrix = true
 
 
-Matrix-vector multiplications with SnpLinAlg and SnpBitMatrix are mathematically equivalent to the corresponding Float matrix contained from `convert` or `copyto!` a SnpArray.
+Matrix-vector and matrix-matrix multiplications with SnpLinAlg are mathematically equivalent to the corresponding Float matrix contained from `convert` or `copyto!` a SnpArray.
 
 
 ```julia
@@ -2119,13 +2108,13 @@ A = convert(Matrix{Float64}, EUR, model=ADDITIVE_MODEL, center=true, scale=true)
 
 
 ```julia
-norm(EURsla * v2 -  A * v2)
+norm(EURsla * v2 - A * v2)
 ```
 
 
 
 
-    3.110386368926456e-11
+    3.219256691519521e-11
 
 
 
@@ -2137,106 +2126,41 @@ norm(EURsla' * v1 - A' * v1)
 
 
 
-    2.445144256864899e-11
+    6.721174834452134e-12
 
 
+
+### Linear Algebra Performance
+
+See Linear Algebra Benchmarks on the left for performance comparison among BLAS, SnpLinAlg, and CuSnpArray (for GPU). In general,
++ SnpLinAlg-vector multiplications are at least 2x faster than the corresponding Matrix{Float64}-vector multiplication using BLAS
++ CuSnpArray-vector multiplications on the GPU is 50x faster than BLAS, and
++ SnpLinAlg-matrix multiplication is competitive with BLAS if the right hand matrix is "tall and thin".
+
+Note that SnpLinAlg does not allocate additional memory, and can impute missing values with column means. 
+
+### `copyto!`, `convert`, and `subarrays`
+
+`copyto!` and `convert` are also supported on `SnpLinAlg`s, but without the `impute`, `scale`, `center` keyword arguments. The destination array will be scaled/centered if the `SnpLinAlg` was scaled/centered. 
 
 
 ```julia
-norm(EURbm * v2 -  A * v2)
+# convert work on SnpLinAlg (and subarrays of it)
+Atrue = convert(Matrix{Float64}, EUR, center=true, scale=true, impute=true)
+A = convert(Matrix{Float64}, EURsla)
+all(Atrue .≈ A)
 ```
 
 
 
 
-    3.3662156610454995e-11
+    true
 
 
 
 
 ```julia
-norm(EURbm' * v1 - A' * v1)
-```
-
-
-
-
-    6.847067637430217e-12
-
-
-
-See Linear Algebra page for performance comparison among BLAS, SnpLinAlg, and SnpBitMatrix. In general, SnpLinAlg and SnpBitMatrix operations are at least twice faster than the corresponding Matrix{Float64}-vector multiplication. 
-
-In general, computing $Ax$ is more effective in SnpLinAlg, and computing $A^T x$ is faster in SnpBitMatrix. Note that SnpLinAlg does not allocate additional memory, and can impute missing values with column means. See Linear Algebra page for more information.
-
-In a test example with ~1GB bed file, SnpBitMatrix-vector multiplication is about 3-5 fold faster than the corresponding Matrix{Float64}-vector multiplication, because the Matrix{Float64} matrix cannot fit into the memory.
-
-`SnpBitMatrix` can be created from a subarray of SnpArray.
-
-
-```julia
-EURsub = @view EUR[1:2:100, 1:2:100]
-EURsubbm = SnpBitMatrix{Float64}(EURsub, model=ADDITIVE_MODEL, center=true, scale=true);
-```
-
-
-```julia
-Base.summarysize(EURsubbm)
-```
-
-
-
-
-    2600
-
-
-
-
-```julia
-@show size(EURsubbm)
-@show eltype(EURsubbm)
-@show typeof(EURsubbm) <: AbstractMatrix;
-```
-
-    size(EURsubbm) = (50, 50)
-    eltype(EURsubbm) = Float64
-    typeof(EURsubbm) <: AbstractMatrix = true
-
-
-
-```julia
-using LinearAlgebra
-v1 = randn(size(EURsub, 1))
-v2 = randn(size(EURsub, 2))
-A = convert(Matrix{Float64}, EURsub, model=ADDITIVE_MODEL, center=true, scale=true)
-norm(EURsubbm * v2 -  A * v2)
-```
-
-
-
-
-    6.684589123597768e-14
-
-
-
-
-```julia
-norm(EURsubbm' * v1 - A' * v1)
-```
-
-
-
-
-    1.823659961779917e-13
-
-
-
-### `copyto!` and `convert`
-
-`copyto!` and `convert` are also supported on `SnpLinAlg`s and `SnpBitMatrix`s, but without the `impute`, `scale`, `center` keyword arguments. The destination array will be scaled/centered if the `SnpLinAlg`/`SnpBitMatrix` were scaled/centered. 
-
-
-```julia
+# copyto on a subarray
 v = zeros(size(EUR, 1), 10)
 copyto!(v, @view(EURsla[:, 1:2:20]))
 ```
@@ -2244,7 +2168,7 @@ copyto!(v, @view(EURsla[:, 1:2:20]))
 
 
 
-    379×10 Array{Float64,2}:
+    379×10 Matrix{Float64}:
       0.46516  0.306468  -0.539104  -0.370294  …   0.238721   0.551318   0.301719
       0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
       0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
@@ -2276,14 +2200,13 @@ copyto!(v, @view(EURsla[:, 1:2:20]))
 
 
 ```julia
-A = convert(Matrix{Float64}, EUR)
-norm(v * ones(10) - A[:, 1:2:20] * ones(10))
+all(v .≈ Atrue[:, 1:2:20])
 ```
 
 
 
 
-    6.691799632605305e-15
+    true
 
 
 

@@ -7,8 +7,8 @@ makedocs(
     clean = true,
     debug = true,
     pages = [
-        "index.md",
-        "linalg.md"
+        "SnpArrays.jl Tutorial" => "index.md",
+        "Linear Algebra Benchmarks" => "linalg.md"
     ]
 )
 

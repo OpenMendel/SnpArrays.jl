@@ -1,10 +1,13 @@
-# Linear algebra of SnpArray
 
-SnpArrays.jl supports three modes of matrix-vector multiplications.
+# Linear Algebra Benchmarks
+
+`SnpArrays.jl` supports three modes of matrix-vector multiplications:
 
 1. Direct operations on a plink-formatted `SnpArray`: `SnpLinAlg`
-2. Operations on transformed `BitMatrix`es: `SnpBitMatrix`
+2. Operations on transformed `BitMatrix`es: `SnpBitMatrix` (support for this will be dropped in the near future)
 3. Direct operations on a plink-formatted data on an Nvidia GPU: `CuSnpArray`.
+
+`SnpLinAlg` also supports matrix-matrix multiplications.
 
 - `SnpLinAlg` and `SnpBitMatrix` use Chris Elrod's [LoopVectorization.jl](https://github.com/chriselrod/LoopVectorization.jl) internally. It is much faster on machines with AVX support.  
 - `CuSnpArray` uses [CUDA.jl](https://juliagpu.gitlab.io/CUDA.jl/) internally.
@@ -16,20 +19,27 @@ On this page, we compare these three.
 versioninfo()
 ```
 
-    Julia Version 1.4.1
-    Commit 381693d3df* (2020-04-14 17:20 UTC)
+    Julia Version 1.6.0
+    Commit f9720dc2eb (2021-03-24 12:55 UTC)
     Platform Info:
-      OS: Linux (x86_64-pc-linux-gnu)
-      CPU: Intel(R) Xeon(R) Silver 4114 CPU @ 2.20GHz
+      OS: macOS (x86_64-apple-darwin19.6.0)
+      CPU: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
       WORD_SIZE: 64
       LIBM: libopenlibm
-      LLVM: libLLVM-8.0.1 (ORCJIT, skylake)
+      LLVM: libLLVM-11.0.1 (ORCJIT, skylake)
 
 
 
 ```julia
 using SnpArrays
+using LinearAlgebra
+using BenchmarkTools
 ```
+
+    ┌ Info: Precompiling SnpArrays [4e780e97-f5bf-4111-9dc4-b70aaf691b06]
+    └ @ Base loading.jl:1317
+    WARNING: could not import DataFrames.DataFrame! into SnpArrays
+
 
 
 ```julia
@@ -45,7 +55,7 @@ EUR_100 = [EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_1
 EUR_101 = [EUR_100; EUR];
 ```
 
-We create instnaces of SnpLinAlg, SnpBitmatrix and CuSnpArray:
+We create instances of SnpLinAlg, SnpBitmatrix and CuSnpArray:
 
 
 ```julia
@@ -74,12 +84,6 @@ EUR_100_cu_ = CuSnpArray{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, s
 
 
 ## $y = Ax$
-
-
-```julia
-using LinearAlgebra
-using BenchmarkTools
-```
 
 
 ```julia
@@ -560,3 +564,383 @@ v2 = randn(size(EUR_101, 2));
 
 
 BitMatrix is slightly faster in this direction.
+
+## $Y = AX$
+
+Now for matrix-matrix multiplications. If we want to center/scale the SnpArray, we have
+```math
+\begin{aligned}
+    Y_{ij} = \sum_{k} \frac{A_{ik} - \mu_k}{\sigma_k}X_{kj}
+\end{aligned}
+```
+
+where $\mu_k$ and $\sigma_k$ is the mean and standard deviation of the $k$th SNP. Centering and scaling is performed on-the-fly. First check correctness
+
+
+```julia
+EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"));
+EUR_10 = [EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR]
+
+m = size(EUR_10, 1)
+n = size(EUR_10, 2)
+p = 2
+
+A = SnpLinAlg{Float64}(EUR_10; model=ADDITIVE_MODEL, impute=true, center=true, scale=true);
+X = rand(n, p)
+Y = zeros(m, p)
+SnpArrays.mul!(Y, A, X)
+Afloat = convert(Matrix{Float64}, EUR_10, impute=true, center=true, scale=true)
+Ytrue = Afloat * X
+all(Y .≈ Ytrue)
+```
+
+
+
+
+    true
+
+
+
+Now lets check out timings. If $B$ is a "tall and thin" matrix, then `SnpLinAlg` remains competitive, often superior, to BLAS. 
+
+
+```julia
+# SnpLinAlg-matrix
+@benchmark LinearAlgebra.mul!($Y, $A, $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  112 bytes
+      allocs estimate:  1
+      --------------
+      minimum time:     173.410 ms (0.00% GC)
+      median time:      183.456 ms (0.00% GC)
+      mean time:        185.278 ms (0.00% GC)
+      maximum time:     212.790 ms (0.00% GC)
+      --------------
+      samples:          28
+      evals/sample:     1
+
+
+
+
+```julia
+# BLAS with 1 threaed 
+BLAS.set_num_threads(1)
+@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     174.038 ms (0.00% GC)
+      median time:      210.557 ms (0.00% GC)
+      mean time:        207.253 ms (0.00% GC)
+      maximum time:     256.666 ms (0.00% GC)
+      --------------
+      samples:          25
+      evals/sample:     1
+
+
+
+
+```julia
+# BLAS with 8 threaed 
+BLAS.set_num_threads(8)
+@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     70.793 ms (0.00% GC)
+      median time:      81.628 ms (0.00% GC)
+      mean time:        85.057 ms (0.00% GC)
+      maximum time:     138.839 ms (0.00% GC)
+      --------------
+      samples:          59
+      evals/sample:     1
+
+
+
+But if $B$ is a large matrix too, single threaded BLAS is ~6 times faster and >10x faster for 8 thread BLAS. 
+
+
+```julia
+# SnpLinAlg-matrix
+p = 100
+X = rand(n, p)
+Y = zeros(m, p)
+@benchmark LinearAlgebra.mul!($Y, $A, $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  112 bytes
+      allocs estimate:  1
+      --------------
+      minimum time:     4.889 s (0.00% GC)
+      median time:      4.910 s (0.00% GC)
+      mean time:        4.910 s (0.00% GC)
+      maximum time:     4.932 s (0.00% GC)
+      --------------
+      samples:          2
+      evals/sample:     1
+
+
+
+
+```julia
+# BLAS with 1 threaed 
+BLAS.set_num_threads(1)
+@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     806.519 ms (0.00% GC)
+      median time:      818.924 ms (0.00% GC)
+      mean time:        817.595 ms (0.00% GC)
+      maximum time:     832.166 ms (0.00% GC)
+      --------------
+      samples:          7
+      evals/sample:     1
+
+
+
+
+```julia
+# BLAS with 8 threaed 
+BLAS.set_num_threads(8)
+@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     217.737 ms (0.00% GC)
+      median time:      238.400 ms (0.00% GC)
+      mean time:        251.802 ms (0.00% GC)
+      maximum time:     305.899 ms (0.00% GC)
+      --------------
+      samples:          20
+      evals/sample:     1
+
+
+
+## $Y = A^tX$
+
+If we want to center/scale the SnpArray, we have
+
+```math
+\begin{aligned}
+    Y_{ij} = \sum_{k} \left(\frac{A_{ik} - \mu_i}{\sigma_i}\right)X_{kj}
+\end{aligned}
+```
+
+where $\mu_i$ and $\sigma_i$ is the mean and standard deviation of the $i$th SNP. Similar to before, lets first check correctness.
+
+
+```julia
+EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed"));
+EUR_10 = [EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR]
+
+m = size(EUR_10, 1)
+n = size(EUR_10, 2)
+p = 2
+
+A = SnpLinAlg{Float64}(EUR_10; model=ADDITIVE_MODEL, impute=true, center=true, scale=true);
+X = rand(m, p)
+Y = zeros(n, p)
+SnpArrays.mul!(Y, Transpose(A), X)
+Afloat = convert(Matrix{Float64}, EUR_10, impute=true, center=true, scale=true)
+Ytrue = Afloat' * X
+all(Y .≈ Ytrue)
+```
+
+
+
+
+    true
+
+
+
+Now lets check out timings. If $B$ is a "tall and thin" matrix, then `SnpLinAlg` remains competitive, often superior, to BLAS. 
+
+
+```julia
+# SnpLinAlg-matrix
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(A)), $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  304 bytes
+      allocs estimate:  1
+      --------------
+      minimum time:     214.029 ms (0.00% GC)
+      median time:      216.865 ms (0.00% GC)
+      mean time:        217.732 ms (0.00% GC)
+      maximum time:     228.314 ms (0.00% GC)
+      --------------
+      samples:          23
+      evals/sample:     1
+
+
+
+
+```julia
+# BLAS with 1 threaed 
+BLAS.set_num_threads(1)
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     270.484 ms (0.00% GC)
+      median time:      297.139 ms (0.00% GC)
+      mean time:        302.211 ms (0.00% GC)
+      maximum time:     343.174 ms (0.00% GC)
+      --------------
+      samples:          17
+      evals/sample:     1
+
+
+
+
+```julia
+# BLAS with 8 threaed 
+BLAS.set_num_threads(8)
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     96.434 ms (0.00% GC)
+      median time:      111.485 ms (0.00% GC)
+      mean time:        126.247 ms (0.00% GC)
+      maximum time:     229.535 ms (0.00% GC)
+      --------------
+      samples:          40
+      evals/sample:     1
+
+
+
+But if $B$ is a large matrix too, single threaded BLAS is ~6 times faster and >10x faster for 8 thread BLAS. 
+
+
+```julia
+# SnpLinAlg-matrix
+p = 100
+X = rand(m, p)
+Y = zeros(n, p)
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(A)), $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  304 bytes
+      allocs estimate:  1
+      --------------
+      minimum time:     6.196 s (0.00% GC)
+      median time:      6.196 s (0.00% GC)
+      mean time:        6.196 s (0.00% GC)
+      maximum time:     6.196 s (0.00% GC)
+      --------------
+      samples:          1
+      evals/sample:     1
+
+
+
+
+```julia
+# BLAS with 1 threaed 
+BLAS.set_num_threads(1)
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     1.013 s (0.00% GC)
+      median time:      1.055 s (0.00% GC)
+      mean time:        1.111 s (0.00% GC)
+      maximum time:     1.310 s (0.00% GC)
+      --------------
+      samples:          5
+      evals/sample:     1
+
+
+
+
+```julia
+# BLAS with 8 threaed 
+BLAS.set_num_threads(8)
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)
+```
+
+
+
+
+    BenchmarkTools.Trial: 
+      memory estimate:  0 bytes
+      allocs estimate:  0
+      --------------
+      minimum time:     221.024 ms (0.00% GC)
+      median time:      284.014 ms (0.00% GC)
+      mean time:        286.916 ms (0.00% GC)
+      maximum time:     422.793 ms (0.00% GC)
+      --------------
+      samples:          18
+      evals/sample:     1
+
+
+
+## Conclusion
+
++ `SnpLinAlg` (for CPU)
+    - achieves up to 32x memory savings compared to double-precision matrices
+    - is usually faster than single threaded BLAS for matrix-vector multiply.
+    - is competitive with single threaded BLAS for matrix-matrix multiply if $B$ is "tall and thin"
++ `CuSnpArray` supports GPU matrix-vector operations that is 30-50x faster than multithreaded BLAS. 
++ Other linear algebra operations (e.g. $v*A$ and $qr(A)$...etc) will be *much* slower than are not guaranteed to work. 
