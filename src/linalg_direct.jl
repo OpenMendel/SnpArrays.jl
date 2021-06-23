@@ -6,8 +6,9 @@ struct SnpLinAlg{T} <: AbstractMatrix{T}
     impute::Bool
     μ::Vector{T}
     σinv::Vector{T}
-    storagev1::Vector{T}
-    storagev2::Vector{T}
+    storagev1::Vector{T} # size(s, 1)
+    storagev2::Vector{T} # size(s, 2)
+    storagev3::Vector{T} # size(s, 2)
 end
 
 AbstractSnpLinAlg = Union{SnpLinAlg, SubArray{T, 1, SnpLinAlg{T}}, 
@@ -31,57 +32,25 @@ function SnpLinAlg{T}(
     center::Bool = false,
     scale::Bool = false,
     impute::Bool = true) where T <: AbstractFloat
+    μ = dropdims(mean(s; dims=1, model=model), dims=1)
+    σinv = Vector{T}(undef, size(s, 2))
     if model == ADDITIVE_MODEL
-        if center || scale || impute
-            μ = dropdims(mean(s; dims=1, model=model), dims=1)
-        else
-            μ = zeros(T, size(s, 2))
+        @inbounds @simd for j in 1:size(s, 2)
+            σinv[j] = sqrt(μ[j] * (1 - μ[j] / 2))
+            σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
         end
-        if scale
-            σinv = Vector{T}(undef, size(s, 2))
-            @inbounds @simd for j in 1:size(s, 2)
-                σinv[j] = sqrt(μ[j] * (1 - μ[j] / 2))
-                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
-            end
-        else
-            σinv = ones(T, size(s, 2))
-        end
-    elseif model == DOMINANT_MODEL
-        if center || scale || impute
-            μ = dropdims(mean(s; dims=1, model=model), dims=1)
-        else
-            μ = zeros(T, size(s, 2))
-        end
-        if scale
-            σinv = Vector{T}(undef, size(s, 2))
-            @inbounds @simd for j in 1:size(s, 2)
-                σinv[j] = sqrt(μ[j] * (1 - μ[j]))
-                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
-            end
-        else
-            σinv = ones(T, size(s, 2))
-        end
-    elseif model == RECESSIVE_MODEL
-        if center || scale || impute
-            μ = dropdims(mean(s; dims=1, model=model), dims=1)
-        else
-            μ = zeros(T, size(s, 2))
-        end
-        if scale
-            σinv = Vector{T}(undef, size(s, 2))
-            @inbounds @simd for j in 1:size(s, 2)
-                σinv[j] = sqrt(μ[j] * (1 - μ[j]))
-                σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
-            end
-        else
-            σinv = ones(T, size(s, 2))
+    elseif model == DOMINANT_MODEL || model == RECESSIVE_MODEL
+        @inbounds @simd for j in 1:size(s, 2)
+            σinv[j] = sqrt(μ[j] * (1 - μ[j]))
+            σinv[j] = σinv[j] > 0 ? inv(σinv[j]) : one(T)
         end
     else
         throw(ArgumentError("unrecognized model $model"))
     end
     storagev1 = Vector{T}(undef, size(s, 1))
     storagev2 = Vector{T}(undef, size(s, 2))
-    SnpLinAlg{T}(s, model, center, scale, impute, μ, σinv, storagev1, storagev2)
+    storagev3 = Vector{T}(undef, size(s, 2))
+    SnpLinAlg{T}(s, model, center, scale, impute, μ, σinv, storagev1, storagev2, storagev3)
 end
 
 Base.size(sla::SnpLinAlg) = size(sla.s)
@@ -151,11 +120,13 @@ function mul!(
     sla::SnpLinAlg{T}, 
     V::AbstractMatrix{T}) where T <: AbstractFloat
     @assert size(out, 1) == size(sla, 1) && size(out, 2) == size(V, 2) && size(sla, 2) == size(V, 1)
+    sla.storagev2 .= sla.center ? sla.μ : zero(T) # for on-the-fly centering
+    sla.storagev3 .= sla.scale ? sla.σinv : one(T) # for on-the-fly scaling
 
     fill!(out, zero(eltype(out)))
     s = sla.s
 
-    _snparray_AX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.σinv)
+    _snparray_AX_tile!(out, s.data, V, sla.model, sla.storagev2, sla.μ, sla.impute, s.m, sla.storagev3)
 
     return out
 end
@@ -197,10 +168,13 @@ function mul!(
     sla = st.parent
     @assert size(out, 1) == size(sla, 2) && size(out, 2) == size(V, 2) && size(sla, 1) == size(V, 1)
 
+    sla.storagev2 .= sla.center ? sla.μ : zero(T) # for on-the-fly centering
+    sla.storagev3 .= sla.scale ? sla.σinv : one(T) # for on-the-fly scaling
+
     s = sla.s
     fill!(out, zero(eltype(out)))
 
-    _snparray_AtX_tile!(out, s.data, V, sla.model, sla.μ, sla.impute, s.m, sla.σinv)
+    _snparray_AtX_tile!(out, s.data, V, sla.model, sla.storagev2, sla.μ, sla.impute, s.m, sla.storagev3)
 
     return out
 end
@@ -286,7 +260,8 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
     end
 end
 
-function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
+# μ[i] is mean of SNP i, and μimpute[i] is used to impute missings for SNP i
+function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, σinv)
     vstep = 256
     hstep = 256
     pstep = 256
@@ -334,6 +309,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
                         vstep << 2, hstep, pstep, 
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(μimpute[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
@@ -345,6 +321,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
                         size(C, 1) - 4 * vstep * Miter, hstep, pstep,
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(μimpute[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
@@ -358,6 +335,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
                         vstep << 2, Nrem, pstep,
                         @view(μ[hstep * Niter + 1:end]),
+                        @view(μimpute[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
                 end
@@ -369,6 +347,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
                         size(C, 1) - 4 * vstep * Miter, Nrem, pstep,
                         @view(μ[hstep * Niter + 1:end]),
+                        @view(μimpute[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
                 end
@@ -384,6 +363,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
                         vstep << 2, hstep, Prem,
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(μimpute[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
@@ -395,6 +375,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
                         size(C, 1) - 4 * vstep * Miter, hstep, Prem,
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(μimpute[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
@@ -408,6 +389,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[hstep * Niter + 1:end, pstep * Piter + 1:end]),
                         vstep << 2, Nrem, Prem,
                         @view(μ[hstep * Niter + 1:end]),
+                        @view(μimpute[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
                 end
@@ -419,6 +401,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[hstep * Niter + 1:end, pstep * Piter + 1:end]),
                         size(C, 1) - 4 * vstep * Miter, Nrem, Prem,
                         @view(μ[hstep * Niter + 1:end]),
+                        @view(μimpute[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
                 end
@@ -506,8 +489,8 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
     end
 end
 
-
-function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
+# μ[i] is mean of SNP i, and μimpute[i] is used to impute missings for SNP i
+function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, σinv)
     vstep = 2048
     hstep = 2048
     pstep = 2048
@@ -555,6 +538,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
                         vstep << 2, hstep, pstep, 
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(μimpute[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
@@ -566,6 +550,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
                         vstep << 2, Nrem, pstep,
                         @view(μ[hstep * Niter + 1:end]),
+                        @view(μimpute[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
                 end
@@ -579,6 +564,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]),
                         size(B, 1) - 4 * vstep * Miter, hstep, pstep,
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(μimpute[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
@@ -590,6 +576,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]),
                         size(B, 1) - 4 * vstep * Miter, Nrem, pstep,
                         @view(μ[hstep * Niter + 1:end]),
+                        @view(μimpute[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
                 end
@@ -605,6 +592,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
                         vstep << 2, hstep, Prem,
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(μimpute[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
@@ -616,6 +604,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
                         vstep << 2, Nrem, Prem,
                         @view(μ[hstep * Niter + 1:end]),
+                        @view(μimpute[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
                 end
@@ -629,6 +618,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]),
                         size(B, 1) - 4 * vstep * Miter, hstep, Prem,
                         @view(μ[hstep * n + 1:hstep * (n + 1)]),
+                        @view(μimpute[hstep * n + 1:hstep * (n + 1)]),
                         @view(σinv[hstep * n + 1:hstep * (n + 1)])
                     )
                 end
@@ -640,6 +630,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, impute, rows_filled, σinv)
                         @view(B[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]),
                         size(B, 1) - 4 * vstep * Miter, Nrem, Prem,
                         @view(μ[hstep * Niter + 1:end]),
+                        @view(μimpute[hstep * Niter + 1:end]),
                         @view(σinv[hstep * Niter + 1:end])
                     )
                 end
@@ -758,14 +749,14 @@ for (_ftn!, _ftn_rem!, expr) in [
         (:_snparray_AX_recessive!, :_snparray_AX_recessive_rem!, 
             :(((Aij == 3) - μ[j]) * σinv[j] * V[j, c])),
         (:_snparray_AX_additive_meanimpute!, :_snparray_AX_additive_meanimpute_rem!, 
-            :(((((Aij >= 2) + (Aij == 3) - μ[j]) + (Aij == 1) * μ[j]) * σinv[j] * V[j, c]))),
+            :(((((Aij >= 2) + (Aij == 3) - μ[j]) + (Aij == 1) * μimpute[j]) * σinv[j] * V[j, c]))),
         (:_snparray_AX_dominant_meanimpute!, :_snparray_AX_dominant_meanimpute_rem!, 
-            :(((Aij >= 2) - μ[j]) * σinv[j] * V[j, c] + (Aij == 1) * μ[j] * σinv[j] * V[j, c])),
+            :(((Aij >= 2) - μ[j]) * σinv[j] * V[j, c] + (Aij == 1) * μimpute[j] * σinv[j] * V[j, c])),
             (:_snparray_AX_recessive_meanimpute!, :_snparray_AX_recessive_meanimpute_rem!, 
-            :(((Aij == 3) - μ[j]) * V[j, c] * σinv[j] + (Aij == 1) * μ[j] * σinv[j] * V[j, c]))
+            :(((Aij == 3) - μ[j]) * V[j, c] * σinv[j] + (Aij == 1) * μimpute[j] * σinv[j] * V[j, c]))
     ]
     @eval begin
-        function ($_ftn_rem!)(out, s, V, μ, σinv, c)
+        function ($_ftn_rem!)(out, s, V, μ, μimpute, σinv, c)
             maxp = size(out, 1)
             @avx for j in 1:size(V, 1)
                 block = s[1, j]
@@ -776,7 +767,7 @@ for (_ftn!, _ftn_rem!, expr) in [
             end
         end
 
-        function ($_ftn!)(out, s, V, srows, scols, Vcols, μ, σinv)
+        function ($_ftn!)(out, s, V, srows, scols, Vcols, μ, μimpute, σinv)
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
 
@@ -797,7 +788,7 @@ for (_ftn!, _ftn_rem!, expr) in [
             if rem != 0
                 for c in 1:Vcols
                     ($_ftn_rem!)(@view(out[4k + 1:end, :]), @view(s[k + 1:k + 1, :]),
-                        V, μ, σinv, c)
+                        V, μ, μimpute, σinv, c)
                 end
             end
             nothing
@@ -813,14 +804,14 @@ for (_ftn!, _ftn_rem!, expr) in [
     (:_snparray_AtX_recessive!, :_snparray_AtX_recessive_rem!, 
         :(((Aij == 3) - μ[i]) * σinv[i] * V[4 * (l - 1) + p, c])),
     (:_snparray_AtX_additive_meanimpute!, :_snparray_AtX_additive_meanimpute_rem!, 
-        :(((((Aij >= 2) + (Aij == 3) - μ[i]) + (Aij == 1) * μ[i]) * σinv[i] * V[4 * (l - 1) + p, c]))),
+        :(((((Aij >= 2) + (Aij == 3) - μ[i]) + (Aij == 1) * μimpute[i]) * σinv[i] * V[4 * (l - 1) + p, c]))),
     (:_snparray_AtX_dominant_meanimpute!, :_snparray_AtX_dominant_meanimpute_rem!, 
-        :(((Aij >= 2) - μ[i]) * σinv[i] * V[4 * (l - 1) + p, c] + (Aij == 1) * μ[i] * σinv[i] * V[4 * (l - 1) + p, c])),
+        :(((Aij >= 2) - μ[i]) * σinv[i] * V[4 * (l - 1) + p, c] + (Aij == 1) * μimpute[i] * σinv[i] * V[4 * (l - 1) + p, c])),
     (:_snparray_AtX_recessive_meanimpute!, :_snparray_AtX_recessive_meanimpute_rem!, 
-        :(((Aij == 3) - μ[i]) * σinv[i] * V[4 * (l - 1) + p, c] + (Aij == 1) * μ[i] * σinv[i] * V[4 * (l - 1) + p, c]))
+        :(((Aij == 3) - μ[i]) * σinv[i] * V[4 * (l - 1) + p, c] + (Aij == 1) * μimpute[i] * σinv[i] * V[4 * (l - 1) + p, c]))
 ]
     @eval begin
-        function ($_ftn_rem!)(out, s, V, μ, σinv, c)
+        function ($_ftn_rem!)(out, s, V, μ, μimpute, σinv, c)
             maxp = size(V, 1)
             l = 1
             @avx for i in 1:size(out, 1)
@@ -832,7 +823,7 @@ for (_ftn!, _ftn_rem!, expr) in [
             end
         end
 
-        function ($_ftn!)(out, s, V, srows, scols, Vcols, μ, σinv)
+        function ($_ftn!)(out, s, V, srows, scols, Vcols, μ, μimpute, σinv)
             k = srows >> 2 # fast div(srows, 4)
             rem = srows & 3 # fast rem(srows, 4)
 
@@ -852,7 +843,7 @@ for (_ftn!, _ftn_rem!, expr) in [
             if rem != 0
                 for c in 1:Vcols
                     ($_ftn_rem!)(out, @view(s[k + 1:k + 1, :]),
-                        @view(V[4k + 1:end, :]), μ, σinv, c)
+                        @view(V[4k + 1:end, :]), μ, μimpute, σinv, c)
                 end
             end
             nothing

@@ -214,7 +214,7 @@ rm("tmp.bim", force=true)
 rm("tmp.fam", force=true)
 end
 
-@testset "lin. alg. bitmatrix" begin
+@testset "SnpBitMatrix-vector multiplication" begin
 reltol = 5e-4
 for t in [Float32, Float64]
     v1 = randn(t, size(EUR, 1))
@@ -339,7 +339,7 @@ for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL], t in [Float32, F
 end
 end
 
-@testset "lin. alg. direct zeroimpute" begin
+@testset "SnpLinAlg-vector multiplication (zeroimpute)" begin
 reltol = 5e-4
 for t in [Float32, Float64]
     v1 = randn(t, size(EUR, 1))
@@ -373,7 +373,32 @@ for t in [Float32, Float64]
 end
 end
 
-@testset "lin. alg. direct zeroimpute (Miter > 0)" begin
+@testset "SnpLinAlg-matrix multiplication zeroimpute" begin
+    for t in [Float32, Float64] # Y = A*X
+        X1 = randn(t, size(EUR, 1), 3)
+        X2 = randn(t, size(EUR, 2), 3)
+        for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL]
+            @test all(isapprox(SnpLinAlg{t}(EUR, model=model, impute=false) * X2,
+                convert(Matrix{t}, EUR, model=model, impute=false) * X2))
+            @test all(isapprox(SnpLinAlg{t}(EUR, center=true, model=model, impute=false) * X2,
+                convert(Matrix{t}, EUR, center=true, model=model, impute=false) * X2))
+            @test all(isapprox(SnpLinAlg{t}(EUR, scale=true, model=model, impute=false) * X2,
+                convert(Matrix{t}, EUR, scale=true, model=model, impute=false) * X2))
+            @test all(isapprox(SnpLinAlg{t}(EUR, center=true, scale=true, model=model, impute=false) * X2,
+                convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=false) * X2))
+            @test all(isapprox(transpose(SnpLinAlg{t}(EUR, model=model, impute=false)) * X1,
+                transpose(convert(Matrix{t}, EUR, model=model, impute=false)) * X1))
+            @test all(isapprox(transpose(SnpLinAlg{t}(EUR, center=true, model=model, impute=false)) * X1,
+                transpose(convert(Matrix{t}, EUR, center=true, model=model, impute=false)) * X1))
+            @test all(isapprox(transpose(SnpLinAlg{t}(EUR, scale=true, model=model, impute=false)) * X1,
+                transpose(convert(Matrix{t}, EUR, scale=true, model=model, impute=false)) * X1))
+            @test all(isapprox(transpose(SnpLinAlg{t}(EUR, center=true, scale=true, model=model, impute=false)) * X1,
+                transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=false)) * X1))
+        end
+    end
+end
+
+@testset "SnpLinAlg-vector multiplication (Miter > 0)" begin
     EUR11 = [EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR;EUR]
     EUR11la = SnpLinAlg{Float64}(EUR11, model=ADDITIVE_MODEL, impute=true, center=true, scale=true)
     v = rand(size(EUR11la, 2))
@@ -421,7 +446,7 @@ if get(ENV,"JULIA_SNPARRAYS_TEST_CUDA","") == "true"
     end
 end
 
-@testset "lin. alg. direct meanimpute" begin
+@testset "SnpLinAlg-vector multiplication meanimpute" begin
 reltol = 5e-4
 for t in [Float32, Float64]
     v1 = randn(t, size(EUR, 1))
@@ -453,6 +478,31 @@ for t in [Float32, Float64]
             norm(transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=true)) * v1) < reltol
     end
 end
+end
+
+@testset "SnpLinAlg-matrix multiplication meanimpute" begin
+    for t in [Float32, Float64] # Y = A*X
+        X1 = randn(t, size(EUR, 1), 3)
+        X2 = randn(t, size(EUR, 2), 3)
+        for model in [ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL]
+            @test all(isapprox(SnpLinAlg{t}(EUR, model=model, impute=true) * X2,
+                convert(Matrix{t}, EUR, model=model, impute=true) * X2))
+            @test all(isapprox(SnpLinAlg{t}(EUR, center=true, model=model, impute=true) * X2,
+                convert(Matrix{t}, EUR, center=true, model=model, impute=true) * X2))
+            @test all(isapprox(SnpLinAlg{t}(EUR, scale=true, model=model, impute=true) * X2,
+                convert(Matrix{t}, EUR, scale=true, model=model, impute=true) * X2))
+            @test all(isapprox(SnpLinAlg{t}(EUR, center=true, scale=true, model=model, impute=false) * X2,
+                convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=true) * X2))
+            @test all(isapprox(transpose(SnpLinAlg{t}(EUR, model=model, impute=true)) * X1,
+                transpose(convert(Matrix{t}, EUR, model=model, impute=true)) * X1))
+            @test all(isapprox(transpose(SnpLinAlg{t}(EUR, center=true, model=model, impute=true)) * X1,
+                transpose(convert(Matrix{t}, EUR, center=true, model=model, impute=true)) * X1))
+            @test all(isapprox(transpose(SnpLinAlg{t}(EUR, scale=true, model=model, impute=true)) * X1,
+                transpose(convert(Matrix{t}, EUR, scale=true, model=model, impute=true)) * X1))
+            @test all(isapprox(transpose(SnpLinAlg{t}(EUR, center=true, scale=true, model=model, impute=true)) * X1,
+                transpose(convert(Matrix{t}, EUR, center=true, scale=true, model=model, impute=true)) * X1))
+        end
+    end
 end
 
 @testset "subarrays" begin
