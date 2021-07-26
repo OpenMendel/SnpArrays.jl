@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Linear Algebra Benchmarks · SnpArrays.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">SnpArrays.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">SnpArrays.jl Tutorial</a></li><li class="is-active"><a class="tocitem" href>Linear Algebra Benchmarks</a><ul class="internal"><li><a class="tocitem" href="#y-Ax"><span><span>$y = Ax$</span></span></a></li><li><a class="tocitem" href="#y-AT-x"><span><span>$y = A^T x$</span></span></a></li><li><a class="tocitem" href="#Y-AX"><span><span>$Y = AX$</span></span></a></li><li><a class="tocitem" href="#Y-AtX"><span><span>$Y = A^tX$</span></span></a></li><li><a class="tocitem" href="#Conclusion"><span>Conclusion</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Linear Algebra Benchmarks</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Linear Algebra Benchmarks</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/OpenMendel/SnpArrays.jl/blob/master/docs/src/linalg.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Linear-Algebra-Benchmarks"><a class="docs-heading-anchor" href="#Linear-Algebra-Benchmarks">Linear Algebra Benchmarks</a><a id="Linear-Algebra-Benchmarks-1"></a><a class="docs-heading-anchor-permalink" href="#Linear-Algebra-Benchmarks" title="Permalink"></a></h1><p><code>SnpArrays.jl</code> supports three modes of matrix-vector multiplications:</p><ol><li>Direct operations on a plink-formatted <code>SnpArray</code>: <code>SnpLinAlg</code></li><li>Operations on transformed <code>BitMatrix</code>es: <code>SnpBitMatrix</code> (support for this will be dropped in the near future)</li><li>Direct operations on a plink-formatted data on an Nvidia GPU: <code>CuSnpArray</code>.</li></ol><p><code>SnpLinAlg</code> also supports matrix-matrix multiplications.</p><ul><li><code>SnpLinAlg</code> and <code>SnpBitMatrix</code> use Chris Elrod&#39;s <a href="https://github.com/chriselrod/LoopVectorization.jl">LoopVectorization.jl</a> internally. It is much faster on machines with AVX support.  </li><li><code>CuSnpArray</code> uses <a href="https://juliagpu.gitlab.io/CUDA.jl/">CUDA.jl</a> internally.</li></ul><p>On this page, we compare these three.</p><ul><li><code>SnpLinAlg</code> supports multithreading. See <a href="https://docs.julialang.org/en/v1/manual/multi-threading/#Starting-Julia-with-multiple-threads-1">this page</a> to learn how to use it.</li></ul><pre><code class="language-julia">versioninfo()</code></pre><pre><code class="nohighlight">Julia Version 1.6.0
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Linear Algebra Benchmarks · SnpArrays.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">SnpArrays.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">SnpArrays.jl Tutorial</a></li><li class="is-active"><a class="tocitem" href>Linear Algebra Benchmarks</a><ul class="internal"><li><a class="tocitem" href="#y-Ax"><span><span>$y = Ax$</span></span></a></li><li><a class="tocitem" href="#y-AT-x"><span><span>$y = A^T x$</span></span></a></li><li><a class="tocitem" href="#Y-AX"><span><span>$Y = AX$</span></span></a></li><li><a class="tocitem" href="#Y-AtX"><span><span>$Y = A^tX$</span></span></a></li><li><a class="tocitem" href="#Conclusion"><span>Conclusion</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Linear Algebra Benchmarks</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Linear Algebra Benchmarks</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/OpenMendel/SnpArrays.jl/blob/master/docs/src/linalg.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Linear-Algebra-Benchmarks"><a class="docs-heading-anchor" href="#Linear-Algebra-Benchmarks">Linear Algebra Benchmarks</a><a id="Linear-Algebra-Benchmarks-1"></a><a class="docs-heading-anchor-permalink" href="#Linear-Algebra-Benchmarks" title="Permalink"></a></h1><p><code>SnpArrays.jl</code> supports three modes of matrix-vector multiplications:</p><ol><li>Direct operations on a plink-formatted <code>SnpArray</code>: <code>SnpLinAlg</code></li><li>Operations on transformed <code>BitMatrix</code>es: <code>SnpBitMatrix</code> (support for this will be dropped in the near future)</li><li>Direct operations on a plink-formatted data on an Nvidia GPU: <code>CuSnpArray</code>.</li></ol><p><code>SnpLinAlg</code> also supports matrix-matrix multiplications.</p><ul><li><code>SnpLinAlg</code> and <code>SnpBitMatrix</code> use Chris Elrod&#39;s <a href="https://github.com/chriselrod/LoopVectorization.jl">LoopVectorization.jl</a> internally. It is much faster on machines with AVX support.  </li><li><code>CuSnpArray</code> uses <a href="https://juliagpu.gitlab.io/CUDA.jl/">CUDA.jl</a> internally.</li></ul><p>On this page, we compare these three.</p><ul><li><code>SnpLinAlg</code> supports multithreading. See <a href="https://docs.julialang.org/en/v1/manual/multi-threading/#Starting-Julia-with-multiple-threads-1">this page</a> to learn how to use it.</li></ul><pre><code class="language-julia hljs">versioninfo()</code></pre><pre><code class="nohighlight hljs">Julia Version 1.6.0
 Commit f9720dc2eb (2021-03-24 12:55 UTC)
 Platform Info:
   OS: macOS (x86_64-apple-darwin19.6.0)
   CPU: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
   WORD_SIZE: 64
   LIBM: libopenlibm
-  LLVM: libLLVM-11.0.1 (ORCJIT, skylake)</code></pre><pre><code class="language-julia">using SnpArrays
+  LLVM: libLLVM-11.0.1 (ORCJIT, skylake)</code></pre><pre><code class="language-julia hljs">using SnpArrays
 using LinearAlgebra
-using BenchmarkTools</code></pre><pre><code class="nohighlight">┌ Info: Precompiling SnpArrays [4e780e97-f5bf-4111-9dc4-b70aaf691b06]
+using BenchmarkTools</code></pre><pre><code class="nohighlight hljs">┌ Info: Precompiling SnpArrays [4e780e97-f5bf-4111-9dc4-b70aaf691b06]
 └ @ Base loading.jl:1317
-WARNING: could not import DataFrames.DataFrame! into SnpArrays</code></pre><pre><code class="language-julia">const EUR = SnpArray(SnpArrays.datadir(&quot;EUR_subset.bed&quot;));</code></pre><p>Let&#39;s try with EUR data repeated 100 and 101 times: 37900 by 54051 and 38279 by 54051, respectively.</p><pre><code class="language-julia">EUR_10 = [EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR]
+WARNING: could not import DataFrames.DataFrame! into SnpArrays</code></pre><pre><code class="language-julia hljs">const EUR = SnpArray(SnpArrays.datadir(&quot;EUR_subset.bed&quot;));</code></pre><p>Let&#39;s try with EUR data repeated 100 and 101 times: 37900 by 54051 and 38279 by 54051, respectively.</p><pre><code class="language-julia hljs">EUR_10 = [EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR]
 EUR_100 = [EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10; EUR_10];
-EUR_101 = [EUR_100; EUR];</code></pre><p>We create instances of SnpLinAlg, SnpBitmatrix and CuSnpArray:</p><pre><code class="language-julia">EUR_100_bm = SnpBitMatrix{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false);
+EUR_101 = [EUR_100; EUR];</code></pre><p>We create instances of SnpLinAlg, SnpBitmatrix and CuSnpArray:</p><pre><code class="language-julia hljs">EUR_100_bm = SnpBitMatrix{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false);
 EUR_100_sla = SnpLinAlg{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false);
 EUR_100_sla_ = SnpLinAlg{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false, impute=false);
 EUR_100_mat = convert(Matrix{Float64}, EUR_100, model=ADDITIVE_MODEL, center=false, scale=false);
@@ -20,15 +20,15 @@ EUR_100_mat = convert(Matrix{Float64}, EUR_100, model=ADDITIVE_MODEL, center=fal
 EUR_101_bm = SnpBitMatrix{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false);
 EUR_101_sla = SnpLinAlg{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false);
 EUR_101_sla_ = SnpLinAlg{Float64}(EUR_101; model=ADDITIVE_MODEL, center=false, scale=false, impute=false);
-EUR_101_mat = convert(Matrix{Float64}, EUR_101, model=ADDITIVE_MODEL, center=false, scale=false);</code></pre><pre><code class="language-julia">ENV[&quot;JULIA_CUDA_USE_BINARYBUILDER&quot;] = &quot;false&quot;
+EUR_101_mat = convert(Matrix{Float64}, EUR_101, model=ADDITIVE_MODEL, center=false, scale=false);</code></pre><pre><code class="language-julia hljs">ENV[&quot;JULIA_CUDA_USE_BINARYBUILDER&quot;] = &quot;false&quot;
 using CUDA
 EUR_100_cu = CuSnpArray{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false);
-EUR_100_cu_ = CuSnpArray{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false, impute=false);</code></pre><pre><code class="nohighlight">┌ Warning: `haskey(::TargetIterator, name::String)` is deprecated, use `Target(; name = name) !== nothing` instead.
+EUR_100_cu_ = CuSnpArray{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false, impute=false);</code></pre><pre><code class="nohighlight hljs">┌ Warning: `haskey(::TargetIterator, name::String)` is deprecated, use `Target(; name = name) !== nothing` instead.
 │   caller = llvm_compat(::VersionNumber) at compatibility.jl:176
-└ @ CUDA /home/kose/.julia/packages/CUDA/5t6R9/deps/compatibility.jl:176</code></pre><h2 id="y-Ax"><a class="docs-heading-anchor" href="#y-Ax"><span>$y = Ax$</span></a><a id="y-Ax-1"></a><a class="docs-heading-anchor-permalink" href="#y-Ax" title="Permalink"></a></h2><pre><code class="language-julia">v1 = randn(size(EUR_100, 1))
+└ @ CUDA /home/kose/.julia/packages/CUDA/5t6R9/deps/compatibility.jl:176</code></pre><h2 id="y-Ax"><a class="docs-heading-anchor" href="#y-Ax"><span>$y = Ax$</span></a><a id="y-Ax-1"></a><a class="docs-heading-anchor-permalink" href="#y-Ax" title="Permalink"></a></h2><pre><code class="language-julia hljs">v1 = randn(size(EUR_100, 1))
 v1_ = randn(size(EUR_100, 1))
-v2 = randn(size(EUR_100, 2));</code></pre><p>With 8-threaded OpenBLAS (included in standard binary installation of Julia): </p><pre><code class="language-julia">BLAS.set_num_threads(8)
-@benchmark LinearAlgebra.mul!($v1, $EUR_100_mat, $v2)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+v2 = randn(size(EUR_100, 2));</code></pre><p>With 8-threaded OpenBLAS (included in standard binary installation of Julia): </p><pre><code class="language-julia hljs">BLAS.set_num_threads(8)
+@benchmark LinearAlgebra.mul!($v1, $EUR_100_mat, $v2)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -38,8 +38,8 @@ v2 = randn(size(EUR_100, 2));</code></pre><p>With 8-threaded OpenBLAS (included 
   maximum time:     668.896 ms (0.00% GC)
   --------------
   samples:          10
-  evals/sample:     1</code></pre><p>With single-threaded OpenBLAS: </p><pre><code class="language-julia">BLAS.set_num_threads(1)
-@benchmark LinearAlgebra.mul!($v1, $EUR_100_mat, $v2)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><p>With single-threaded OpenBLAS: </p><pre><code class="language-julia hljs">BLAS.set_num_threads(1)
+@benchmark LinearAlgebra.mul!($v1, $EUR_100_mat, $v2)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -49,7 +49,7 @@ v2 = randn(size(EUR_100, 2));</code></pre><p>With 8-threaded OpenBLAS (included 
   maximum time:     3.019 s (0.00% GC)
   --------------
   samples:          2
-  evals/sample:     1</code></pre><p>Direct linear algebra on a SnpArray, with mean imputation: </p><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v1, $EUR_100_sla, $v2)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><p>Direct linear algebra on a SnpArray, with mean imputation: </p><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v1, $EUR_100_sla, $v2)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  38.33 KiB
   allocs estimate:  1616
   --------------
@@ -59,7 +59,7 @@ v2 = randn(size(EUR_100, 2));</code></pre><p>With 8-threaded OpenBLAS (included 
   maximum time:     1.757 s (0.00% GC)
   --------------
   samples:          3
-  evals/sample:     1</code></pre><p>With zero imputation:</p><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v1, $EUR_100_sla_, $v2)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><p>With zero imputation:</p><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v1, $EUR_100_sla_, $v2)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  38.33 KiB
   allocs estimate:  1616
   --------------
@@ -69,7 +69,7 @@ v2 = randn(size(EUR_100, 2));</code></pre><p>With 8-threaded OpenBLAS (included 
   maximum time:     1.037 s (0.00% GC)
   --------------
   samples:          5
-  evals/sample:     1</code></pre><p>Indeed, we are paying some price for mean imputation.</p><p>The below is the benchmark for SnpBitMatrix (always zero-imputed):</p><pre><code class="language-julia">@benchmark (LinearAlgebra.mul!($v1, $EUR_100_bm, $v2))</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><p>Indeed, we are paying some price for mean imputation.</p><p>The below is the benchmark for SnpBitMatrix (always zero-imputed):</p><pre><code class="language-julia hljs">@benchmark (LinearAlgebra.mul!($v1, $EUR_100_bm, $v2))</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -79,8 +79,8 @@ v2 = randn(size(EUR_100, 2));</code></pre><p>With 8-threaded OpenBLAS (included 
   maximum time:     1.124 s (0.00% GC)
   --------------
   samples:          5
-  evals/sample:     1</code></pre><p>At first glance, the result from SnpBitMatrix might look better than SnpLinAlg. However, SnpLinAlg is more stable in performance when the number of samples is not multiple of 4 or 8.</p><pre><code class="language-julia">v1 = randn(size(EUR_101, 1))
-v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v1, $EUR_101_sla, $v2)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><p>At first glance, the result from SnpBitMatrix might look better than SnpLinAlg. However, SnpLinAlg is more stable in performance when the number of samples is not multiple of 4 or 8.</p><pre><code class="language-julia hljs">v1 = randn(size(EUR_101, 1))
+v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v1, $EUR_101_sla, $v2)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  44.13 KiB
   allocs estimate:  1722
   --------------
@@ -90,7 +90,7 @@ v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia">@ben
   maximum time:     1.654 s (0.00% GC)
   --------------
   samples:          4
-  evals/sample:     1</code></pre><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v1, $EUR_101_sla_, $v2)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v1, $EUR_101_sla_, $v2)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  44.13 KiB
   allocs estimate:  1722
   --------------
@@ -100,7 +100,7 @@ v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia">@ben
   maximum time:     1.046 s (0.00% GC)
   --------------
   samples:          5
-  evals/sample:     1</code></pre><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v1, $EUR_101_bm, $v2)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v1, $EUR_101_bm, $v2)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -110,13 +110,13 @@ v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia">@ben
   maximum time:     1.348 s (0.00% GC)
   --------------
   samples:          4
-  evals/sample:     1</code></pre><p>Now let&#39;s try CUDA. The device is Nvidia Titan V.</p><pre><code class="language-julia">using Adapt</code></pre><p>Moving data to GPU: </p><pre><code class="language-julia">v1 = randn(size(EUR_100, 1))
+  evals/sample:     1</code></pre><p>Now let&#39;s try CUDA. The device is Nvidia Titan V.</p><pre><code class="language-julia hljs">using Adapt</code></pre><p>Moving data to GPU: </p><pre><code class="language-julia hljs">v1 = randn(size(EUR_100, 1))
 v1_ = randn(size(EUR_100, 1))
 v2 = randn(size(EUR_100, 2));
 v1_d = adapt(CuArray{Float64}, v1)
 v1_d_ = similar(v1_d)
-v2_d = adapt(CuArray{Float64}, v2);</code></pre><pre><code class="language-julia">using BenchmarkTools
-@benchmark CUDA.@sync LinearAlgebra.mul!($v1_d, $EUR_100_cu, $v2_d)</code></pre><pre><code class="nohighlight">┌ Warning: `Target(triple::String)` is deprecated, use `Target(; triple = triple)` instead.
+v2_d = adapt(CuArray{Float64}, v2);</code></pre><pre><code class="language-julia hljs">using BenchmarkTools
+@benchmark CUDA.@sync LinearAlgebra.mul!($v1_d, $EUR_100_cu, $v2_d)</code></pre><pre><code class="nohighlight hljs">┌ Warning: `Target(triple::String)` is deprecated, use `Target(; triple = triple)` instead.
 │   caller = ip:0x0
 └ @ Core :-1
 
@@ -134,7 +134,7 @@ BenchmarkTools.Trial:
   maximum time:     22.739 ms (0.00% GC)
   --------------
   samples:          225
-  evals/sample:     1</code></pre><p>For CuSnpArray, the additional cost for mean imputation is negligible.</p><pre><code class="language-julia">@benchmark CUDA.@sync LinearAlgebra.mul!($v1_d_, $EUR_100_cu_, $v2_d)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><p>For CuSnpArray, the additional cost for mean imputation is negligible.</p><pre><code class="language-julia hljs">@benchmark CUDA.@sync LinearAlgebra.mul!($v1_d_, $EUR_100_cu_, $v2_d)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  3.28 KiB
   allocs estimate:  130
   --------------
@@ -144,7 +144,7 @@ BenchmarkTools.Trial:
   maximum time:     54.782 ms (0.00% GC)
   --------------
   samples:          221
-  evals/sample:     1</code></pre><pre><code class="language-julia">EUR_100_mat_d = adapt(CuArray, EUR_100_mat);</code></pre><pre><code class="language-julia">@benchmark CUDA.@sync LinearAlgebra.mul!($v1_d, $EUR_100_mat_d, $v2_d)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs">EUR_100_mat_d = adapt(CuArray, EUR_100_mat);</code></pre><pre><code class="language-julia hljs">@benchmark CUDA.@sync LinearAlgebra.mul!($v1_d, $EUR_100_mat_d, $v2_d)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  2.58 KiB
   allocs estimate:  85
   --------------
@@ -154,11 +154,11 @@ BenchmarkTools.Trial:
   maximum time:     81.984 ms (0.00% GC)
   --------------
   samples:          64
-  evals/sample:     1</code></pre><p>The speedup is obvious, CuSnpArrays is 30-50x faster than on CPU, and using CuSnpArray is both faster and memory-efficient compared to linear algebra with floating point matrix on GPU.</p><pre><code class="language-julia">isapprox(v1_d, v1_d_)</code></pre><pre><code class="nohighlight">true</code></pre><h2 id="y-AT-x"><a class="docs-heading-anchor" href="#y-AT-x"><span>$y = A^T x$</span></a><a id="y-AT-x-1"></a><a class="docs-heading-anchor-permalink" href="#y-AT-x" title="Permalink"></a></h2><pre><code class="language-julia">v1 = randn(size(EUR_100, 1))
+  evals/sample:     1</code></pre><p>The speedup is obvious, CuSnpArrays is 30-50x faster than on CPU, and using CuSnpArray is both faster and memory-efficient compared to linear algebra with floating point matrix on GPU.</p><pre><code class="language-julia hljs">isapprox(v1_d, v1_d_)</code></pre><pre><code class="nohighlight hljs">true</code></pre><h2 id="y-AT-x"><a class="docs-heading-anchor" href="#y-AT-x"><span>$y = A^T x$</span></a><a id="y-AT-x-1"></a><a class="docs-heading-anchor-permalink" href="#y-AT-x" title="Permalink"></a></h2><pre><code class="language-julia hljs">v1 = randn(size(EUR_100, 1))
 v2 = randn(size(EUR_100, 2))
 v2_ = randn(size(EUR_100, 2))
 v1_d = adapt(CuArray{Float64}, v1)
-v2_d = adapt(CuArray{Float64}, v2);</code></pre><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v2, transpose($EUR_100_sla), $v1)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+v2_d = adapt(CuArray{Float64}, v2);</code></pre><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v2, transpose($EUR_100_sla), $v1)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  38.34 KiB
   allocs estimate:  1617
   --------------
@@ -168,7 +168,7 @@ v2_d = adapt(CuArray{Float64}, v2);</code></pre><pre><code class="language-julia
   maximum time:     946.902 ms (0.00% GC)
   --------------
   samples:          6
-  evals/sample:     1</code></pre><pre><code class="language-julia">@benchmark (LinearAlgebra.mul!($v2, transpose($EUR_100_bm), $v1))</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs">@benchmark (LinearAlgebra.mul!($v2, transpose($EUR_100_bm), $v1))</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  16 bytes
   allocs estimate:  1
   --------------
@@ -178,7 +178,7 @@ v2_d = adapt(CuArray{Float64}, v2);</code></pre><pre><code class="language-julia
   maximum time:     635.480 ms (0.00% GC)
   --------------
   samples:          9
-  evals/sample:     1</code></pre><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v2_d, transpose($EUR_100_cu), $v1_d)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v2_d, transpose($EUR_100_cu), $v1_d)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  3.08 KiB
   allocs estimate:  118
   --------------
@@ -188,8 +188,8 @@ v2_d = adapt(CuArray{Float64}, v2);</code></pre><pre><code class="language-julia
   maximum time:     31.066 ms (0.00% GC)
   --------------
   samples:          185
-  evals/sample:     1</code></pre><pre><code class="language-julia">isapprox(collect(v2_d), v2)</code></pre><pre><code class="nohighlight">true</code></pre><pre><code class="language-julia">v1 = randn(size(EUR_101, 1))
-v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v2, transpose($EUR_101_sla), $v1)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs">isapprox(collect(v2_d), v2)</code></pre><pre><code class="nohighlight hljs">true</code></pre><pre><code class="language-julia hljs">v1 = randn(size(EUR_101, 1))
+v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v2, transpose($EUR_101_sla), $v1)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  44.14 KiB
   allocs estimate:  1723
   --------------
@@ -199,7 +199,7 @@ v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia">@ben
   maximum time:     1.002 s (0.00% GC)
   --------------
   samples:          6
-  evals/sample:     1</code></pre><pre><code class="language-julia">@benchmark LinearAlgebra.mul!($v2, transpose($EUR_101_sla_), $v1)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs">@benchmark LinearAlgebra.mul!($v2, transpose($EUR_101_sla_), $v1)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  44.14 KiB
   allocs estimate:  1723
   --------------
@@ -209,7 +209,7 @@ v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia">@ben
   maximum time:     1.107 s (0.00% GC)
   --------------
   samples:          5
-  evals/sample:     1</code></pre><pre><code class="language-julia">@benchmark (LinearAlgebra.mul!($v2, transpose($EUR_101_bm), $v1))</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs">@benchmark (LinearAlgebra.mul!($v2, transpose($EUR_101_bm), $v1))</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  16 bytes
   allocs estimate:  1
   --------------
@@ -221,7 +221,7 @@ v2 = randn(size(EUR_101, 2));</code></pre><pre><code class="language-julia">@ben
   samples:          8
   evals/sample:     1</code></pre><p>BitMatrix is slightly faster in this direction.</p><h2 id="Y-AX"><a class="docs-heading-anchor" href="#Y-AX"><span>$Y = AX$</span></a><a id="Y-AX-1"></a><a class="docs-heading-anchor-permalink" href="#Y-AX" title="Permalink"></a></h2><p>Now for matrix-matrix multiplications. If we want to center/scale the SnpArray, we have</p><p class="math-container">\[\begin{aligned}
     Y_{ij} = \sum_{k} \frac{A_{ik} - \mu_k}{\sigma_k}X_{kj}
-\end{aligned}\]</p><p>where <span>$\mu_k$</span> and <span>$\sigma_k$</span> is the mean and standard deviation of the <span>$k$</span>th SNP. Centering and scaling is performed on-the-fly. First check correctness</p><pre><code class="language-julia">EUR = SnpArray(SnpArrays.datadir(&quot;EUR_subset.bed&quot;));
+\end{aligned}\]</p><p>where <span>$\mu_k$</span> and <span>$\sigma_k$</span> is the mean and standard deviation of the <span>$k$</span>th SNP. Centering and scaling is performed on-the-fly. First check correctness</p><pre><code class="language-julia hljs">EUR = SnpArray(SnpArrays.datadir(&quot;EUR_subset.bed&quot;));
 EUR_10 = [EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR]
 
 m = size(EUR_10, 1)
@@ -234,8 +234,8 @@ Y = zeros(m, p)
 SnpArrays.mul!(Y, A, X)
 Afloat = convert(Matrix{Float64}, EUR_10, impute=true, center=true, scale=true)
 Ytrue = Afloat * X
-all(Y .≈ Ytrue)</code></pre><pre><code class="nohighlight">true</code></pre><p>Now lets check out timings. If <span>$B$</span> is a &quot;tall and thin&quot; matrix, then <code>SnpLinAlg</code> remains competitive, often superior, to BLAS. </p><pre><code class="language-julia"># SnpLinAlg-matrix
-@benchmark LinearAlgebra.mul!($Y, $A, $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+all(Y .≈ Ytrue)</code></pre><pre><code class="nohighlight hljs">true</code></pre><p>Now lets check out timings. If <span>$B$</span> is a &quot;tall and thin&quot; matrix, then <code>SnpLinAlg</code> remains competitive, often superior, to BLAS. </p><pre><code class="language-julia hljs"># SnpLinAlg-matrix
+@benchmark LinearAlgebra.mul!($Y, $A, $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  112 bytes
   allocs estimate:  1
   --------------
@@ -245,9 +245,9 @@ all(Y .≈ Ytrue)</code></pre><pre><code class="nohighlight">true</code></pre><p
   maximum time:     212.790 ms (0.00% GC)
   --------------
   samples:          28
-  evals/sample:     1</code></pre><pre><code class="language-julia"># BLAS with 1 threaed 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs"># BLAS with 1 threaed 
 BLAS.set_num_threads(1)
-@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -257,9 +257,9 @@ BLAS.set_num_threads(1)
   maximum time:     256.666 ms (0.00% GC)
   --------------
   samples:          25
-  evals/sample:     1</code></pre><pre><code class="language-julia"># BLAS with 8 threaed 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs"># BLAS with 8 threaed 
 BLAS.set_num_threads(8)
-@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -269,11 +269,11 @@ BLAS.set_num_threads(8)
   maximum time:     138.839 ms (0.00% GC)
   --------------
   samples:          59
-  evals/sample:     1</code></pre><p>But if <span>$B$</span> is a large matrix too, single threaded BLAS is ~6 times faster and &gt;10x faster for 8 thread BLAS. </p><pre><code class="language-julia"># SnpLinAlg-matrix
+  evals/sample:     1</code></pre><p>But if <span>$B$</span> is a large matrix too, single threaded BLAS is ~6 times faster and &gt;10x faster for 8 thread BLAS. </p><pre><code class="language-julia hljs"># SnpLinAlg-matrix
 p = 100
 X = rand(n, p)
 Y = zeros(m, p)
-@benchmark LinearAlgebra.mul!($Y, $A, $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $A, $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  112 bytes
   allocs estimate:  1
   --------------
@@ -283,9 +283,9 @@ Y = zeros(m, p)
   maximum time:     4.932 s (0.00% GC)
   --------------
   samples:          2
-  evals/sample:     1</code></pre><pre><code class="language-julia"># BLAS with 1 threaed 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs"># BLAS with 1 threaed 
 BLAS.set_num_threads(1)
-@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -295,9 +295,9 @@ BLAS.set_num_threads(1)
   maximum time:     832.166 ms (0.00% GC)
   --------------
   samples:          7
-  evals/sample:     1</code></pre><pre><code class="language-julia"># BLAS with 8 threaed 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs"># BLAS with 8 threaed 
 BLAS.set_num_threads(8)
-@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $Afloat, $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -309,7 +309,7 @@ BLAS.set_num_threads(8)
   samples:          20
   evals/sample:     1</code></pre><h2 id="Y-AtX"><a class="docs-heading-anchor" href="#Y-AtX"><span>$Y = A^tX$</span></a><a id="Y-AtX-1"></a><a class="docs-heading-anchor-permalink" href="#Y-AtX" title="Permalink"></a></h2><p>If we want to center/scale the SnpArray, we have</p><p class="math-container">\[\begin{aligned}
     Y_{ij} = \sum_{k} \left(\frac{A_{ik} - \mu_i}{\sigma_i}\right)X_{kj}
-\end{aligned}\]</p><p>where <span>$\mu_i$</span> and <span>$\sigma_i$</span> is the mean and standard deviation of the <span>$i$</span>th SNP. Similar to before, lets first check correctness.</p><pre><code class="language-julia">EUR = SnpArray(SnpArrays.datadir(&quot;EUR_subset.bed&quot;));
+\end{aligned}\]</p><p>where <span>$\mu_i$</span> and <span>$\sigma_i$</span> is the mean and standard deviation of the <span>$i$</span>th SNP. Similar to before, lets first check correctness.</p><pre><code class="language-julia hljs">EUR = SnpArray(SnpArrays.datadir(&quot;EUR_subset.bed&quot;));
 EUR_10 = [EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR; EUR]
 
 m = size(EUR_10, 1)
@@ -322,8 +322,8 @@ Y = zeros(n, p)
 SnpArrays.mul!(Y, Transpose(A), X)
 Afloat = convert(Matrix{Float64}, EUR_10, impute=true, center=true, scale=true)
 Ytrue = Afloat&#39; * X
-all(Y .≈ Ytrue)</code></pre><pre><code class="nohighlight">true</code></pre><p>Now lets check out timings. If <span>$B$</span> is a &quot;tall and thin&quot; matrix, then <code>SnpLinAlg</code> remains competitive, often superior, to BLAS. </p><pre><code class="language-julia"># SnpLinAlg-matrix
-@benchmark LinearAlgebra.mul!($Y, $(Transpose(A)), $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+all(Y .≈ Ytrue)</code></pre><pre><code class="nohighlight hljs">true</code></pre><p>Now lets check out timings. If <span>$B$</span> is a &quot;tall and thin&quot; matrix, then <code>SnpLinAlg</code> remains competitive, often superior, to BLAS. </p><pre><code class="language-julia hljs"># SnpLinAlg-matrix
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(A)), $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  304 bytes
   allocs estimate:  1
   --------------
@@ -333,9 +333,9 @@ all(Y .≈ Ytrue)</code></pre><pre><code class="nohighlight">true</code></pre><p
   maximum time:     228.314 ms (0.00% GC)
   --------------
   samples:          23
-  evals/sample:     1</code></pre><pre><code class="language-julia"># BLAS with 1 threaed 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs"># BLAS with 1 threaed 
 BLAS.set_num_threads(1)
-@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -345,9 +345,9 @@ BLAS.set_num_threads(1)
   maximum time:     343.174 ms (0.00% GC)
   --------------
   samples:          17
-  evals/sample:     1</code></pre><pre><code class="language-julia"># BLAS with 8 threaed 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs"># BLAS with 8 threaed 
 BLAS.set_num_threads(8)
-@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -357,11 +357,11 @@ BLAS.set_num_threads(8)
   maximum time:     229.535 ms (0.00% GC)
   --------------
   samples:          40
-  evals/sample:     1</code></pre><p>But if <span>$B$</span> is a large matrix too, single threaded BLAS is ~6 times faster and &gt;10x faster for 8 thread BLAS. </p><pre><code class="language-julia"># SnpLinAlg-matrix
+  evals/sample:     1</code></pre><p>But if <span>$B$</span> is a large matrix too, single threaded BLAS is ~6 times faster and &gt;10x faster for 8 thread BLAS. </p><pre><code class="language-julia hljs"># SnpLinAlg-matrix
 p = 100
 X = rand(m, p)
 Y = zeros(n, p)
-@benchmark LinearAlgebra.mul!($Y, $(Transpose(A)), $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(A)), $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  304 bytes
   allocs estimate:  1
   --------------
@@ -371,9 +371,9 @@ Y = zeros(n, p)
   maximum time:     6.196 s (0.00% GC)
   --------------
   samples:          1
-  evals/sample:     1</code></pre><pre><code class="language-julia"># BLAS with 1 threaed 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs"># BLAS with 1 threaed 
 BLAS.set_num_threads(1)
-@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -383,9 +383,9 @@ BLAS.set_num_threads(1)
   maximum time:     1.310 s (0.00% GC)
   --------------
   samples:          5
-  evals/sample:     1</code></pre><pre><code class="language-julia"># BLAS with 8 threaed 
+  evals/sample:     1</code></pre><pre><code class="language-julia hljs"># BLAS with 8 threaed 
 BLAS.set_num_threads(8)
-@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)</code></pre><pre><code class="nohighlight">BenchmarkTools.Trial: 
+@benchmark LinearAlgebra.mul!($Y, $(Transpose(Afloat)), $X)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
   --------------
@@ -395,4 +395,4 @@ BLAS.set_num_threads(8)
   maximum time:     422.793 ms (0.00% GC)
   --------------
   samples:          18
-  evals/sample:     1</code></pre><h2 id="Conclusion"><a class="docs-heading-anchor" href="#Conclusion">Conclusion</a><a id="Conclusion-1"></a><a class="docs-heading-anchor-permalink" href="#Conclusion" title="Permalink"></a></h2><ul><li><code>SnpLinAlg</code> (for CPU)<ul><li>achieves up to 32x memory savings compared to double-precision matrices</li><li>is usually faster than single threaded BLAS for matrix-vector multiply.</li><li>is competitive with single threaded BLAS for matrix-matrix multiply if <span>$B$</span> is &quot;tall and thin&quot;</li></ul></li><li><code>CuSnpArray</code> supports GPU matrix-vector operations that is 30-50x faster than multithreaded BLAS. </li><li>Other linear algebra operations (e.g. <span>$v*A$</span> and <span>$qr(A)$</span>...etc) will be <em>much</em> slower than are not guaranteed to work. </li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« SnpArrays.jl Tutorial</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.3 on <span class="colophon-date" title="Wednesday 30 June 2021 00:18">Wednesday 30 June 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  evals/sample:     1</code></pre><h2 id="Conclusion"><a class="docs-heading-anchor" href="#Conclusion">Conclusion</a><a id="Conclusion-1"></a><a class="docs-heading-anchor-permalink" href="#Conclusion" title="Permalink"></a></h2><ul><li><code>SnpLinAlg</code> (for CPU)<ul><li>achieves up to 32x memory savings compared to double-precision matrices</li><li>is usually faster than single threaded BLAS for matrix-vector multiply.</li><li>is competitive with single threaded BLAS for matrix-matrix multiply if <span>$B$</span> is &quot;tall and thin&quot;</li></ul></li><li><code>CuSnpArray</code> supports GPU matrix-vector operations that is 30-50x faster than multithreaded BLAS. </li><li>Other linear algebra operations (e.g. <span>$v*A$</span> and <span>$qr(A)$</span>...etc) will be <em>much</em> slower than are not guaranteed to work. </li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« SnpArrays.jl Tutorial</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.4 on <span class="colophon-date" title="Monday 26 July 2021 03:02">Monday 26 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
