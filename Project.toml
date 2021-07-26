@@ -31,11 +31,11 @@ VariantCallFormat = "28eba6e3-a997-4ad9-87c6-d933b8bca6c1"
 VectorizationBase = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
 
 [compat]
-CSV = ">=0.8.0"
-LoopVectorization = ">=0.12.43"
-SpecialFunctions = ">=0.8.0"
-StatsBase = ">=0.11.0"
-VectorizationBase = ">=0.20.19"
+CSV = "0.8.0"
+LoopVectorization = "0.12.43"
+SpecialFunctions = "0.8.0"
+StatsBase = "0.11.0"
+VectorizationBase = "0.20.19"
 julia = "1.5"
 
 [extras]
