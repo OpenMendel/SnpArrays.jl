@@ -1,8 +1,8 @@
 name = "SnpArrays"
 uuid = "4e780e97-f5bf-4111-9dc4-b70aaf691b06"
 keywords = ["GWAS", "Genome-wide association studies", "binary plink"]
-authors = ["Hua Zhou <hwachou@gmail.com>", "Seyoon Ko <syko0507@snu.ac.kr>", "Douglas Bates <dmbates@gmail.com>", "OpenMendel Team"]
-version = "0.3.12"
+authors = ["Hua Zhou <hwachou@gmail.com>", "Seyoon Ko <kos@ucla.edu>", "Douglas Bates <dmbates@gmail.com>", "OpenMendel Team"]
+version = "0.3.13"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -42,7 +42,7 @@ Glob = "1"
 LoopVectorization = "0.12.43"
 Missings = "0.4, 1"
 Requires = "1"
-SpecialFunctions = "0.8, 0.9, 0.10, 1"
+SpecialFunctions = "0.8, 0.9, 0.10, 1, 2"
 StatsBase = "0.24 - 0.33"
 Tables = "1"
 TranscodingStreams = "0.9"
