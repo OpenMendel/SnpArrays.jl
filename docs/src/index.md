@@ -505,11 +505,11 @@ tmpbf
 rm("tmp.bed", force=true)
 ```
 
-### `convert` and `copyto!`
+## `convert` and `copyto!`
 
 Most common usage of SnpArray is to convert genotypes to numeric values for statistical analysis. Conversion rule depends on genetic models (additive, dominant, or recessive), centering, scaling, or imputation.
 
-#### `convert`
+### `convert`
 
 `convert` function has 4 keyword arguments: `model`, `center`, `scale`, and `impute`.
 
@@ -754,7 +754,7 @@ convert(Vector{Float64}, @view(mouse[:, end]), center=true, scale=true, impute=t
 
 
 
-#### `copyto!`
+### `copyto!`
 
 `copyto!` is the in-place version of `convert`. It takes the same keyword arguments (`model`, `center`, `scale`, `impute`) as `convert`.
 
@@ -933,7 +933,7 @@ M = similar(mouse, Float64)
       77.183 ms (0 allocations: 0 bytes)
 
 
-#### Impute missing genotypes using ADMIXTURE estimates
+## Impute missing genotypes using ADMIXTURE estimates
 
 `convert` and `copyto!` can perform more fine-tuned imputation using the ancestry estimates from the [ADMIXTURE](https://github.com/OpenMendel/ADMIXTURE.jl) software.
 
@@ -1064,9 +1064,9 @@ M = similar(mouse, Float64)
       138.702 ms (0 allocations: 0 bytes)
 
 
-### Summaries
+## Summaries
 
-#### Counts
+### Counts
 
 Counts of each the four possible values for each column are returned by `counts`.`
 
@@ -1099,7 +1099,7 @@ The counts by column and by row are cached in the `SnpArray` object. Accesses af
       4.698 ns (0 allocations: 0 bytes)
 
 
-#### Minor allele frequencies
+### Minor allele frequencies
 
 Minor allele frequencies (MAF) for each SNP.
 
@@ -1181,7 +1181,7 @@ minorallele(mouse)
 
 
 
-#### `mean` and `var`
+### `mean` and `var`
 
 The package provides methods for the generics `mean` and `var` from the `Statistics` package.
 
@@ -1274,7 +1274,7 @@ std(mouse, dims=2)
 
 
 
-#### Missing rate
+### Missing rate
 
 Proportion of missing genotypes
 
@@ -1354,7 +1354,7 @@ missingrate(mouse, 2)
 
 
 
-#### Location of the missing values
+### Location of the missing values
 
 The positions of the missing data are evaluated by
 
@@ -1412,9 +1412,9 @@ view(counts(mouse, dims=1), 2:2, :)
 
 
 
-### Genetic relationship matrix (GRM)
+## Genetic relationship matrix (GRM)
 
-#### Homogenous population
+### Homogenous population
 
 For homogenous population, `grm` function computes the empirical kinship matrix using either the classical genetic relationship matrix, `grm(A, model=:GRM)`, or the method of moment method, `grm(A, model=:MoM)`, or the robust method, `grm(A, model=:Robust)`. See the section _Kinship Comparison_ of the [manuscript](http://hua-zhou.github.io/media/pdf/Zhou19OpenMendel.pdf) for the formulae and references for these methods. 
 
@@ -1598,7 +1598,7 @@ grm(mouse, cinds=1:2:size(mouse, 2))
 
 
 
-#### Inhomogenous/admixed populations
+### Inhomogenous/admixed populations
 
 For inhomogenous/admixed population, we recommend first estimate the ancestry and pupulation allele frequencies using the ADMIXTURE software. See [ADMIXTURE.jl](https://github.com/OpenMendel/ADMIXTURE.jl) for usage. Then compute the kinship coefficients using the `P` (allele frequencies) and `Q` (ancestry fractions) matrix from the output of ADMIXTURE. This is essentially what the [REAP software](http://faculty.washington.edu/tathornt/software/REAP) does, except our implementation runs much faster than REAP (>50 fold speedup). 
 
@@ -1660,7 +1660,7 @@ rm("mouse.3.P", force = true)
 rm("mouse.3.Q", force = true)
 ```
 
-### Filtering
+## Filtering
 
 Before GWAS, we often need to filter SNPs and/or samples according to genotyping success rates, minor allele frequencies, and Hardy-Weinberg Equilibrium test. This can be achieved by the `filter` function.
 
@@ -1707,7 +1707,7 @@ One may use the `rowmask` and `colmask` to filter and save filtering result as P
 SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
 ```
 
-#### Filter Plink files
+### Filter Plink files
 
 Filter a set of Plink files according to row indices and column indices. By result, filtered Plink files are saved as `srcname.filtered.bed`, `srcname.filtered.fam`, and `srcname.filtered.bim`, where `srcname` is the source Plink file name. You can also specify destimation file name using keyword `des`.
 
@@ -1799,7 +1799,7 @@ rm(SnpArrays.datadir("mouse.filtered.fam"), force=true)
 rm(SnpArrays.datadir("mouse.filtered.bim"), force=true)
 ```
 
-### Concatenating `SnpArray`s
+## Concatenating `SnpArray`s
 
 Concatenation of `SnpArray`s is implemented in `hcat`, `vcat`, and `hvcat` functions. By default, the resulting `.bed` file is saved as a file beginning with `tmp_` in the working directory. You can specify destination using keyword `des`. 
 
