@@ -17,10 +17,10 @@ This package requires Julia v1.5 or later, which can be obtained from
 https://julialang.org/downloads/ or by building Julia from the sources in the
 https://github.com/JuliaLang/julia repository.
 
-The package has not yet been registered and must be installed using the repository location.
-Start julia and use the `]` key to switch to the package manager REPL
+This package is registered in the default Julia package registry, and can be installed through standard package installation procedure.
 ```julia
-(v1.6) pkg> add https://github.com/OpenMendel/SnpArrays.jl
+using Pkg
+pkg"add SnpArrays"
 ```
 Use the backspace key to return to the Julia REPL.
 

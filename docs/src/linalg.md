@@ -1,5 +1,6 @@
-
 # Linear Algebra Benchmarks
+
+`SnpArrays.jl` supports three modes of matrix-vector multiplications:
 
 `SnpArrays.jl` supports three modes of matrix-vector multiplications:
 
@@ -19,14 +20,14 @@ On this page, we compare these three.
 versioninfo()
 ```
 
-    Julia Version 1.6.0
-    Commit f9720dc2eb (2021-03-24 12:55 UTC)
+    Julia Version 1.6.2
+    Commit 1b93d53fc4 (2021-07-14 15:36 UTC)
     Platform Info:
       OS: macOS (x86_64-apple-darwin19.6.0)
       CPU: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
       WORD_SIZE: 64
       LIBM: libopenlibm
-      LLVM: libLLVM-11.0.1 (ORCJIT, skylake)
+      LLVM: libLLVM-11.0.1 (ORCJIT, skylake-avx512)
 
 
 
@@ -72,15 +73,14 @@ EUR_101_mat = convert(Matrix{Float64}, EUR_101, model=ADDITIVE_MODEL, center=fal
 
 
 ```julia
-ENV["JULIA_CUDA_USE_BINARYBUILDER"] = "false"
 using CUDA
 EUR_100_cu = CuSnpArray{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false);
 EUR_100_cu_ = CuSnpArray{Float64}(EUR_100; model=ADDITIVE_MODEL, center=false, scale=false, impute=false);
 ```
 
-    ┌ Warning: `haskey(::TargetIterator, name::String)` is deprecated, use `Target(; name = name) !== nothing` instead.
-    │   caller = llvm_compat(::VersionNumber) at compatibility.jl:176
-    └ @ CUDA /home/kose/.julia/packages/CUDA/5t6R9/deps/compatibility.jl:176
+    ┌ Warning: The NVIDIA driver on this system only supports up to CUDA 10.2.0.
+    │ For performance reasons, it is recommended to upgrade to a driver that supports CUDA 11.2 or higher.
+    └ @ CUDA /home/xyz/.julia/packages/CUDA/CtvPY/src/initialization.jl:42
 
 
 ## $y = Ax$
@@ -103,17 +103,16 @@ BLAS.set_num_threads(8)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     361.080 ms (0.00% GC)
-      median time:      581.438 ms (0.00% GC)
-      mean time:        535.216 ms (0.00% GC)
-      maximum time:     668.896 ms (0.00% GC)
-      --------------
-      samples:          10
-      evals/sample:     1
+    BenchmarkTools.Trial: 11 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m408.568 ms[22m[39m … [35m478.025 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m461.873 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m457.339 ms[22m[39m ± [32m 19.116 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m█[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m [39m [39m█[39m [39m [39m [39m█[39m [39m [39m [32m [39m[39m [34m█[39m[39m█[39m [39m [39m [39m█[39m█[39m [39m█[39m [39m [39m█[39m [39m [39m [39m█[39m [39m 
+      [39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[32m▁[39m[39m▁[34m█[39m[39m█[39m▁[39m▁[39m▁[39m█[39m█[39m▁[39m█[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      409 ms[90m           Histogram: frequency by time[39m          478 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -128,17 +127,16 @@ BLAS.set_num_threads(1)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     2.741 s (0.00% GC)
-      median time:      2.880 s (0.00% GC)
-      mean time:        2.880 s (0.00% GC)
-      maximum time:     3.019 s (0.00% GC)
-      --------------
-      samples:          2
-      evals/sample:     1
+    BenchmarkTools.Trial: 3 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m1.957 s[22m[39m … [35m  2.089 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m1.986 s              [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m2.011 s[22m[39m ± [32m69.424 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [34m█[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      1.96 s[90m         Histogram: frequency by time[39m         290 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -152,17 +150,16 @@ Direct linear algebra on a SnpArray, with mean imputation:
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  38.33 KiB
-      allocs estimate:  1616
-      --------------
-      minimum time:     1.726 s (0.00% GC)
-      median time:      1.748 s (0.00% GC)
-      mean time:        1.744 s (0.00% GC)
-      maximum time:     1.757 s (0.00% GC)
-      --------------
-      samples:          3
-      evals/sample:     1
+    BenchmarkTools.Trial: 6 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m840.116 ms[22m[39m … [35m852.731 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m844.339 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m845.643 ms[22m[39m ± [32m  4.589 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m█[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m [39m [39m█[34m [39m[39m [39m [39m [39m█[39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m█[34m▁[39m[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      840 ms[90m           Histogram: frequency by time[39m          853 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m160 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -176,17 +173,16 @@ With zero imputation:
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  38.33 KiB
-      allocs estimate:  1616
-      --------------
-      minimum time:     1.013 s (0.00% GC)
-      median time:      1.032 s (0.00% GC)
-      mean time:        1.029 s (0.00% GC)
-      maximum time:     1.037 s (0.00% GC)
-      --------------
-      samples:          5
-      evals/sample:     1
+    BenchmarkTools.Trial: 9 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m590.436 ms[22m[39m … [35m600.609 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m594.370 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m594.687 ms[22m[39m ± [32m  2.947 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m▁[39m [39m [39m [39m [39m [39m [39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m [39m [39m [39m [39m█[34m [39m[32m [39m[39m [39m [39m [39m▁[39m▁[39m [39m [39m [39m [39m [39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m 
+      [39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[34m▁[39m[32m▁[39m[39m▁[39m▁[39m▁[39m█[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      590 ms[90m           Histogram: frequency by time[39m          601 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m160 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -202,17 +198,16 @@ The below is the benchmark for SnpBitMatrix (always zero-imputed):
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     1.057 s (0.00% GC)
-      median time:      1.089 s (0.00% GC)
-      mean time:        1.085 s (0.00% GC)
-      maximum time:     1.124 s (0.00% GC)
-      --------------
-      samples:          5
-      evals/sample:     1
+    BenchmarkTools.Trial: 2 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m4.945 s[22m[39m … [35m  4.981 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m4.963 s              [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m4.963 s[22m[39m ± [32m25.520 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [34m█[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      4.94 s[90m         Histogram: frequency by time[39m        4.98 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -232,17 +227,16 @@ v2 = randn(size(EUR_101, 2));
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  44.13 KiB
-      allocs estimate:  1722
-      --------------
-      minimum time:     1.322 s (0.00% GC)
-      median time:      1.635 s (0.00% GC)
-      mean time:        1.561 s (0.00% GC)
-      maximum time:     1.654 s (0.00% GC)
-      --------------
-      samples:          4
-      evals/sample:     1
+    BenchmarkTools.Trial: 6 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m858.307 ms[22m[39m … [35m895.131 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m867.094 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m869.931 ms[22m[39m ± [32m 13.289 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m█[39m [39m [39m█[39m [39m [39m [39m [39m [39m [39m [39m [34m█[39m[39m [39m [39m [39m█[39m [39m [32m [39m[39m [39m█[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [39m█[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[34m█[39m[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[32m▁[39m[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      858 ms[90m           Histogram: frequency by time[39m          895 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m160 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -254,17 +248,16 @@ v2 = randn(size(EUR_101, 2));
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  44.13 KiB
-      allocs estimate:  1722
-      --------------
-      minimum time:     1.032 s (0.00% GC)
-      median time:      1.039 s (0.00% GC)
-      mean time:        1.039 s (0.00% GC)
-      maximum time:     1.046 s (0.00% GC)
-      --------------
-      samples:          5
-      evals/sample:     1
+    BenchmarkTools.Trial: 9 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m615.004 ms[22m[39m … [35m631.572 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m616.410 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m618.802 ms[22m[39m ± [32m  5.452 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m▁[39m▁[39m [39m [34m█[39m[39m█[39m [39m [39m [39m [39m [39m▁[39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m 
+      [39m█[39m█[39m▁[39m▁[34m█[39m[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      615 ms[90m           Histogram: frequency by time[39m          632 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m160 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -276,17 +269,16 @@ v2 = randn(size(EUR_101, 2));
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     1.214 s (0.00% GC)
-      median time:      1.230 s (0.00% GC)
-      mean time:        1.256 s (0.00% GC)
-      maximum time:     1.348 s (0.00% GC)
-      --------------
-      samples:          4
-      evals/sample:     1
+    BenchmarkTools.Trial: 2 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m4.967 s[22m[39m … [35m  4.995 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m4.981 s              [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m4.981 s[22m[39m ± [32m19.665 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [34m█[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      4.97 s[90m         Histogram: frequency by time[39m        4.99 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -315,25 +307,19 @@ using BenchmarkTools
 @benchmark CUDA.@sync LinearAlgebra.mul!($v1_d, $EUR_100_cu, $v2_d)
 ```
 
-    ┌ Warning: `Target(triple::String)` is deprecated, use `Target(; triple = triple)` instead.
-    │   caller = ip:0x0
-    └ @ Core :-1
 
 
 
-
-
-    BenchmarkTools.Trial: 
-      memory estimate:  3.28 KiB
-      allocs estimate:  130
-      --------------
-      minimum time:     22.141 ms (0.00% GC)
-      median time:      22.287 ms (0.00% GC)
-      mean time:        22.286 ms (0.00% GC)
-      maximum time:     22.739 ms (0.00% GC)
-      --------------
-      samples:          225
-      evals/sample:     1
+    BenchmarkTools.Trial: 240 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m20.808 ms[22m[39m … [35m 23.129 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m20.834 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m20.857 ms[22m[39m ± [32m200.753 μs[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.08% ± 1.19%
+    
+      [39m▅[34m█[39m[32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [39m█[34m█[39m[32m█[39m[39m▄[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▄[39m [39m▅
+      20.8 ms[90m       [39m[90mHistogram: [39m[90m[1mlog([22m[39m[90mfrequency[39m[90m[1m)[22m[39m[90m by time[39m      22.1 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m69.23 KiB[39m, allocs estimate[90m: [39m[33m4393[39m.
 
 
 
@@ -347,17 +333,16 @@ For CuSnpArray, the additional cost for mean imputation is negligible.
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  3.28 KiB
-      allocs estimate:  130
-      --------------
-      minimum time:     22.063 ms (0.00% GC)
-      median time:      22.283 ms (0.00% GC)
-      mean time:        22.667 ms (0.00% GC)
-      maximum time:     54.782 ms (0.00% GC)
-      --------------
-      samples:          221
-      evals/sample:     1
+    BenchmarkTools.Trial: 239 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m20.813 ms[22m[39m … [35m 30.895 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m20.837 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m20.945 ms[22m[39m ± [32m915.783 μs[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.08% ± 1.27%
+    
+      [34m█[39m[32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [34m█[39m[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▄[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▄[39m [39m▅
+      20.8 ms[90m       [39m[90mHistogram: [39m[90m[1mlog([22m[39m[90mfrequency[39m[90m[1m)[22m[39m[90m by time[39m      27.4 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m18.95 KiB[39m, allocs estimate[90m: [39m[33m1175[39m.
 
 
 
@@ -367,25 +352,88 @@ EUR_100_mat_d = adapt(CuArray, EUR_100_mat);
 ```
 
 
+    Out of GPU memory trying to allocate 15.263 GiB
+    Effective GPU memory usage: 11.12% (1.311 GiB/11.784 GiB)
+    CUDA allocator usage: 980.317 MiB
+    Memory pool usage: 980.317 MiB (980.317 MiB allocated, 0 bytes cached)
+
+
+    
+
+    Stacktrace:
+
+      [1] #alloc#176
+
+        @ ~/.julia/packages/CUDA/CtvPY/src/pool.jl:267 [inlined]
+
+      [2] alloc
+
+        @ ~/.julia/packages/CUDA/CtvPY/src/pool.jl:259 [inlined]
+
+      [3] CuArray{Float64, 2}(#unused#::UndefInitializer, dims::Tuple{Int64, Int64})
+
+        @ CUDA ~/.julia/packages/CUDA/CtvPY/src/array.jl:28
+
+      [4] CuArray
+
+        @ ~/.julia/packages/CUDA/CtvPY/src/array.jl:241 [inlined]
+
+      [5] CuArray
+
+        @ ~/.julia/packages/CUDA/CtvPY/src/array.jl:249 [inlined]
+
+      [6] convert
+
+        @ ~/.julia/packages/GPUArrays/Tebtl/src/host/construction.jl:4 [inlined]
+
+      [7] adapt_storage(#unused#::Type{CuArray}, xs::Matrix{Float64})
+
+        @ CUDA ~/.julia/packages/CUDA/CtvPY/src/array.jl:286
+
+      [8] adapt_structure(to::Type, x::Matrix{Float64})
+
+        @ Adapt ~/.julia/packages/Adapt/RGNRk/src/Adapt.jl:42
+
+      [9] adapt(to::Type, x::Matrix{Float64})
+
+        @ Adapt ~/.julia/packages/Adapt/RGNRk/src/Adapt.jl:40
+
+     [10] top-level scope
+
+        @ In[21]:1
+
+     [11] eval
+
+        @ ./boot.jl:360 [inlined]
+
+     [12] include_string(mapexpr::typeof(REPL.softscope), mod::Module, code::String, filename::String)
+
+        @ Base ./loading.jl:1116
+
+
+
 ```julia
 @benchmark CUDA.@sync LinearAlgebra.mul!($v1_d, $EUR_100_mat_d, $v2_d)
 ```
 
 
+    UndefVarError: EUR_100_mat_d not defined
 
+    
 
-    BenchmarkTools.Trial: 
-      memory estimate:  2.58 KiB
-      allocs estimate:  85
-      --------------
-      minimum time:     76.064 ms (0.00% GC)
-      median time:      80.063 ms (0.00% GC)
-      mean time:        78.925 ms (0.00% GC)
-      maximum time:     81.984 ms (0.00% GC)
-      --------------
-      samples:          64
-      evals/sample:     1
+    Stacktrace:
 
+     [1] top-level scope
+
+       @ ~/.julia/packages/BenchmarkTools/tGTCy/src/execution.jl:440
+
+     [2] eval
+
+       @ ./boot.jl:360 [inlined]
+
+     [3] include_string(mapexpr::typeof(REPL.softscope), mod::Module, code::String, filename::String)
+
+       @ Base ./loading.jl:1116
 
 
 The speedup is obvious, CuSnpArrays is 30-50x faster than on CPU, and using CuSnpArray is both faster and memory-efficient compared to linear algebra with floating point matrix on GPU.
@@ -421,17 +469,16 @@ v2_d = adapt(CuArray{Float64}, v2);
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  38.34 KiB
-      allocs estimate:  1617
-      --------------
-      minimum time:     934.273 ms (0.00% GC)
-      median time:      941.154 ms (0.00% GC)
-      mean time:        940.465 ms (0.00% GC)
-      maximum time:     946.902 ms (0.00% GC)
-      --------------
-      samples:          6
-      evals/sample:     1
+    BenchmarkTools.Trial: 6 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m851.938 ms[22m[39m … [35m875.831 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m864.144 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m864.772 ms[22m[39m ± [32m  8.569 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m█[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m [39m [39m [39m [39m [39m [39m [39m█[34m█[39m[39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[34m█[39m[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      852 ms[90m           Histogram: frequency by time[39m          876 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m304 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -443,17 +490,9 @@ v2_d = adapt(CuArray{Float64}, v2);
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  16 bytes
-      allocs estimate:  1
-      --------------
-      minimum time:     613.994 ms (0.00% GC)
-      median time:      624.201 ms (0.00% GC)
-      mean time:        623.735 ms (0.00% GC)
-      maximum time:     635.480 ms (0.00% GC)
-      --------------
-      samples:          9
-      evals/sample:     1
+    BenchmarkTools.Trial: 1 sample with 1 evaluation.
+     Single result which took [34m5.943 s[39m (0.00% GC) to evaluate,
+     with a memory estimate of [33m0 bytes[39m, over [33m0[39m allocations.
 
 
 
@@ -465,17 +504,16 @@ v2_d = adapt(CuArray{Float64}, v2);
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  3.08 KiB
-      allocs estimate:  118
-      --------------
-      minimum time:     26.717 ms (0.00% GC)
-      median time:      26.903 ms (0.00% GC)
-      mean time:        27.136 ms (0.00% GC)
-      maximum time:     31.066 ms (0.00% GC)
-      --------------
-      samples:          185
-      evals/sample:     1
+    BenchmarkTools.Trial: 278 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m17.848 ms[22m[39m … [35m52.127 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 65.80%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m17.878 ms              [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m18.038 ms[22m[39m ± [32m 2.084 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.68% ±  3.95%
+    
+      [39m█[34m▅[39m[39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [39m█[34m█[39m[39m▆[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▄[39m [39m▅
+      17.8 ms[90m      [39m[90mHistogram: [39m[90m[1mlog([22m[39m[90mfrequency[39m[90m[1m)[22m[39m[90m by time[39m        20 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m142.14 KiB[39m, allocs estimate[90m: [39m[33m9059[39m.
 
 
 
@@ -505,17 +543,16 @@ v2 = randn(size(EUR_101, 2));
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  44.14 KiB
-      allocs estimate:  1723
-      --------------
-      minimum time:     958.926 ms (0.00% GC)
-      median time:      965.005 ms (0.00% GC)
-      mean time:        969.983 ms (0.00% GC)
-      maximum time:     1.002 s (0.00% GC)
-      --------------
-      samples:          6
-      evals/sample:     1
+    BenchmarkTools.Trial: 5 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m868.448 ms[22m[39m … [35m   1.327 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m895.181 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m   1.033 s[22m[39m ± [32m217.498 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [39m [39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m 
+      [34m█[39m[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      868 ms[90m           Histogram: frequency by time[39m          1.33 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m304 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -527,17 +564,16 @@ v2 = randn(size(EUR_101, 2));
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  44.14 KiB
-      allocs estimate:  1723
-      --------------
-      minimum time:     1.089 s (0.00% GC)
-      median time:      1.092 s (0.00% GC)
-      mean time:        1.097 s (0.00% GC)
-      maximum time:     1.107 s (0.00% GC)
-      --------------
-      samples:          5
-      evals/sample:     1
+    BenchmarkTools.Trial: 6 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m927.944 ms[22m[39m … [35m  1.028 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m934.817 ms              [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m958.481 ms[22m[39m ± [32m42.785 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m▁[39m█[34m [39m[39m [39m [39m [39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m 
+      [39m█[39m█[34m▁[39m[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      928 ms[90m          Histogram: frequency by time[39m           130 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m304 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -549,17 +585,9 @@ v2 = randn(size(EUR_101, 2));
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  16 bytes
-      allocs estimate:  1
-      --------------
-      minimum time:     620.057 ms (0.00% GC)
-      median time:      628.593 ms (0.00% GC)
-      mean time:        635.710 ms (0.00% GC)
-      maximum time:     664.656 ms (0.00% GC)
-      --------------
-      samples:          8
-      evals/sample:     1
+    BenchmarkTools.Trial: 1 sample with 1 evaluation.
+     Single result which took [34m5.813 s[39m (0.00% GC) to evaluate,
+     with a memory estimate of [33m0 bytes[39m, over [33m0[39m allocations.
 
 
 
@@ -594,6 +622,9 @@ Ytrue = Afloat * X
 all(Y .≈ Ytrue)
 ```
 
+    WARNING: redefinition of constant EUR. This may fail, cause incorrect answers, or produce other errors.
+
+
 
 
 
@@ -612,17 +643,16 @@ Now lets check out timings. If $B$ is a "tall and thin" matrix, then `SnpLinAlg`
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  112 bytes
-      allocs estimate:  1
-      --------------
-      minimum time:     173.410 ms (0.00% GC)
-      median time:      183.456 ms (0.00% GC)
-      mean time:        185.278 ms (0.00% GC)
-      maximum time:     212.790 ms (0.00% GC)
-      --------------
-      samples:          28
-      evals/sample:     1
+    BenchmarkTools.Trial: 46 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m105.415 ms[22m[39m … [35m132.895 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m106.670 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m108.777 ms[22m[39m ± [32m  6.331 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m [39m▄[39m█[34m▅[39m[39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [39m▇[39m█[39m█[34m█[39m[39m▃[39m▃[39m▁[32m▁[39m[39m▃[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▃[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▃[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▄[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▃[39m▁[39m▃[39m [39m▁
+      105 ms[90m           Histogram: frequency by time[39m          133 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m112 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -636,17 +666,16 @@ BLAS.set_num_threads(1)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     174.038 ms (0.00% GC)
-      median time:      210.557 ms (0.00% GC)
-      mean time:        207.253 ms (0.00% GC)
-      maximum time:     256.666 ms (0.00% GC)
-      --------------
-      samples:          25
-      evals/sample:     1
+    BenchmarkTools.Trial: 8 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m589.561 ms[22m[39m … [35m885.109 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m601.005 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m635.873 ms[22m[39m ± [32m100.867 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m [39m [34m█[39m[39m▃[39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [39m▇[39m▇[34m█[39m[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▇[39m [39m▁
+      590 ms[90m           Histogram: frequency by time[39m          885 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -660,17 +689,16 @@ BLAS.set_num_threads(8)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     70.793 ms (0.00% GC)
-      median time:      81.628 ms (0.00% GC)
-      mean time:        85.057 ms (0.00% GC)
-      maximum time:     138.839 ms (0.00% GC)
-      --------------
-      samples:          59
-      evals/sample:     1
+    BenchmarkTools.Trial: 40 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m109.089 ms[22m[39m … [35m609.969 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m111.358 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m127.126 ms[22m[39m ± [32m 78.665 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [34m█[39m[39m▃[32m▃[39m[39m▃[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▂[39m [39m▁
+      109 ms[90m           Histogram: frequency by time[39m          610 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -688,17 +716,16 @@ Y = zeros(m, p)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  112 bytes
-      allocs estimate:  1
-      --------------
-      minimum time:     4.889 s (0.00% GC)
-      median time:      4.910 s (0.00% GC)
-      mean time:        4.910 s (0.00% GC)
-      maximum time:     4.932 s (0.00% GC)
-      --------------
-      samples:          2
-      evals/sample:     1
+    BenchmarkTools.Trial: 2 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m3.599 s[22m[39m … [35m 3.602 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m3.600 s             [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m3.600 s[22m[39m ± [32m1.921 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [34m█[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      3.6 s[90m         Histogram: frequency by time[39m         3.6 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m112 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -712,17 +739,16 @@ BLAS.set_num_threads(1)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     806.519 ms (0.00% GC)
-      median time:      818.924 ms (0.00% GC)
-      mean time:        817.595 ms (0.00% GC)
-      maximum time:     832.166 ms (0.00% GC)
-      --------------
-      samples:          7
-      evals/sample:     1
+    BenchmarkTools.Trial: 3 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m2.192 s[22m[39m … [35m   2.759 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m2.192 s               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m2.381 s[22m[39m ± [32m326.877 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m 
+      [34m█[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      2.19 s[90m         Histogram: frequency by time[39m         2.76 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -736,17 +762,16 @@ BLAS.set_num_threads(8)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     217.737 ms (0.00% GC)
-      median time:      238.400 ms (0.00% GC)
-      mean time:        251.802 ms (0.00% GC)
-      maximum time:     305.899 ms (0.00% GC)
-      --------------
-      samples:          20
-      evals/sample:     1
+    BenchmarkTools.Trial: 15 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m323.403 ms[22m[39m … [35m366.700 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m330.332 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m334.467 ms[22m[39m ± [32m 11.791 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m▁[39m█[39m▁[39m [39m [39m█[34m▁[39m[39m [39m [39m▁[39m [39m [39m [39m [39m [39m [32m▁[39m[39m▁[39m [39m [39m [39m▁[39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m▁[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m▁[39m [39m 
+      [39m█[39m█[39m█[39m▁[39m▁[39m█[34m█[39m[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m█[39m[39m█[39m▁[39m▁[39m▁[39m█[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m█[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      323 ms[90m           Histogram: frequency by time[39m          367 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -780,6 +805,9 @@ Ytrue = Afloat' * X
 all(Y .≈ Ytrue)
 ```
 
+    WARNING: redefinition of constant EUR. This may fail, cause incorrect answers, or produce other errors.
+
+
 
 
 
@@ -798,17 +826,16 @@ Now lets check out timings. If $B$ is a "tall and thin" matrix, then `SnpLinAlg`
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  304 bytes
-      allocs estimate:  1
-      --------------
-      minimum time:     214.029 ms (0.00% GC)
-      median time:      216.865 ms (0.00% GC)
-      mean time:        217.732 ms (0.00% GC)
-      maximum time:     228.314 ms (0.00% GC)
-      --------------
-      samples:          23
-      evals/sample:     1
+    BenchmarkTools.Trial: 25 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m193.170 ms[22m[39m … [35m217.577 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m199.180 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m200.356 ms[22m[39m ± [32m  5.605 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m [39m [39m [39m▃[39m [39m [39m [39m [39m [39m [39m█[39m [39m [39m▃[34m [39m[39m [39m [39m▃[32m▃[39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [39m▇[39m▁[39m▁[39m█[39m▁[39m▇[39m▇[39m▇[39m▁[39m▇[39m█[39m▁[39m▁[39m█[34m▁[39m[39m▇[39m▁[39m█[32m█[39m[39m▇[39m▁[39m▇[39m▇[39m▁[39m▁[39m▁[39m▁[39m▇[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▇[39m▁[39m▁[39m▁[39m▇[39m▁[39m▁[39m▁[39m▇[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▇[39m [39m▁
+      193 ms[90m           Histogram: frequency by time[39m          218 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m304 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -822,17 +849,16 @@ BLAS.set_num_threads(1)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     270.484 ms (0.00% GC)
-      median time:      297.139 ms (0.00% GC)
-      mean time:        302.211 ms (0.00% GC)
-      maximum time:     343.174 ms (0.00% GC)
-      --------------
-      samples:          17
-      evals/sample:     1
+    BenchmarkTools.Trial: 13 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m402.128 ms[22m[39m … [35m452.548 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m404.967 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m408.729 ms[22m[39m ± [32m 13.282 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m [39m█[39m [34m█[39m[39m▃[39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [39m▇[39m█[39m▁[34m█[39m[39m█[39m▇[39m▇[39m▇[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▇[39m [39m▁
+      402 ms[90m           Histogram: frequency by time[39m          453 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -846,17 +872,16 @@ BLAS.set_num_threads(8)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     96.434 ms (0.00% GC)
-      median time:      111.485 ms (0.00% GC)
-      mean time:        126.247 ms (0.00% GC)
-      maximum time:     229.535 ms (0.00% GC)
-      --------------
-      samples:          40
-      evals/sample:     1
+    BenchmarkTools.Trial: 74 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m65.019 ms[22m[39m … [35m96.348 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m65.594 ms              [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m67.762 ms[22m[39m ± [32m 5.614 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m▅[39m█[34m▂[39m[39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [39m█[39m█[34m█[39m[39m▁[39m▅[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▅[39m▅[39m▆[39m▅[39m▅[39m▅[39m▁[39m▁[39m▅[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▅[39m▅[39m▁[39m▁[39m▁[39m▅[39m▁[39m▁[39m▁[39m▁[39m▅[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▅[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▅[39m▅[39m [39m▁
+      65 ms[90m        [39m[90mHistogram: [39m[90m[1mlog([22m[39m[90mfrequency[39m[90m[1m)[22m[39m[90m by time[39m      86.5 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -874,17 +899,16 @@ Y = zeros(n, p)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  304 bytes
-      allocs estimate:  1
-      --------------
-      minimum time:     6.196 s (0.00% GC)
-      median time:      6.196 s (0.00% GC)
-      mean time:        6.196 s (0.00% GC)
-      maximum time:     6.196 s (0.00% GC)
-      --------------
-      samples:          1
-      evals/sample:     1
+    BenchmarkTools.Trial: 2 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m4.218 s[22m[39m … [35m   4.367 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m4.293 s               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m4.293 s[22m[39m ± [32m105.845 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [34m█[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      4.22 s[90m         Histogram: frequency by time[39m         4.37 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m304 bytes[39m, allocs estimate[90m: [39m[33m1[39m.
 
 
 
@@ -898,17 +922,16 @@ BLAS.set_num_threads(1)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     1.013 s (0.00% GC)
-      median time:      1.055 s (0.00% GC)
-      mean time:        1.111 s (0.00% GC)
-      maximum time:     1.310 s (0.00% GC)
-      --------------
-      samples:          5
-      evals/sample:     1
+    BenchmarkTools.Trial: 3 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m1.845 s[22m[39m … [35m  1.870 s[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m1.855 s              [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m1.857 s[22m[39m ± [32m12.738 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [34m█[39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m█[39m [39m 
+      [34m█[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m▁[39m▁[39m▁[32m▁[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m█[39m [39m▁
+      1.84 s[90m         Histogram: frequency by time[39m        1.87 s [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -922,17 +945,16 @@ BLAS.set_num_threads(8)
 
 
 
-    BenchmarkTools.Trial: 
-      memory estimate:  0 bytes
-      allocs estimate:  0
-      --------------
-      minimum time:     221.024 ms (0.00% GC)
-      median time:      284.014 ms (0.00% GC)
-      mean time:        286.916 ms (0.00% GC)
-      maximum time:     422.793 ms (0.00% GC)
-      --------------
-      samples:          18
-      evals/sample:     1
+    BenchmarkTools.Trial: 17 samples with 1 evaluation.
+     Range [90m([39m[36m[1mmin[22m[39m … [35mmax[39m[90m):  [39m[36m[1m276.946 ms[22m[39m … [35m386.706 ms[39m  [90m┊[39m GC [90m([39mmin … max[90m): [39m0.00% … 0.00%
+     Time  [90m([39m[34m[1mmedian[22m[39m[90m):     [39m[34m[1m285.168 ms               [22m[39m[90m┊[39m GC [90m([39mmedian[90m):    [39m0.00%
+     Time  [90m([39m[32m[1mmean[22m[39m ± [32mσ[39m[90m):   [39m[32m[1m302.769 ms[22m[39m ± [32m 37.051 ms[39m  [90m┊[39m GC [90m([39mmean ± σ[90m):  [39m0.00% ± 0.00%
+    
+      [39m█[39m [39m [34m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [32m [39m[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m 
+      [39m█[39m▅[39m█[34m▁[39m[39m▅[39m▅[39m▁[39m▁[39m▁[39m▁[39m▅[39m▁[39m▁[39m▅[32m▅[39m[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▅[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▅[39m▁[39m▅[39m▁[39m▁[39m▁[39m▁[39m▁[39m▁[39m▅[39m [39m▁
+      277 ms[90m           Histogram: frequency by time[39m          387 ms [0m[1m<[22m
+    
+     Memory estimate[90m: [39m[33m0 bytes[39m, allocs estimate[90m: [39m[33m0[39m.
 
 
 
@@ -943,4 +965,4 @@ BLAS.set_num_threads(8)
     - is usually faster than single threaded BLAS for matrix-vector multiply.
     - is competitive with single threaded BLAS for matrix-matrix multiply if $B$ is "tall and thin"
 + `CuSnpArray` supports GPU matrix-vector operations that is 30-50x faster than multithreaded BLAS. 
-+ Other linear algebra operations (e.g. $v*A$ and $qr(A)$...etc) will be *much* slower than are not guaranteed to work. 
++ Other linear algebra operations (e.g. $v*A$ and $qr(A)$...etc) will be *much* slower and are not guaranteed to work. 
