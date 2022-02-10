@@ -66,22 +66,6 @@ function Base.getindex(s::SnpLinAlg{T}, i::Int, j::Int) where T
     return x
 end
 
-# macros taken from Gaius.jl
-macro _spawn(ex)
-    if Threads.nthreads() > 1
-        esc(Expr(:macrocall, Expr(:(.), :Threads, QuoteNode(Symbol("@spawn"))), __source__, ex))
-    else
-        esc(ex)
-    end
-end
-macro _sync(ex)
-    if Threads.nthreads() > 1
-        esc(Expr(:macrocall, Symbol("@sync"), __source__, ex))
-    else
-        esc(ex)
-    end    
-end
-
 """
     LinearAlgebra.mul!(out, sla::SnpLinAlg, v)
 
@@ -213,11 +197,11 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
     Nrem = N & (hstep - 1)
     taskarray = Array{Any}(undef, Miter + 1)
     fill!(taskarray, nothing)
-    @_sync begin
+    @sync begin
         GC.@preserve c A b for n in 0:Niter - 1
             for m in 0:Miter - 1
                 wait(taskarray[m+1])
-                taskarray[m+1] = @_spawn _ftn!(
+                taskarray[m+1] = Threads.@spawn _ftn!(
                     gesp(stridedpointer(c), (4 * vstep * m,)),
                     gesp(stridedpointer(A), (vstep * m, hstep * n)),
                     gesp(stridedpointer(b), (hstep * n,)),
@@ -226,7 +210,7 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
             end
             if Mrem != 0
                 wait(taskarray[Miter+1])
-                taskarray[Miter+1] = @_spawn _ftn!(
+                taskarray[Miter+1] = Threads.@spawn _ftn!(
                     @view(c[4 * vstep * Miter + 1:end]), 
                     @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                     @view(b[hstep * n + 1:hstep * (n + 1)]),
@@ -238,7 +222,7 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
         if Nrem != 0
             for m in 0:Miter-1
                 wait(taskarray[m+1])
-                taskarray[m+1] = @_spawn _ftn!(
+                taskarray[m+1] = Threads.@spawn _ftn!(
                     @view(c[4 * vstep * m + 1:4 * vstep * (m + 1)]),
                     @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                     @view(b[hstep * Niter + 1:end]),
@@ -248,7 +232,7 @@ function _snparray_ax_tile!(c, A, b, model, μ, impute, rows_filled)
             end
             if Mrem != 0
                 wait(taskarray[Miter + 1])
-                taskarray[Miter + 1] = @_spawn _ftn!(
+                taskarray[Miter + 1] = Threads.@spawn _ftn!(
                     @view(c[4 * vstep * Miter+1:end]),
                     @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                     @view(b[hstep * Niter + 1:end]),
@@ -298,12 +282,12 @@ function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, �
     Prem = P & (pstep - 1)
     taskarray = Array{Any}(undef, Miter + 1)
     fill!(taskarray, nothing)
-    @_sync begin
+    @sync begin
         GC.@preserve C A B for p in 0:Piter - 1
             for n in 0:Niter - 1
                 for m in 0:Miter - 1
                     wait(taskarray[m+1])
-                    taskarray[m+1] = @_spawn _ftn!(
+                    taskarray[m+1] = Threads.@spawn _ftn!(
                         @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
@@ -315,7 +299,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, �
                 end
                 if Mrem != 0
                     wait(taskarray[Miter+1])
-                    taskarray[Miter+1] = @_spawn _ftn!(
+                    taskarray[Miter+1] = Threads.@spawn _ftn!(
                         @view(C[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]), 
                         @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
@@ -329,7 +313,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, �
             if Nrem != 0
                 for m in 0:Miter-1
                     wait(taskarray[m+1])
-                    taskarray[m+1] = @_spawn _ftn!(
+                    taskarray[m+1] = Threads.@spawn _ftn!(
                         @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                         @view(B[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
@@ -341,7 +325,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, �
                 end
                 if Mrem != 0
                     wait(taskarray[Miter + 1])
-                    taskarray[Miter + 1] = @_spawn _ftn!(
+                    taskarray[Miter + 1] = Threads.@spawn _ftn!(
                         @view(C[4 * vstep * Miter+1:end, pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                         @view(B[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
@@ -357,7 +341,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, �
             for n in 0:Niter - 1
                 for m in 0:Miter - 1
                     wait(taskarray[m+1])
-                    taskarray[m+1] = @_spawn _ftn!(
+                    taskarray[m+1] = Threads.@spawn _ftn!(
                         @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
@@ -369,7 +353,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, �
                 end
                 if Mrem != 0
                     wait(taskarray[Miter+1])
-                    taskarray[Miter+1] = @_spawn _ftn!(
+                    taskarray[Miter+1] = Threads.@spawn _ftn!(
                         @view(C[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]), 
                         @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                         @view(B[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
@@ -383,7 +367,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, �
             if Nrem != 0
                 for m in 0:Miter-1
                     wait(taskarray[m+1])
-                    taskarray[m+1] = @_spawn _ftn!(
+                    taskarray[m+1] = Threads.@spawn _ftn!(
                         @view(C[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                         @view(B[hstep * Niter + 1:end, pstep * Piter + 1:end]),
@@ -395,7 +379,7 @@ function _snparray_AX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, �
                 end
                 if Mrem != 0
                     wait(taskarray[Miter + 1])
-                    taskarray[Miter + 1] = @_spawn _ftn!(
+                    taskarray[Miter + 1] = Threads.@spawn _ftn!(
                         @view(C[4 * vstep * Miter+1:end, pstep * Piter + 1:end]),
                         @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                         @view(B[hstep * Niter + 1:end, pstep * Piter + 1:end]),
@@ -442,11 +426,11 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
     Nrem = N & (hstep - 1)
     taskarray = Array{Any}(undef, Niter+1)
     fill!(taskarray, nothing)
-    @_sync begin
+    @sync begin
         GC.@preserve c A b for m in 0:Miter - 1
             for n in 0:Niter - 1
                 wait(taskarray[n + 1])
-                taskarray[n + 1] = @_spawn _ftn!(
+                taskarray[n + 1] = Threads.@spawn _ftn!(
                     gesp(stridedpointer(c), (hstep * n,)),
                     gesp(stridedpointer(A), (vstep * m, hstep * n)),
                     gesp(stridedpointer(b), (4 * vstep * m,)),
@@ -455,7 +439,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
             end
             if Nrem != 0
                 wait(taskarray[Niter + 1])
-                taskarray[Niter + 1] = @_spawn _ftn!(
+                taskarray[Niter + 1] = Threads.@spawn _ftn!(
                     @view(c[hstep * Niter + 1:end]),
                     @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                     @view(b[4 * vstep * m + 1:4 * vstep * (m + 1)]),
@@ -467,7 +451,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
         if Mrem != 0
             for n in 0:Niter - 1
                 wait(taskarray[n + 1])
-                taskarray[n + 1] = @_spawn _ftn!(
+                taskarray[n + 1] = Threads.@spawn _ftn!(
                     @view(c[hstep * n + 1:hstep * (n + 1)]),
                     @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                     @view(b[4 * vstep * Miter + 1:end]),
@@ -477,7 +461,7 @@ function _snparray_atx_tile!(c, A, b, model, μ, impute, rows_filled)
             end
             if Nrem != 0
                 wait(taskarray[Niter + 1])
-                taskarray[Niter + 1] = @_spawn _ftn!(
+                taskarray[Niter + 1] = Threads.@spawn _ftn!(
                     @view(c[hstep * Niter + 1:end]),
                     @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                     @view(b[4 * vstep * Miter + 1:end]),
@@ -527,12 +511,12 @@ function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, 
     Prem = P & (pstep - 1)
     taskarray = Array{Any}(undef, Niter + 1)
     fill!(taskarray, nothing)
-    @_sync begin
+    @sync begin
         GC.@preserve C A B for p in 0:Piter - 1
             for m in 0:Miter - 1
                 for n in 0:Niter - 1
                     wait(taskarray[n + 1])
-                    taskarray[n + 1] = @_spawn _ftn!(
+                    taskarray[n + 1] = Threads.@spawn _ftn!(
                         @view(C[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
@@ -544,7 +528,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, 
                 end
                 if Nrem != 0
                     wait(taskarray[Niter + 1])
-                    taskarray[Niter + 1] = @_spawn _ftn!(
+                    taskarray[Niter + 1] = Threads.@spawn _ftn!(
                         @view(C[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * p + 1:pstep * (p + 1)]),
@@ -558,7 +542,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, 
             if Mrem != 0
                 for n in 0:Niter - 1
                     wait(taskarray[n + 1])
-                    taskarray[n + 1] = @_spawn _ftn!(
+                    taskarray[n + 1] = Threads.@spawn _ftn!(
                         @view(C[hstep * n + 1:hstep * (n + 1), pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                         @view(B[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]),
@@ -570,7 +554,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, 
                 end
                 if Nrem != 0
                     wait(taskarray[Niter + 1])
-                    taskarray[Niter + 1] = @_spawn _ftn!(
+                    taskarray[Niter + 1] = Threads.@spawn _ftn!(
                         @view(C[hstep * Niter + 1:end, pstep * p + 1:pstep * (p + 1)]),
                         @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                         @view(B[4 * vstep * Miter + 1:end, pstep * p + 1:pstep * (p + 1)]),
@@ -586,7 +570,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, 
             for m in 0:Miter - 1
                 for n in 0:Niter - 1
                     wait(taskarray[n + 1])
-                    taskarray[n + 1] = @_spawn _ftn!(
+                    taskarray[n + 1] = Threads.@spawn _ftn!(
                         @view(C[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * n + 1:hstep * (n + 1)]),
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
@@ -598,7 +582,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, 
                 end
                 if Nrem != 0
                     wait(taskarray[Niter + 1])
-                    taskarray[Niter + 1] = @_spawn _ftn!(
+                    taskarray[Niter + 1] = Threads.@spawn _ftn!(
                         @view(C[hstep * Niter + 1:end, pstep * Piter + 1:end]), 
                         @view(A[vstep * m + 1:vstep * (m + 1), hstep * Niter + 1:end]),
                         @view(B[4 * vstep * m + 1:4 * vstep * (m + 1), pstep * Piter + 1:end]),
@@ -612,7 +596,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, 
             if Mrem != 0
                 for n in 0:Niter - 1
                     wait(taskarray[n + 1])
-                    taskarray[n + 1] = @_spawn _ftn!(
+                    taskarray[n + 1] = Threads.@spawn _ftn!(
                         @view(C[hstep * n + 1:hstep * (n + 1), pstep * Piter + 1:end]),
                         @view(A[vstep * Miter + 1:end, hstep * n + 1:hstep * (n + 1)]),
                         @view(B[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]),
@@ -624,7 +608,7 @@ function _snparray_AtX_tile!(C, A, B, model, μ, μimpute, impute, rows_filled, 
                 end
                 if Nrem != 0
                     wait(taskarray[Niter + 1])
-                    taskarray[Niter + 1] = @_spawn _ftn!(
+                    taskarray[Niter + 1] = Threads.@spawn _ftn!(
                         @view(C[hstep * Niter + 1:end, pstep * Piter + 1:end]),
                         @view(A[vstep * Miter + 1:end, hstep * Niter + 1:end]),
                         @view(B[4 * vstep * Miter + 1:end, pstep * Piter + 1:end]),
