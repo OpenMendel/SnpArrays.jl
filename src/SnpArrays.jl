@@ -16,7 +16,7 @@ import SpecialFunctions: gamma_inc
 import VectorizationBase: gesp
 import Tables: table
 export AbstractSnpArray, AbstractSnpBitMatrix, AbstractSnpLinAlg
-export SnpArray, SnpBitMatrix, SnpLinAlg, SnpData
+export SnpArray, SnpBitMatrix, SnpLinAlg, SnpData, StackedSnpArray
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
 export counts, grm, grm_admixture, maf, mean, minorallele, missingpos, missingrate
 export std, var, vcf2plink
@@ -32,6 +32,7 @@ const RECESSIVE_MODEL = Val(3)
 
 include("codec.jl")
 include("snparray.jl")
+include("stackedsnparray.jl")
 include("filter.jl")
 include("cat.jl")
 include("snpdata.jl")
@@ -42,6 +43,8 @@ include("linalg_bitmatrix.jl")
 include("reorder.jl")
 include("vcf2plink.jl")
 include("admixture.jl")
+AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}, 
+    StackedSnpArray, SubArray{UInt8, 1, StackedSnpArray}, SubArray{UInt8, 2, StackedSnpArray}}
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 

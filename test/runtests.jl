@@ -752,3 +752,13 @@ g = grm(mouse)
 @test count(kinship_pruning(g; method=:bottom_up)) == 132
 @test count(kinship_pruning(g; method=:plink)) == 126
 end
+
+@testset "stackedsnparray" begin
+mouse2 = StackedSnpArray([mouse, mouse])
+@test size(mouse2) == (1940, 20300)
+@test size(mouse2, 3) == 1
+@test_throws ErrorException size(mouse2, 0)
+@test length(mouse2) == 1940 * 20300
+@test eltype(mouse2) == UInt8
+@test mouse2[777, 16384] == mouse[777, 16384 - 10150]
+end

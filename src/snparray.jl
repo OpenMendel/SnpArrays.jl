@@ -14,7 +14,21 @@ struct SnpArray <: AbstractMatrix{UInt8}
     m::Int
 end
 
-AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}}
+"""
+    StackedSnpArray(s::Vector{SnpArray})
+
+Stacked SnpArray for unified indexing
+"""
+struct StackedSnpArray <: AbstractMatrix{UInt8} # details in stackedsnparray.jl
+    arrays::Vector{SnpArray}
+    m::Int
+    n::Int
+    ns::Vector{Int}
+    offsets::Vector{Int} # 0-based
+end
+
+AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}, 
+    StackedSnpArray, SubArray{UInt8, 1, StackedSnpArray}, SubArray{UInt8, 2, StackedSnpArray}}
 
 function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
     checkplinkfilename(bednm, "bed")
@@ -40,7 +54,7 @@ function SnpArray(
     kwargs...)
     checkplinkfilename(bednm, "bed")
     # check user supplied fam filename
-    if famnm == nothing
+    if famnm === nothing
         famnm = replace(bednm, ".bed" => ".fam") 
         isfile(famnm) || throw(ArgumentError("fam file not found"))
     else # user supplied fam file name

@@ -2,7 +2,7 @@ name = "SnpArrays"
 uuid = "4e780e97-f5bf-4111-9dc4-b70aaf691b06"
 keywords = ["GWAS", "Genome-wide association studies", "binary plink"]
 authors = ["Hua Zhou <hwachou@gmail.com>", "Seyoon Ko <kos@ucla.edu>", "Douglas Bates <dmbates@gmail.com>", "OpenMendel Team"]
-version = "0.3.15"
+version = "0.3.16"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
