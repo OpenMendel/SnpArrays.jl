@@ -847,9 +847,9 @@ function Base.copyto!(
     s::AbstractSnpLinAlg
     ) where T <: AbstractFloat
     m, n = size(s, 1), size(s, 2)
-    @inbounds for j in 1:n
+    Threads.@threads for j in 1:n
         @simd for i in 1:m
-            v[i, j] = s[i, j]
+            @inbounds v[i, j] = s[i, j]
         end
     end
     return v
