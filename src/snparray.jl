@@ -27,7 +27,7 @@ struct StackedSnpArray <: AbstractMatrix{UInt8} # details in stackedsnparray.jl
     offsets::Vector{Int} # 0-based
 end
 
-AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}, 
+const AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}, 
     StackedSnpArray, SubArray{UInt8, 1, StackedSnpArray}, SubArray{UInt8, 2, StackedSnpArray}}
 
 function SnpArray(bednm::AbstractString, m::Integer, args...; kwargs...)
