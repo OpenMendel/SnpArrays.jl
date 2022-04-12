@@ -157,7 +157,7 @@ function filter(
     makestream(desbedfile, "w+") do io
         write(io, 0x1b6c)
         write(io, 0x01)
-        write(io, Matrix{UInt8}(undef, (desm + 3) >> 2, desn))
+        truncate(io, ((desm + 3) >> 2) * desn + 3)
     end
     bfdes  = SnpArray(desbedfile, desm, "r+")
     bfdes .= @view bfsrc[rmask, cmask]
