@@ -36,4 +36,4 @@ Current implementation incorporates ideas in the package [BEDFiles.jl](https://g
 
 Chris Elrod (@chriselrod) helped us accelerate CPU linear algebra through his great support of [LoopVectorization.jl](https://github.com/chriselrod/LoopVectorization.jl) package.
 
-This project is supported by the National Institutes of Health under NIGMS awards R01GM053275 and R25GM103774 and NHGRI award R01HG006139.
+This project has been supported by the National Institutes of Health under awards R01GM053275, R01HG006139, R25GM103774, and 1R25HG011845.
