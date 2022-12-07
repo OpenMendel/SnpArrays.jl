@@ -325,5 +325,5 @@ function write_plink(filename::AbstractString, snpdata::SnpData)
         write(io, 0x01)
         write(io, snpdata.snparray.data)
     end
-    SnpData(snpdata.people, snpdata.snps, snpdata.snparray, snpdata.snp_info, snpdata.person_info, bimfile, bedfile, famfile)
+    SnpData(snpdata.people, snpdata.snps, snpdata.snparray, snpdata.snp_info, snpdata.person_info, bedfile, bimfile, famfile)
 end
