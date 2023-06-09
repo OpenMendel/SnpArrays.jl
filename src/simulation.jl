@@ -286,3 +286,37 @@ function simulate!(
     ) where {T<:AbstractFloat}
     return simulate!(Random.GLOBAL_RNG, m, n, mafs)
 end
+
+"""
+    simulate!([rng], X, mafs)
+
+Simulate genotype data to be stored directly in a `SnpArray`, assuming no missingness.
+
+# Arguments
+- `X::SnpArray`: `m` by `n` SnpArray
+- `mafs::AbstractVector{T}`: Vector of minor allele frequencies, should be length `n`
+"""
+
+function simulate!(
+    rng::Random.AbstractRNG,
+    X::SnpArray,
+    mafs::AbstractVector{T}
+    ) where {T<:AbstractFloat}
+    m, n = size(X)
+    length(mafs) == n || throw(DimensionMismatch("Number of MAFs must equal number of columns"))
+
+    weights = compressedSNPWeights(Vector{T}(undef, 81))
+    storage = Vector{T}(undef, 3)
+
+    # Simulate data
+    _simulate!(rng, X.data, mafs, weights, storage)
+
+    return X
+end
+
+function simulate!(
+    X::SnpArray,
+    mafs::AbstractVector{T}
+    ) where {T<:AbstractFloat}
+    return simulate!(Random.GLOBAL_RNG, X, mafs)
+end
