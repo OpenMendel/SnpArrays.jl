@@ -30,9 +30,9 @@ end
 end
 
 function iterator(snpdata::SnpData; startidx=1)::SnpArrayIterator
-    if startidx == 1
-        return SnpArrayIterator(snpdata, startidx)
+    if startidx > size(snpdata,2)
+        return nothing
     else
-        @assert false "Not implemented."
+        return SnpArrayIterator(snpdata,startidx)
     end
 end
