@@ -2,6 +2,7 @@ __precompile__()
 
 module SnpArrays
 
+using GeneticVariantBase
 using CodecZlib, CodecXz, CodecBzip2, CodecZstd,  TranscodingStreams
 using Adapt, Glob, LinearAlgebra, LoopVectorization, Missings, Mmap, Printf
 using Requires, SparseArrays, Statistics, StatsBase
