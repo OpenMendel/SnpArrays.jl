@@ -1,9 +1,8 @@
 mutable struct SnpArrayIterator <: VariantIterator
    snpdata::SnpData
-   index::Int
 end
 
-struct SnpArrayIndex <: VariantIterator
+struct SnpArrayIndex <: Variant
     index::Int
 end 
 
@@ -15,7 +14,7 @@ function Base.iterate(itr::SnpArrayIterator, state=itr.index)
     if state > size(itr.snpdata.snp_info,2)
         return nothing
     else
-        itr.index = state + 1
+        state = state + 1
         result = (view(itr.snpdata.snp_info, :, state), state+1)
         return result
     end
@@ -26,13 +25,14 @@ end
 end
 
 @inline function snparrayiterator(snpdata::SnpData)
-    SnpArrayIterator(snpdata, 1)
+    SnpArrayIterator(snpdata)
 end
 
 function iterator(snpdata::SnpData; startidx=1)::SnpArrayIterator
     if startidx > size(snpdata,2)
         return nothing
     else
-        return SnpArrayIterator(snpdata,startidx)
+        SnpArrayIndex(startidx)
+        return SnpArrayIterator(snpdata)
     end
 end
