@@ -36,3 +36,38 @@ function iterator(snpdata::SnpData; startidx=1)::SnpArrayIterator
         return SnpArrayIterator(snpdata)
     end
 end
+
+function iterator(s::SnpData; startidx=1)
+    iterator = SnpArrayIterator(s)
+end
+
+function chrom(s::SnpData, startidx=1)::String
+    result = view(s.snp_info,startidx,1)
+    return result
+end
+
+function pos(s::SnpData, startidx=1)::Int
+    result = view(s.snp_info,startidx,2)
+    return result
+end
+
+function rsid(s::SnpData, startidx=1)::String
+    result = view(s.snp_info,startidx,3)
+    return result
+end
+
+function alleles(s::SnpData, startidx=1)::Vector{String}
+    allele1 = view(s.snp_info,startidx,5)
+    allele2 = view(s.snp_info,startidx,6)
+    return [allele1, allele2]
+end
+
+function alt_allele(s::SnpData, startidx=1)::String
+    alt = view(s.snp_info,startidx,6)
+    return alt
+end
+
+function ref_allele(s::SnpData, startidx=1)::String
+    ref = view(s.snp_info,v,5)
+    return ref
+end
