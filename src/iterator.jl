@@ -71,3 +71,35 @@ function ref_allele(s::SnpData, startidx=1)::String
     ref = view(s.snp_info,v,5)
     return ref
 end
+
+function mafCount(s::SnpData,startidx=1)::Int
+    n00 = 0
+    n01 = 0
+    n11 = 0
+    for i in startidx:size(s,1)
+        row = s[i,:]
+        totalCount += 1
+        if row[5] == 0 && row[6] == 0
+            n00 += 1
+        else if row[5] == 0 && row[6] == 1
+            n01 += 1
+        else if row[5] == 1 && row[6] == 1
+            n11 += 1
+        end
+    end
+    
+    return n00,n01,n11,totalCount
+end
+
+function maf(s::SnpData, startidx=1)
+    results = mafCount(s)
+    if results[1] <= results[2] && results[1] <= results[3]
+        return float(results[1]) / float(results[4])
+    end
+    if results[2] <= results[1] && results[2] <= results[1]
+        return float(results[2]) / float(results[4])
+    end
+    if results[3] <= results[1] && results[3] <= results[2]
+        return float(results[3]) / float(results[4])
+    end
+end
