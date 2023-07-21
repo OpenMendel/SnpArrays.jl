@@ -27,6 +27,8 @@ export ADDITIVE_MODEL, DOMINANT_MODEL, RECESSIVE_MODEL
 export CuSnpArray
 import VariantCallFormat: findgenokey, VCF, header
 
+# this is exporting functions necessary 
+
 const ADDITIVE_MODEL = Val(1)
 const DOMINANT_MODEL = Val(2)
 const RECESSIVE_MODEL = Val(3)
@@ -44,6 +46,8 @@ include("linalg_bitmatrix.jl")
 include("reorder.jl")
 include("vcf2plink.jl")
 include("admixture.jl")
+include("iterator.jl")
+
 AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}, 
     StackedSnpArray, SubArray{UInt8, 1, StackedSnpArray}, SubArray{UInt8, 2, StackedSnpArray}}
 

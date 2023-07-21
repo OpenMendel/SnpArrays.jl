@@ -67,8 +67,6 @@ function ref_allele(s::SnpData, startidx=1)::String
     return ref
 end
 
-
-
 function maf(s::SnpData, startidx=1)::Float
     results = mafCount(s)
     if results[1] <= results[2] && results[1] <= results[3]
