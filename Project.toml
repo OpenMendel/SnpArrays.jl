@@ -33,7 +33,7 @@ VectorizationBase = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
 [compat]
 Adapt = "3"
 CSV = "0.8, 0.9, 0.10"
-CodecBzip2 = "0.7"
+CodecBzip2 = "0.7, 0.8"
 CodecXz = "0.7"
 CodecZlib = "0.7"
 CodecZstd = "0.7"
