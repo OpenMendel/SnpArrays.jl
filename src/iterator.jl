@@ -7,7 +7,7 @@ mutable struct SnpArrayIndex <: Variant
 end 
 
 @inline function Base.eltype(::Type{<:VariantIterator})
-    SnpArray
+    SnpArrayIndex
 end
 
 function Base.iterate(itr::SnpArrayIterator, state=1)
@@ -17,20 +17,17 @@ function Base.iterate(itr::SnpArrayIterator, state=1)
     if state > size(itr.snpdata.snp_info,2)
         return nothing
     else
-        result = (view(itr.snpdata.snp_info, :, state), state+1)
+        index = SnpArrayIndex(state)
+        # don't need view just return the snparray index and the next state 
+        # tuple of length 2 
         state = state + 1
-        return result
+        return (index, state)
     end
 end
 
 @inline function Base.length(itr::SnpArrayIterator)
     return size(itr.snpdata.snp_info, 2)
 end
-
-@inline function snparrayiterator(snpdata::SnpData)
-    SnpArrayIterator(snpdata)
-end
-
 
 function iterator(s::SnpData; startidx=1)
     iterator = SnpArrayIterator(s)
@@ -67,15 +64,3 @@ function ref_allele(s::SnpData, startidx=1)::String
     return ref
 end
 
-function maf(s::SnpData, startidx=1)::Float
-    results = mafCount(s)
-    if results[1] <= results[2] && results[1] <= results[3]
-        return float(results[1]) / float(results[4])
-    end
-    if results[2] <= results[1] && results[2] <= results[1]
-        return float(results[2]) / float(results[4])
-    end
-    if results[3] <= results[1] && results[3] <= results[2]
-        return float(results[3]) / float(results[4])
-    end
-end
