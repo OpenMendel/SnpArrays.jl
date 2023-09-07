@@ -82,6 +82,24 @@ const genotypes = [0b00_00_00_00;
                    0b11_11_11_11
                    ];
 
+missing_mask    = [0b00_00_00_00;
+                   0b00_00_00_11;
+                   0b00_00_11_00;
+                   0b00_00_11_11;
+                   0b00_11_00_00;
+                   0b00_11_00_11;
+                   0b00_11_11_00;
+                   0b00_11_11_11;
+                   0b11_00_00_00;
+                   0b11_00_00_11;
+                   0b11_00_11_00;
+                   0b11_00_11_11;
+                   0b11_11_00_00;
+                   0b11_11_00_11;
+                   0b11_11_11_00;
+                   0b11_11_11_11;
+                   ];
+
 """
     compressed_snp_prob!(compressed_prob, prob)
 
@@ -107,6 +125,24 @@ a compressed SNP format, assuming non-missing genotype data
     return compressed_prob
 end
 
+@inline function compressed_missing_prob!(
+    compressed_prob::AbstractVector{T}, 
+    prob::T
+    ) where {T<:AbstractFloat}
+    probs = (1 - prob, prob)
+    @inbounds for l in 1:2
+        for k in 1:2
+            for j in 1:2
+                for i in 1:2
+                    idx = (l - 1) * 8 + (k - 1) * 4 + (j - 1) * 2 + i
+                    compressed_prob[idx] = probs[l] * probs[k] * probs[j] * probs[i] 
+                end
+            end
+        end
+    end
+    return compressed_prob
+end
+
 struct compressedSNPWeights{S<:AbstractFloat, T<:AbstractFloat, V<:AbstractVector{T}} <: StatsBase.AbstractWeights{S, T, V}
     values::V
     sum::S
@@ -119,6 +155,27 @@ end
 
 function compressedSNPWeights(values::AbstractVector{T}) where {T<:AbstractFloat}
     return compressedSNPWeights(values, one(T))
+end
+
+struct compressedMissingWeights{S<:AbstractFloat, T<:AbstractFloat, V<:AbstractVector{T}} <: StatsBase.AbstractWeights{S, T, V}
+    values::V
+    sum::S
+    function compressedMissingWeights{S, T, V}(values, sum) where {S<:AbstractFloat, T<:AbstractFloat, V<:AbstractVector{T}}
+        isfinite(sum) || throw(ArgumentError("weights cannot contain Inf or NaN values"))
+        return new{S, T, V}(values, sum)
+    end
+    compressedMissingWeights(values::AbstractVector{T}, sum::S) where {S<:AbstractFloat, T<:AbstractFloat} = compressedMissingWeights{S, T, typeof(values)}(values, sum)
+end
+
+function compressedMissingWeights(values::AbstractVector{T}) where {T<:AbstractFloat}
+    return compressedMissingWeights(values, one(T))
+end
+
+@inline function _to_missing!(g::AbstractVector{UInt8}, mask::AbstractVector{UInt8})
+    @inbounds @simd for i in eachindex(g, mask)
+        g[i] = (g[i] & ~mask[i]) | (mask[i] & 0x55)
+    end
+    return g
 end
 
 function _make_alias_table!(
@@ -237,6 +294,34 @@ function _simulate!(
     return X
 end
 
+function _simulate_missing!(
+    rng::Random.AbstractRNG,
+    X::AbstractMatrix{UInt8},
+    missing_rates::AbstractVector{T},
+    weights::compressedMissingWeights
+    ) where {T<:AbstractFloat}
+    larges = Vector{Int}(undef, 16)
+    smalls = Vector{Int}(undef, 16)
+
+    ap = Vector{Float64}(undef, 16)
+    alias = Vector{Int}(undef, 16)
+
+    missing_idx = Vector{UInt8}(undef, size(X, 1))
+    @inbounds for j in axes(X, 2)
+        ρ = missing_rates[j]
+        # Map missing probability for one observation to probabilities for 4
+        compressed_missing_prob!(weights.values, ρ)
+        # Construct alias table takes O(k log(k)) where k = 81
+        _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
+        # Drawing samples is only O(1) per sample, should be fastest method
+        # Sample index vector to mask off missing values
+        _alias_sample!(rng, missing_mask, missing_idx, ap, alias)
+        # Fast operation to assign missing according to indexed values
+        _to_missing!(view(X, :, j), missing_idx)
+    end
+    return X
+end
+
 """
     simulate!([rng], m, n, mafs)
 
@@ -298,7 +383,6 @@ function simulate!(
     length(mafs) == n || throw(DimensionMismatch("Number of MAFs must equal number of columns"))
 
     weights = compressedSNPWeights(Vector{T}(undef, 81))
-    # storage = Vector{T}(undef, 3)
 
     # Simulate data
     _simulate!(rng, X.data, mafs, weights)
@@ -311,4 +395,36 @@ function simulate!(
     mafs::AbstractVector{T}
     ) where {T<:AbstractFloat}
     return simulate!(Random.GLOBAL_RNG, X, mafs)
+end
+
+"""
+    simulate_missing!([rng], X, missing_rates)
+
+In-place modify a `SnpArray` to simulate missing data
+
+# Arguments
+- `X::SnpArray`: `m` by `n` SnpArray
+- `missing_rates::AbstractVector{T}`: Vector of missingness rates, should be length `n`
+"""
+
+function simulate_missing!(
+    rng::Random.AbstractRNG,
+    X::SnpArray,
+    missing_rates::AbstractVector{T}
+    ) where {T<:AbstractFloat}
+    m, n = size(X)
+    length(missing_rates) == n || throw(DimensionMismatch("Number of missing rates must equal number of columns"))
+
+    weights = compressedMissingWeights(Vector{T}(undef, 16))
+
+    # Simulate data
+    _simulate_missing!(rng, X.data, missing_rates, weights)
+    return X
+end
+
+function simulate_missing!(
+    X::SnpArray,
+    missing_rates::AbstractVector{T}
+    ) where {T<:AbstractFloat}
+    return simulate_missing!(Random.GLOBAL_RNG, X, missing_rates)
 end
