@@ -90,14 +90,16 @@ a compressed SNP format, assuming non-missing genotype data
 """
 @inline function compressed_snp_prob!(
     compressed_prob::AbstractVector{T}, 
-    prob::AbstractVector{T}
+    prob::T
     ) where {T<:AbstractFloat}
+    # Tuple is non-allocating since its immutable
+    probs = (abs2(1 - prob), 2 * prob * (1 - prob), abs2(prob))
     @inbounds for l in 1:3
         for k in 1:3
             for j in 1:3
                 for i in 1:3
                     idx = (l - 1) * 27 + (k - 1) * 9 + (j - 1) * 3 + i
-                    compressed_prob[idx] = prob[l] * prob[k] * prob[j] * prob[i] 
+                    compressed_prob[idx] = probs[l] * probs[k] * probs[j] * probs[i] 
                 end
             end
         end
@@ -185,7 +187,6 @@ end
 function _alias_sample!(
     rng   :: Random.AbstractRNG,
     a     :: AbstractArray{T},
-    wv    :: StatsBase.AbstractWeights, 
     x     :: AbstractArray{T},
     ap    :: AbstractVector{Float64},
     alias :: AbstractVector{Int}
@@ -193,18 +194,10 @@ function _alias_sample!(
 
     Base.mightalias(a, x) &&
         throw(ArgumentError("output array x must not share memory with input array a"))
-    Base.mightalias(x, wv) &&
-        throw(ArgumentError("output array x must not share memory with weights array wv"))
-    1 == firstindex(a) == firstindex(wv) == firstindex(x) ||
+    1 == firstindex(a) == firstindex(x) ||
         throw(ArgumentError("non 1-based arrays are not supported"))
 
     n = length(a)
-    length(wv) == n || throw(DimensionMismatch("Inconsistent lengths."))
-
-    # create alias table
-    # ap = Vector{Float64}(undef, n)
-    # alias = Vector{Int}(undef, n)
-    # _make_alias_table!(wv, sum(wv), ap, alias)
 
     # sampling
     S = Random.Sampler(rng, 1:n)
@@ -219,8 +212,7 @@ function _simulate!(
     rng::Random.AbstractRNG,
     X::AbstractMatrix{UInt8},
     mafs::AbstractVector{T},
-    weights::compressedSNPWeights,
-    storage::AbstractVector{T}
+    weights::compressedSNPWeights
     ) where {T<:AbstractFloat}
     # pre-allocate vectors for alias table sampling
     larges = Vector{Int}(undef, 81)
@@ -231,16 +223,16 @@ function _simulate!(
 
     @inbounds for j in axes(X, 2)
         ρ          = mafs[j]
-        # Store probabilities for 00, 01, and 11
-        storage[1] = abs2(1 - ρ)
-        storage[2] = 2 * ρ * (1 - ρ)
-        storage[3] = abs2(ρ)
+        # # Store probabilities for 00, 01, and 11
+        # storage[1] = abs2(1 - ρ)
+        # storage[2] = 2 * ρ * (1 - ρ)
+        # storage[3] = abs2(ρ)
         # Map probabilities for one observation to probabilities for 4
-        compressed_snp_prob!(weights.values, storage)
+        compressed_snp_prob!(weights.values, ρ)
         # Construct alias table takes O(k log(k)) where k = 81
         _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
         # Drawing samples is only O(1) per sample, should be fastest method
-        _alias_sample!(rng, genotypes, weights, view(X, :, j), ap, alias)
+        _alias_sample!(rng, genotypes, view(X, :, j), ap, alias)
     end
     return X
 end
@@ -268,13 +260,13 @@ function simulate!(
     r = cld(m, 4)
 
     weights = compressedSNPWeights(Vector{T}(undef, 81))
-    storage = Vector{T}(undef, 3)
+    # storage = Vector{T}(undef, 3)
 
     # Allocate storage
     X_compressed = Matrix{UInt8}(undef, r, n)
 
     # Simulate data
-    _simulate!(rng, X_compressed, mafs, weights, storage)
+    _simulate!(rng, X_compressed, mafs, weights)
 
     return SnpArray(X_compressed, zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
@@ -306,10 +298,10 @@ function simulate!(
     length(mafs) == n || throw(DimensionMismatch("Number of MAFs must equal number of columns"))
 
     weights = compressedSNPWeights(Vector{T}(undef, 81))
-    storage = Vector{T}(undef, 3)
+    # storage = Vector{T}(undef, 3)
 
     # Simulate data
-    _simulate!(rng, X.data, mafs, weights, storage)
+    _simulate!(rng, X.data, mafs, weights)
 
     return X
 end
