@@ -243,24 +243,28 @@ end
 # Assumes alias table has been pre-computed and stored in ap and alias
 function _alias_sample!(
     rng   :: Random.AbstractRNG,
-    a     :: AbstractArray{T},
+    values:: AbstractArray{T},
     x     :: AbstractArray{T},
     ap    :: AbstractVector{Float64},
     alias :: AbstractVector{Int}
     ) where {T<:Real}
 
-    Base.mightalias(a, x) &&
+    Base.mightalias(values, x) &&
         throw(ArgumentError("output array x must not share memory with input array a"))
-    1 == firstindex(a) == firstindex(x) ||
+    1 == firstindex(values) == firstindex(x) ||
         throw(ArgumentError("non 1-based arrays are not supported"))
 
-    n = length(a)
+    n = length(values)
 
     # sampling
     S = Random.Sampler(rng, 1:n)
-    for i in eachindex(x)
+    @inbounds for i in eachindex(x)
         j = rand(rng, S)
-        x[i] = rand(rng) < ap[j] ? a[j] : a[alias[j]]
+        # Generating this index is much faster than doing it in the 'else' branch 
+        # values[alias[j]], don't know why
+        # Suspect that compiler cant optimize x[idx1[idx2]]
+        alias_j = alias[j]
+        x[i] = rand(rng) < ap[j] ? values[j] : values[alias_j]
     end
     return x
 end
@@ -275,12 +279,14 @@ function _simulate!(
     larges = Vector{Int}(undef, 81)
     smalls = Vector{Int}(undef, 81)
 
+    # Acceptance Probabilities
     ap    = Vector{T}(undef, 81)
+    # Alias vector
     alias = Vector{Int}(undef, 81)
 
     @inbounds for j in axes(X, 2)
         ρ          = mafs[j]
-        # # Store probabilities for 00, 01, and 11
+        # Store probabilities for 00, 01, and 11
         # storage[1] = abs2(1 - ρ)
         # storage[2] = 2 * ρ * (1 - ρ)
         # storage[3] = abs2(ρ)
