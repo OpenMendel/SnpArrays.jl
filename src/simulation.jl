@@ -100,6 +100,9 @@ const missing_mask = [0b00_00_00_00;
                       0b11_11_11_11;
                       ];
 
+# Storing array of all possible single nucleotide shifts in a packed SnpArray element
+const allele_diff = missing_mask .& 0x55;
+
 """
     compressed_snp_prob!(compressed_prob, prob)
 
@@ -125,7 +128,7 @@ a compressed SNP format, assuming non-missing genotype data
     return compressed_prob
 end
 
-@inline function compressed_missing_prob!(
+@inline function compressed_binary_prob!(
     compressed_prob::AbstractVector{T}, 
     prob::T
     ) where {T<:AbstractFloat}
@@ -143,6 +146,10 @@ end
     return compressed_prob
 end
 
+"""
+    compressedSNPWeights
+
+"""
 struct compressedSNPWeights{S<:AbstractFloat, T<:AbstractFloat, V<:AbstractVector{T}} <: StatsBase.AbstractWeights{S, T, V}
     values::V
     sum::S
@@ -157,20 +164,30 @@ function compressedSNPWeights(values::AbstractVector{T}) where {T<:AbstractFloat
     return compressedSNPWeights(values, one(T))
 end
 
-struct compressedMissingWeights{S<:AbstractFloat, T<:AbstractFloat, V<:AbstractVector{T}} <: StatsBase.AbstractWeights{S, T, V}
+"""
+    compressedBinaryWeights
+
+"""
+struct compressedBinaryWeights{S<:AbstractFloat, T<:AbstractFloat, V<:AbstractVector{T}} <: StatsBase.AbstractWeights{S, T, V}
     values::V
     sum::S
-    function compressedMissingWeights{S, T, V}(values, sum) where {S<:AbstractFloat, T<:AbstractFloat, V<:AbstractVector{T}}
+    function compressedBinaryWeights{S, T, V}(values, sum) where {S<:AbstractFloat, T<:AbstractFloat, V<:AbstractVector{T}}
         isfinite(sum) || throw(ArgumentError("weights cannot contain Inf or NaN values"))
         return new{S, T, V}(values, sum)
     end
-    compressedMissingWeights(values::AbstractVector{T}, sum::S) where {S<:AbstractFloat, T<:AbstractFloat} = compressedMissingWeights{S, T, typeof(values)}(values, sum)
+    compressedBinaryWeights(values::AbstractVector{T}, sum::S) where {S<:AbstractFloat, T<:AbstractFloat} = compressedBinaryWeights{S, T, typeof(values)}(values, sum)
 end
 
-function compressedMissingWeights(values::AbstractVector{T}) where {T<:AbstractFloat}
-    return compressedMissingWeights(values, one(T))
+function compressedBinaryWeights(values::AbstractVector{T}) where {T<:AbstractFloat}
+    return compressedBinaryWeights(values, one(T))
 end
 
+"""
+    _to_missing!(g, mask)
+
+Given a packed vector of SNPs at a single locus `g`, impute missing values at all
+locations indicated by `mask`.
+"""
 @inline function _to_missing!(g::AbstractVector{UInt8}, mask::AbstractVector{UInt8})
     @inbounds @simd for i in eachindex(g, mask)
         g[i] = (g[i] & ~mask[i]) | (mask[i] & 0x55)
@@ -286,10 +303,6 @@ function _simulate!(
 
     @inbounds for j in axes(X, 2)
         ρ          = mafs[j]
-        # Store probabilities for 00, 01, and 11
-        # storage[1] = abs2(1 - ρ)
-        # storage[2] = 2 * ρ * (1 - ρ)
-        # storage[3] = abs2(ρ)
         # Map probabilities for one observation to probabilities for 4
         compressed_snp_prob!(weights.values, ρ)
         # Construct alias table takes O(k log(k)) where k = 81
@@ -304,7 +317,7 @@ function _simulate_missing!(
     rng::Random.AbstractRNG,
     X::AbstractMatrix{UInt8},
     missing_rates::AbstractVector{T},
-    weights::compressedMissingWeights
+    weights::compressedBinaryWeights
     ) where {T<:AbstractFloat}
     larges = Vector{Int}(undef, 16)
     smalls = Vector{Int}(undef, 16)
@@ -316,7 +329,7 @@ function _simulate_missing!(
     @inbounds for j in axes(X, 2)
         ρ = missing_rates[j]
         # Map missing probability for one observation to probabilities for 4
-        compressed_missing_prob!(weights.values, ρ)
+        compressed_binary_prob!(weights.values, ρ)
         # Construct alias table takes O(k log(k)) where k = 81
         _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
         # Drawing samples is only O(1) per sample, should be fastest method
@@ -329,17 +342,17 @@ function _simulate_missing!(
 end
 
 """
-    simulate!([rng], m, n, mafs)
+    simulate([rng], m, n, mafs)
 
 Simulate genotype data to be stored directly in a `SnpArray`, assuming no missingness.
 
 # Arguments
 - `m::Integer`: Number of subjects
-- `n::Integer`: Number of columns
+- `n::Integer`: Number of SNPs or loci
 - `mafs::AbstractVector{T}`: Vector of minor allele frequencies, should be length `n`
 """
 
-function simulate!(
+function simulate(
     rng::Random.AbstractRNG,
     m::Integer, 
     n::Integer,
@@ -362,18 +375,19 @@ function simulate!(
     return SnpArray(X_compressed, zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 end
 
-function simulate!(
+function simulate(
     m::Integer, 
     n::Integer,
     mafs::AbstractVector{T}
     ) where {T<:AbstractFloat}
-    return simulate!(Random.GLOBAL_RNG, m, n, mafs)
+    return simulate(Random.GLOBAL_RNG, m, n, mafs)
 end
 
 """
     simulate!([rng], X, mafs)
 
-Simulate genotype data to be stored directly in a `SnpArray`, assuming no missingness.
+Simulate genotype data to be stored directly in a `SnpArray`, assuming no missingness,
+and that SNPs are independent (no linkage disequilibrium).
 
 # Arguments
 - `X::SnpArray`: `m` by `n` SnpArray
@@ -404,6 +418,179 @@ function simulate!(
 end
 
 """
+    simulate_ld!([rng], m, n, mafs, ρ)
+
+Simulate genotype data under a linkage disequilbrium (AR1) structure, assuming no
+missingness.
+"""
+function simulate_ld(
+    rng::Random.AbstractRNG,
+    m::Integer,
+    n::Integer,
+    mafs::AbstractVector{T},
+    ρ::T
+    ) where {T<:AbstractFloat}
+    length(mafs) == n || throw(DimensionMismatch("Number of MAFs must equal number of columns"))
+
+    # Get number of expected rows in compressed SNP data
+    r = cld(m, 4)
+
+    α = Vector{T}(undef, n)
+    β = Vector{T}(undef, n)
+
+    weights = compressedBinaryWeights(Vector{T}(undef, 16))
+    # β_weights = compressedBinaryWeights(Vector{T}(undef, 16))
+
+    U = Matrix{UInt8}(undef, r, 2)
+    V = Matrix{UInt8}(undef, r, 2)
+    Xtmp = Matrix{UInt8}(undef, r, 2)
+    # Allocate storage
+    X_compressed = Matrix{UInt8}(undef, r, n)
+
+    # Check Prentice's (1988) constraints given ρ and mafs
+    # See Jiang (2020) Theorem 2.4
+    check_cor_bound(mafs, ρ)
+
+    # Update Sampling parameters
+    update_αβ!(α, β, mafs, ρ)
+
+    # Simulate data
+    _simulate_ld!(rng, X_compressed, α, β, weights, U, V, Xtmp)
+
+    @inbounds for j in axes(X_compressed, 2)
+        @simd for i in axes(X_compressed, 1)
+            mask = find_mask(X_compressed[i, j])
+            X_compressed[i, j] = (X_compressed[i, j] + 0x55) & mask 
+        end
+    end
+
+    return SnpArray(X_compressed, zeros(Int, (4, n)), zeros(Int, (4, m)), m)
+end
+
+function check_cor_bound(mafs::AbstractVector{T}, ρ::T) where {T<:AbstractFloat}
+    q = length(mafs)
+    @inbounds for i in 2:q
+        if mafs[i] > mafs[i-1]
+            p_large = mafs[i]
+            p_small = mafs[i-1]
+        else
+            p_large = mafs[i-1]
+            p_small = mafs[i]
+        end
+        o_large = p_large / (one(T) - p_large)
+        o_small = p_small / (one(T) - p_small)
+        ρ_bound = sqrt(o_small / o_large)
+        (ρ < ρ_bound) || throw(error("Correlation ρ too high! Must be smaller than $ρ_bound\n"))
+    end
+end
+
+function update_αβ!(
+    α::Vector{T}, 
+    β::Vector{T}, 
+    mafs::Vector{T}, 
+    ρ::T
+    ) where {T<:AbstractFloat}
+    for i in eachindex(mafs)
+        if i ≥ 2
+            p_i = mafs[i]
+            p_im1 = mafs[i-1]
+
+            α[i] = ρ * sqrt((p_i - abs2(p_i)) / (p_im1 - abs2(p_im1)))
+            β[i] = (p_i - α[i] * p_im1) / (1 - α[i])
+        else
+            α[1] = mafs[1]
+        end
+    end
+end
+
+@inline function find_mask(g::UInt8)
+    msk = 0x00
+    for i in 1:4
+        snp = (g >> ((i - 1) << 1)) & 0x03
+        if snp > 0x00
+            msk |= 0x03 << ((i - 1) << 1)
+        end
+    end
+    return msk
+end
+
+function _simulate_ld!(
+    rng::Random.AbstractRNG,
+    X::AbstractMatrix{UInt8},
+    α::AbstractVector{T},
+    β::AbstractVector{T},
+    weights::compressedBinaryWeights,
+    # β_weights::compressedBinaryWeights,
+    U::AbstractMatrix{UInt8},
+    V::AbstractMatrix{UInt8},
+    Xtmp::AbstractMatrix{UInt8}
+    ) where {T<:AbstractFloat}
+    # pre-allocate vectors for alias table sampling
+    larges = Vector{Int}(undef, 16)
+    smalls = Vector{Int}(undef, 16)
+
+    # Acceptance Probabilities
+    ap    = Vector{T}(undef, 16)
+    # Alias vector
+    alias = Vector{Int}(undef, 16)
+
+    fill!(X, 0x00)
+    @inbounds for j in axes(X, 2)
+        if j == 1
+            # Storing p₁ in α[1]
+            prob = α[1]
+            # Map probabilities for one observation to probabilities for 4
+            compressed_binary_prob!(weights.values, prob)
+            # Construct alias table takes O(k log(k)) where k = 16
+            _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
+            # Drawing samples is only O(1) per sample, should be fastest method
+            for k in axes(Xtmp, 2)
+                _alias_sample!(rng, allele_diff, view(Xtmp, :, k), ap, alias)
+            end
+        else
+            ### Sample from u ∼ Bernoulli(α[j]) ###
+            αj = α[j]
+            # Map probabilities for one observation to probabilities for 4
+            compressed_binary_prob!(weights.values, αj)
+            # Construct alias table takes O(k log(k)) where k = 16
+            _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
+            # Drawing samples is only O(1) per sample, should be fastest method
+            # _alias_sample!(rng, allele_diff, u, ap, alias)
+            for k in axes(U, 2)
+                _alias_sample!(rng, allele_diff, view(U, :, k), ap, alias)
+            end
+
+            ### Sample from v ∼ Bernoulli(β[j]) ###
+            βj = β[j]
+            # Map probabilities for one observation to probabilities for 4
+            compressed_binary_prob!(weights.values, βj)
+            # Construct alias table takes O(k log(k)) where k = 16
+            _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
+            # Drawing samples is only O(1) per sample, should be fastest method
+            # _alias_sample!(rng, allele_diff, v, ap, alias)
+            for k in axes(V, 2)
+                _alias_sample!(rng, allele_diff, view(V, :, k), ap, alias)
+            end
+            ### Transform u, v samples → X[:, j]
+            for k in axes(Xtmp, 2)
+                @simd for i in axes(Xtmp, 1)
+                    # X[i, j] = (~u[i] & v[i]) + (u[i] & x[i])
+                    Xtmp[i, k] = (~U[i, k] & V[i, k]) + (U[i, k] & Xtmp[i, k])
+                end
+            end
+        end
+        # Update X_compressed
+        for k in axes(Xtmp, 2)
+            @simd for i in axes(Xtmp, 1)
+                X[i, j] += Xtmp[i, k]
+            end
+        end
+    end
+    return X
+end
+
+
+"""
     simulate_missing!([rng], X, missing_rates)
 
 In-place modify a `SnpArray` to simulate missing data
@@ -419,9 +606,10 @@ function simulate_missing!(
     missing_rates::AbstractVector{T}
     ) where {T<:AbstractFloat}
     m, n = size(X)
-    length(missing_rates) == n || throw(DimensionMismatch("Number of missing rates must equal number of columns"))
+    length(missing_rates) == n || 
+        throw(DimensionMismatch("Number of missing rates must equal number of columns"))
 
-    weights = compressedMissingWeights(Vector{T}(undef, 16))
+    weights = compressedBinaryWeights(Vector{T}(undef, 16))
 
     # Simulate data
     _simulate_missing!(rng, X.data, missing_rates, weights)
