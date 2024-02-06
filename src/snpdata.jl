@@ -7,7 +7,7 @@ const PERSON_INFO_KEYS = [:fid, :iid, :father, :mother, :sex, :phenotype]
 
 Type to store SNP and person information along with the SnpArray.
 """
-struct SnpData
+struct SnpData <: GeneticData
     people::Int
     snps::Int
     snparray::SnpArray
