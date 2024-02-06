@@ -68,26 +68,67 @@ function ref_allele(s::SnpData, snpindex::SnpArrayIndex)::String
 end
 
 function maf(s::SnpData, snpindex::SnpArrayIndex)
-    array = s.snparray
-    return maf(array)
+    maf_vector = similar(s.snparray, Float64)
+    maf!(maf_vector, s.snparray)
+    return maf_vector[snpindex.index]
 end
 
-function hwepval(s::SnpData, snpindex::SnpArrayIndex)'
-# Extract the genotype data for a specific SNP using snpindex
-    genotypes = s.snparray[snpindex, :]
+function hwepval(s::SnpData, snpindex::SnpArrayIndex)
+    genotypes = s.snparray[:,snpindex.index]
 
-    # Calculate the observed genotype frequencies
-    observed_hom_ref = sum(genotypes .== 0) / length(genotypes)
-    observed_het = sum(genotypes .== 1) / length(genotypes)
-    observed_hom_alt = sum(genotypes .== 2) / length(genotypes)
+    n00 = sum(genotypes .== 0) 
+    n01 = sum(genotypes .== 1) 
+    n11 = sum(genotypes .== 2) # / length(genotypes)
 
-    # Calculate the expected genotype frequencies under HWE
-    total_alleles = 2 * s.people
-    expected_hom_ref = (observed_hom_ref + observed_het / 2)
-    expected_het = observed_het
-    expected_hom_alt = (observed_hom_alt + observed_het / 2)
+   pval = hwe(n00,n01,n11)
+   return pval
     
     # function hwe()
     # filter.jl line 188
 
+end
+
+function alt_dosages!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex; use_genotype::Bool=false) where T <: Real
+    allele1, allele2 = alleles(s, snpindex)
+    
+    for i in 1:size(arr, 1)
+        for j in 1:size(arr, 2)
+            if s.snparray[i, snpindex.index] == 0x01
+                arr[i, j] = 0.5  # Heterozygous dosage
+            elseif s.snparray[i, snpindex.index] == 0x02
+                arr[i, j] = 1.0  # Homozygous dosage for allele2
+            else
+                arr[i, j] = 0.0  # Homozygous dosage for allele1 or missing
+            end
+            
+            if use_genotype
+                if s.snparray[i, snpindex.index] == 0x01
+                    arr[i, j] = 1  # Heterozygous
+                elseif s.snparray[i, snpindex.index] == 0x02
+                    arr[i, j] = 2  # Homozygous for allele2
+                else
+                    arr[i, j] = missing  # Missing genotype or homozygous for allele1
+                end
+            end
+        end
+    end
+    
+    return arr
+end
+
+
+
+function alt_genotypes!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex) where T <: Integer
+    allele1, allele2 = alleles(s, snpindex)
+    
+    @inbounds for i in eachindex(arr)
+        if s.snparray[i, snpindex.index] == 0x01
+            arr[i] = 1  # Heterozygous
+        elseif s.snparray[i, snpindex.index] == 0x02
+            arr[i] = 2  # Homozygous for allele2
+        else
+            arr[i] = missing  # Missing genotype or homozygous for allele1
+        end
+    end
+    return arr
 end
