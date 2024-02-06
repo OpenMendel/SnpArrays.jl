@@ -830,5 +830,3 @@ g_iterator = SnpArrayIterator(g)
 
 h = create_dummy("test4", 4, 4)
 @show h
-
-

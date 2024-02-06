@@ -87,4 +87,7 @@ function hwepval(s::SnpData, snpindex::SnpArrayIndex)'
     expected_het = observed_het
     expected_hom_alt = (observed_hom_alt + observed_het / 2)
     
+    # function hwe()
+    # filter.jl line 188
+
 end
