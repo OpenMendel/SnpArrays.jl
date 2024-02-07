@@ -1,4 +1,4 @@
-# Vector of all possible genotypes across one row of compressed SNP data
+# Vector of all possible genotypes in one element of packed SNP data
 const genotypes = [0b00_00_00_00;
                    0b00_00_00_10;
                    0b00_00_00_11;
@@ -185,7 +185,7 @@ end
 """
     _to_missing!(g, mask)
 
-Given a packed vector of SNPs at a single locus `g`, impute missing values at all
+Given a packed vector of SNPs at a particular element, impute missing values at all
 locations indicated by `mask`.
 """
 @inline function _to_missing!(g::AbstractVector{UInt8}, mask::AbstractVector{UInt8})
@@ -302,9 +302,9 @@ function _simulate!(
     alias = Vector{Int}(undef, 81)
 
     @inbounds for j in axes(X, 2)
-        ρ          = mafs[j]
+        prob = mafs[j]
         # Map probabilities for one observation to probabilities for 4
-        compressed_snp_prob!(weights.values, ρ)
+        compressed_snp_prob!(weights.values, prob)
         # Construct alias table takes O(k log(k)) where k = 81
         _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
         # Drawing samples is only O(1) per sample, should be fastest method
@@ -358,21 +358,14 @@ function simulate(
     n::Integer,
     mafs::AbstractVector{T}
     ) where {T<:AbstractFloat}
-    length(mafs) == n || throw(DimensionMismatch("Number of MAFs must equal number of columns"))
-
     # Get number of expected rows in compressed SNP data
     r = cld(m, 4)
-
-    weights = compressedSNPWeights(Vector{T}(undef, 81))
-    # storage = Vector{T}(undef, 3)
-
-    # Allocate storage
-    X_compressed = Matrix{UInt8}(undef, r, n)
+    
+    # Allocate SnpArray
+    X = SnpArray(Matrix{UInt8}(undef, r, n), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
 
     # Simulate data
-    _simulate!(rng, X_compressed, mafs, weights)
-
-    return SnpArray(X_compressed, zeros(Int, (4, n)), zeros(Int, (4, m)), m)
+    return simulate!(rng, X, mafs)
 end
 
 function simulate(
@@ -418,14 +411,14 @@ function simulate!(
 end
 
 """
-    simulate_ld!([rng], m, n, mafs, ρ)
+    simulate([rng], m, n, mafs, ρ)
 
-Simulate genotype data under a linkage disequilbrium (AR1) structure, assuming no
-missingness.
+Simulate genotype data under a linkage disequilbrium (AR1) structure with 
+scalar correlation `ρ`, assuming no missingness.
 """
-function simulate_ld(
+function simulate(
     rng::Random.AbstractRNG,
-    m::Integer,
+    m::Integer, 
     n::Integer,
     mafs::AbstractVector{T},
     ρ::T
@@ -435,17 +428,58 @@ function simulate_ld(
     # Get number of expected rows in compressed SNP data
     r = cld(m, 4)
 
+    # Allocate storage
+    X = SnpArray(Matrix{UInt8}(undef, r, n), zeros(Int, (4, n)), zeros(Int, (4, m)), m)
+
+    # Simulate data
+    simulate!(rng, X, mafs, ρ)
+
+    return X
+end
+
+function simulate(
+    m::Integer, 
+    n::Integer,
+    mafs::AbstractVector{T},
+    ρ::T
+    ) where {T<:AbstractFloat}
+    return simulate(Random.GLOBAL_RNG, m, n, mafs, ρ)
+end
+
+"""
+    simulate!([rng], X, mafs, ρ)
+
+Simulate genotype data to be stored directly in a `SnpArray`, assuming no missingness,
+and that SNPs have linkage disequilibrium that can be modeled by an AR1
+process with correlation ρ.
+
+# Arguments
+- `rng::AbstractRNG`: Optional random number generator
+- `X::SnpArray`: `m` by `n` SnpArray
+- `mafs::AbstractVector{T}`: Vector of minor allele frequencies, should be length `n`
+- `ρ`::AbstractFloat: 
+"""
+
+function simulate!(
+    rng::Random.AbstractRNG,
+    X::SnpArray,
+    mafs::AbstractVector{T},
+    ρ::T
+    ) where {T<:AbstractFloat}
+    m, n = size(X)
+    length(mafs) == n || throw(DimensionMismatch("Number of MAFs must equal number of columns"))
+
+    # Get number of expected rows in compressed SNP data
+    r = cld(m, 4)
+
     α = Vector{T}(undef, n)
     β = Vector{T}(undef, n)
 
     weights = compressedBinaryWeights(Vector{T}(undef, 16))
-    # β_weights = compressedBinaryWeights(Vector{T}(undef, 16))
 
     U = Matrix{UInt8}(undef, r, 2)
     V = Matrix{UInt8}(undef, r, 2)
     Xtmp = Matrix{UInt8}(undef, r, 2)
-    # Allocate storage
-    X_compressed = Matrix{UInt8}(undef, r, n)
 
     # Check Prentice's (1988) constraints given ρ and mafs
     # See Jiang (2020) Theorem 2.4
@@ -455,18 +489,36 @@ function simulate_ld(
     update_αβ!(α, β, mafs, ρ)
 
     # Simulate data
-    _simulate_ld!(rng, X_compressed, α, β, weights, U, V, Xtmp)
+    _simulate!(rng, X.data, α, β, weights, U, V, Xtmp)
 
-    @inbounds for j in axes(X_compressed, 2)
-        @simd for i in axes(X_compressed, 1)
-            mask = find_mask(X_compressed[i, j])
-            X_compressed[i, j] = (X_compressed[i, j] + 0x55) & mask 
+    # transform samples from 00, 01, 10 to 00, 10, 11
+    @inbounds for j in axes(X.data, 2)
+        @simd for i in axes(X.data, 1)
+            # find_00 finds where there are `00`s
+            mask = find_00(X.data[i, j])
+            # add 01 to every SNP and then mask off what should be zeros
+            X.data[i, j] = (X.data[i, j] + 0x55) & mask 
         end
     end
 
-    return SnpArray(X_compressed, zeros(Int, (4, n)), zeros(Int, (4, m)), m)
+    # return SnpArray(X_compressed, zeros(Int, (4, n)), zeros(Int, (4, m)), m)
+    return X
 end
 
+function simulate!(
+    X::SnpArray,
+    mafs::AbstractVector{T},
+    ρ::T
+    ) where {T<:AbstractFloat}
+    return simulate!(Random.GLOBAL_RNG, X, mafs, ρ)
+end
+
+"""
+    check_cor_bound(mafs, ρ)
+
+Given a vector of minor allele frequencies, verifies condition for a 
+valid correlation matrix. See Prentice (1988).
+"""
 function check_cor_bound(mafs::AbstractVector{T}, ρ::T) where {T<:AbstractFloat}
     q = length(mafs)
     @inbounds for i in 2:q
@@ -477,9 +529,9 @@ function check_cor_bound(mafs::AbstractVector{T}, ρ::T) where {T<:AbstractFloat
             p_large = mafs[i-1]
             p_small = mafs[i]
         end
-        o_large = p_large / (one(T) - p_large)
-        o_small = p_small / (one(T) - p_small)
-        ρ_bound = sqrt(o_small / o_large)
+        odds_large = p_large / (one(T) - p_large)
+        odds_small = p_small / (one(T) - p_small)
+        ρ_bound = sqrt(odds_small / odds_large)
         (ρ < ρ_bound) || throw(error("Correlation ρ too high! Must be smaller than $ρ_bound\n"))
     end
 end
@@ -503,7 +555,7 @@ function update_αβ!(
     end
 end
 
-@inline function find_mask(g::UInt8)
+@inline function find_00(g::UInt8)
     msk = 0x00
     for i in 1:4
         snp = (g >> ((i - 1) << 1)) & 0x03
@@ -514,13 +566,12 @@ end
     return msk
 end
 
-function _simulate_ld!(
+function _simulate!(
     rng::Random.AbstractRNG,
     X::AbstractMatrix{UInt8},
     α::AbstractVector{T},
     β::AbstractVector{T},
     weights::compressedBinaryWeights,
-    # β_weights::compressedBinaryWeights,
     U::AbstractMatrix{UInt8},
     V::AbstractMatrix{UInt8},
     Xtmp::AbstractMatrix{UInt8}
@@ -530,13 +581,14 @@ function _simulate_ld!(
     smalls = Vector{Int}(undef, 16)
 
     # Acceptance Probabilities
-    ap    = Vector{T}(undef, 16)
+    ap     = Vector{T}(undef, 16)
     # Alias vector
-    alias = Vector{Int}(undef, 16)
+    alias  = Vector{Int}(undef, 16)
 
     fill!(X, 0x00)
-    @inbounds for j in axes(X, 2)
-        if j == 1
+    @inbounds for k in axes(X, 2)
+        if k == 1
+            # First column can be done in a special case, since just sample the marginal
             # Storing p₁ in α[1]
             prob = α[1]
             # Map probabilities for one observation to probabilities for 4
@@ -544,45 +596,48 @@ function _simulate_ld!(
             # Construct alias table takes O(k log(k)) where k = 16
             _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
             # Drawing samples is only O(1) per sample, should be fastest method
-            for k in axes(Xtmp, 2)
-                _alias_sample!(rng, allele_diff, view(Xtmp, :, k), ap, alias)
+            for j in axes(Xtmp, 2)
+                _alias_sample!(rng, allele_diff, view(Xtmp, :, j), ap, alias)
             end
         else
+            # TODO: U and V are independent
+            # ⟹ Sampling from U and V can be done in parallel
             ### Sample from u ∼ Bernoulli(α[j]) ###
-            αj = α[j]
+            αk = α[k]
             # Map probabilities for one observation to probabilities for 4
-            compressed_binary_prob!(weights.values, αj)
-            # Construct alias table takes O(k log(k)) where k = 16
+            compressed_binary_prob!(weights.values, αk)
+            # Construct alias table takes O(n log(n)) where n = 16
             _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
-            # Drawing samples is only O(1) per sample, should be fastest method
+            # Drawing samples is only O(1) per sample, should be 
+            # almost fastest method
             # _alias_sample!(rng, allele_diff, u, ap, alias)
-            for k in axes(U, 2)
-                _alias_sample!(rng, allele_diff, view(U, :, k), ap, alias)
+            for j in axes(U, 2)
+                _alias_sample!(rng, allele_diff, view(U, :, j), ap, alias)
             end
-
             ### Sample from v ∼ Bernoulli(β[j]) ###
-            βj = β[j]
+            βk = β[k]
             # Map probabilities for one observation to probabilities for 4
-            compressed_binary_prob!(weights.values, βj)
-            # Construct alias table takes O(k log(k)) where k = 16
+            compressed_binary_prob!(weights.values, βk)
+            # Construct alias table takes O(n log(n)) where n = 16
             _make_alias_table!(weights.values, one(T), ap, alias; larges=larges, smalls=smalls)
             # Drawing samples is only O(1) per sample, should be fastest method
             # _alias_sample!(rng, allele_diff, v, ap, alias)
-            for k in axes(V, 2)
-                _alias_sample!(rng, allele_diff, view(V, :, k), ap, alias)
+            for j in axes(V, 2)
+                _alias_sample!(rng, allele_diff, view(V, :, j), ap, alias)
             end
-            ### Transform u, v samples → X[:, j]
-            for k in axes(Xtmp, 2)
+            ### Transform u, v samples
+            # xₖ = (1 - u) × v + u × xₖ₋₁ should have the correct marginals
+            for j in axes(Xtmp, 2)
                 @simd for i in axes(Xtmp, 1)
                     # X[i, j] = (~u[i] & v[i]) + (u[i] & x[i])
-                    Xtmp[i, k] = (~U[i, k] & V[i, k]) + (U[i, k] & Xtmp[i, k])
+                    Xtmp[i, j] = (~U[i, j] & V[i, j]) + (U[i, j] & Xtmp[i, j])
                 end
             end
         end
-        # Update X_compressed
-        for k in axes(Xtmp, 2)
+        # Update j-th column of X_compressed
+        for j in axes(Xtmp, 2)
             @simd for i in axes(Xtmp, 1)
-                X[i, j] += Xtmp[i, k]
+                X[i, k] += Xtmp[i, j]
             end
         end
     end
