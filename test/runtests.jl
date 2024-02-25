@@ -762,3 +762,52 @@ mouse2 = StackedSnpArray([mouse, mouse])
 @test eltype(mouse2) == UInt8
 @test mouse2[777, 16384] == mouse[777, 16384 - 10150]
 end
+
+@testset "SNP simulation" begin
+    function observed_mafs!(
+        obs::Vector{T},
+        counts::Matrix{Int}
+        ) where {T}
+        @inbounds for j in axes(counts, 2)
+            obs[j] = (counts[3, j] + 2 * counts[4, j]) / (2 * (counts[1, j] + counts[3, j] + counts[4, j]))
+        end
+    end
+    rng = MersenneTwister(1234)
+    reltol = 1e-2
+    M = 1_024 * 1000
+    N = 1_024
+    minfreq = 0.01
+    MAFs = minfreq .+ (0.5 - minfreq) * rand(rng, N)
+    G = SnpArrays.simulate(rng, M, N, MAFs)
+    # Simulate missing values
+    missing_rates = 0.10 * rand(rng, N)
+    SnpArrays.simulate_missing!(rng, G, missing_rates)
+    # Get counts
+    cc = counts(G; dims=1)
+    observed_prob = similar(MAFs);
+    observed_mafs!(observed_prob, cc)
+    @test norm(observed_prob - MAFs) / norm(MAFs) < reltol
+    observed_missing_rates = cc[2, :] ./ M
+    @test norm(observed_missing_rates - missing_rates) / norm(missing_rates) < reltol
+    # Simulation under linkage disequilibrium
+    ρ = 0.10
+    G = SnpArrays.simulate!(rng, G, MAFs, ρ)
+    cc = counts(G; dims=1)
+    observed_mafs!(observed_prob, cc)
+    @test norm(observed_prob - MAFs) / norm(MAFs) < reltol
+    # check for first order correlation
+    σ = zeros(N)
+    for i in 1:N
+        σ[i] = sqrt(2 * observed_prob[i] * (1 - observed_prob[i]))
+    end
+    r = zeros(N - 1)
+    g1, g2 = zeros(M), zeros(M)
+    for j in eachindex(r)
+        copyto!(g1, view(G, :, j))
+        g1 .-= 2 * observed_prob[j]
+        copyto!(g2, view(G, :, j + 1))
+        g2 .-= 2 * observed_prob[j + 1]
+        r[j] = dot(g1, g2) / ((M-1) * σ[j] * σ[j + 1])
+    end
+    @test abs(mean(r) - ρ) / ρ < reltol
+end
