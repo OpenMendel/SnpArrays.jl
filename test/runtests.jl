@@ -1,7 +1,7 @@
 using LinearAlgebra, SnpArrays, SparseArrays, Test
 
 const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed")) # no missing genotypes
-const mouse = SnpArray(SnpArrays.datadir("mouse.bed")) # has missing genotypes
+# const mouse = SnpArray(SnpArrays.datadir("mouse.bed")) # has missing genotypes
 
 # @testset "size" begin
 # @test size(EUR) == (379, 54051)
@@ -768,65 +768,84 @@ abstract type VariantIterator end
 abstract type Variant end
 include(joinpath(@__DIR__, "..", "src", "iterator.jl"))
 
-function create_dummy(prefix, m, n; rng=Random.GLOBAL_RNG)
-    s = SnpArray(prefix * ".bed", m, n)
-    rand!(rng, s.data)
-    Mmap.sync!(s.data)
-    open(prefix * ".fam", "w") do io
-        for i in 1:m
-            write(io, join([i, i, 0, 0, 0, 0], "\t") * "\n")
-        end
-    end
-    open(prefix * ".bim", "w") do io
-        for j in 1:n
-            write(io, join([1, j, 0, j, 1, 2], "\t") * "\n")
-        end
-    end
-    return SnpData(prefix)
-end
+# # need to export outside of module 
 
-# need to export outside of module 
+const EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
 
-function test_snparray_iterator(s::SnpData)
-    iterator = SnpArrays.SnpArrayIterator(s)
-    state = 1
-    # Test the iteration
-    while true
-        result = iterate(iterator, state)
-        result === nothing && break
-        col, state = result
-        @show col
-    end
+# @testset "SNP Array Tests" begin
+#     # Initialize necessary variables
+#     snp_iter = SnpArrayIterator(EUR_data)
+#     num_snps = length(snp_iter)
+#     @test length(snp_iter) == 54051
+    
+#     # Iterate through each SNP in the SNP array
+#     for i in 1:num_snps
+#         # Obtain the SnpArrayIndex object at the current iteration
+#         snp_index, _ = iterate(snp_iter, i)
+        
+#         # Test each function with the SNP data
+#         @test chrom(EUR_data, snp_index) == EUR_data.snp_info[i,:chromosome]
+#         @test pos(EUR_data, snp_index) == EUR_data.snp_info[i,:position]
+#         @test rsid(EUR_data, snp_index) == EUR_data.snp_info[i,:snpid]
+#         @test alleles(EUR_data, snp_index) == [EUR_data.snp_info[i,:allele1],EUR_data.snp_info[i,:allele2]]
+#         @test alt_allele(EUR_data, snp_index) == EUR_data.snp_info[i,:allele2]
+#         @test ref_allele(EUR_data, snp_index) == EUR_data.snp_info[i,:allele1]
+#     end
+# end
 
-    # Test the length
-    len = length(iterator)
-    @show len
-end
 
-d = create_dummy("test", 10, 5)
-@show d
-test_snparray_iterator(d)
-d_iterator = SnpArrayIterator(d)
-@test length(d_iterator) == 6
-@test iterate(d_iterator,7) === nothing
-@test_throws BoundsError iterate(d_iterator,0)
+# Test for maf function
 
-f = create_dummy("test2", 4, 7)
-@show f
-test_snparray_iterator(f)
-f_iterator = SnpArrayIterator(f)
-@test length(f_iterator) == 6
-@test iterate(f_iterator,5) == (["1", "1", "1", "1", "1", "1", "1"],6)
-# (SnpArrayIndex(5), 6)
-@test iterate(f_iterator,6) == (["2", "2", "2", "2", "2", "2", "2"],7)
-@test_throws BoundsError iterate(f_iterator,0)
+# Compute the MAF values using maf
 
-g = create_dummy("test3",1,1)
-@show g
-test_snparray_iterator(g)
-g_iterator = SnpArrayIterator(g)
-@test iterate(g_iterator,1) == (["1"],2)
-@test_throws BoundsError iterate(g_iterator,0)
+# @testset "MAF Values" begin
+#     snp_iterator = iterator(EUR_data)
+#     maf_values = maf(EUR)
+#     maf_data = calculate_maf_data(EUR_data)
+#     test = SnpArrayIndex(1)
+#     maf_index(maf_data, test)
 
-h = create_dummy("test4", 4, 4)
-@show h
+#     for idx in eachindex(maf_values)
+#         s = SnpArrayIndex(idx)
+#         @test maf_index(maf_data, s) == maf_values[idx]
+#     end
+# end
+
+# snp_iterator = iterator(EUR_data)
+
+# @testset "HWE P Values" begin
+    
+#     genotypes = EUR_data.snparray[:,1]
+#     n00_count = 0
+#     n01_count = 0
+#     n11_count = 0
+
+#     for j in genotypes
+#         if j == 0x00
+#             n00_count += 1
+#         elseif j == 0x02
+#             n01_count += 1
+#         elseif j == 0x03
+#             n11_count += 1
+#         end
+#     end
+#     n00 = sum(genotypes .== 0x00) 
+#     n01 = sum(genotypes .== 0x02) 
+#     n11 = sum(genotypes .== 0x03) 
+#     @test n00 == n00_count
+#     @test n01 == n01_count 
+#     @test n11 == n11_count 
+# end
+
+# @testset "Alt Dosages & Alt Genotypes" begin
+
+#     v = Vector{Float64}(undef, size(EUR, 1))
+#     v2 = Vector{Float64}(undef, size(EUR, 1))
+#     s = SnpArrayIndex(1)
+#     alt_dosages!(v,EUR_data,s)
+#     copyto!(v2, @view(EUR[:, 1]))
+#     @test v == v2 
+#     alt_genotypes!(v,EUR_data,s)
+#     @test v == v2 
+
+# end

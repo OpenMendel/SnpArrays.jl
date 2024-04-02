@@ -19,7 +19,7 @@ import Tables: table
 export AbstractSnpArray, AbstractSnpBitMatrix, AbstractSnpLinAlg
 export SnpArray, SnpBitMatrix, SnpLinAlg, SnpData, StackedSnpArray
 export compress_plink, decompress_plink, split_plink, merge_plink, write_plink 
-export counts, grm, grm_admixture, maf, mean, minorallele, missingpos, missingrate
+export counts, grm, grm_admixture, maf, maf!, mean, minorallele, missingpos, missingrate
 export std, var, vcf2plink
 export counts, grm, maf, mean, minorallele, missingpos, missingrate, std, var
 export vcf2plink, kinship_pruning
