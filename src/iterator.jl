@@ -2,7 +2,7 @@ mutable struct SnpArrayIterator <: VariantIterator
    snpdata::SnpData
 end
 
-mutable struct SnpArrayIndex <: Variant
+mutable struct SnpArrayIndex <: GeneticVariantBase.Variant
     index::Int
 end 
 
