@@ -31,7 +31,7 @@ VariantCallFormat = "28eba6e3-a997-4ad9-87c6-d933b8bca6c1"
 VectorizationBase = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
 
 [compat]
-Adapt = "3"
+Adapt = "3, 4"
 CSV = "0.8, 0.9, 0.10"
 CodecBzip2 = "0.7, 0.8"
 CodecXz = "0.7"
