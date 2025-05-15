@@ -1,4 +1,4 @@
-mutable struct SnpArrayIterator <: VariantIterator
+mutable struct SnpArrayIterator <: GeneticVariantBase.VariantIterator
    snpdata::SnpData
 end
 
@@ -27,22 +27,18 @@ end
     return size(itr.snpdata.snparray, 2)
 end
 
-function iterator(s::SnpData)
-    iterator = SnpArrayIterator(s)
-    return iterator
-end
-
-function chrom(s::SnpData, snpindex::SnpArrayIndex)::String
+function GeneticVariantBase.chrom(s::SnpData, snpindex::SnpArrayIndex)::String
     result = s.snp_info[snpindex.index,:chromosome]
     return result
 end
 
-function pos(s::SnpData, snpindex::SnpArrayIndex)::Int
+function GeneticVariantBase.pos(s::SnpData, snpindex::SnpArrayIndex)::Int
     result = s.snp_info[snpindex.index,:position]
+    # println("entered pos function $result $snpindex.index")
     return result
 end
 
-function rsid(s::SnpData, snpindex::SnpArrayIndex)::String
+function GeneticVariantBase.rsid(s::SnpData, snpindex::SnpArrayIndex)::String
     result = s.snp_info[snpindex.index,:snpid]
     return result
 end
@@ -55,12 +51,12 @@ function alleles(s::SnpData, snpindex::SnpArrayIndex)::Vector{String}
     return [allele1, allele2]
 end
 
-function alt_allele(s::SnpData, snpindex::SnpArrayIndex)::String
+function GeneticVariantBase.alt_allele(s::SnpData, snpindex::SnpArrayIndex)::String
     alt = s.snp_info[snpindex.index,:allele2]
     return alt
 end
 
-function ref_allele(s::SnpData, snpindex::SnpArrayIndex)::String
+function GeneticVariantBase.ref_allele(s::SnpData, snpindex::SnpArrayIndex)::String
     ref = s.snp_info[snpindex.index,:allele1]
     return ref
 end
@@ -68,6 +64,8 @@ end
 struct MAFData
     maf_vector::Vector{Float64}
 end
+
+# fold into GeneticVariantBase.maf function name 
 
 function calculate_maf_data(s::SnpData)
     maf_vector = maf(s.snparray)
@@ -79,7 +77,15 @@ function maf_index(maf_data::MAFData, snpindex::SnpArrayIndex)
     return maf_data.maf_vector[snpindex.index]
 end
 
-function hwepval(s::SnpData, snpindex::SnpArrayIndex)
+
+function GeneticVariantBase.maf(s::SnpData, snpindex::SnpArrayIndex)
+    # maf_vector = calculate_maf_data(s)
+    maf_vector = maf(s.snparray)
+    return maf_vector[snpindex.index]
+    # return maf_vector[snpindex.index]
+end 
+
+function GeneticVariantBase.hwepval(s::SnpData, snpindex::SnpArrayIndex)
     genotypes = s.snparray[:,snpindex.index]
 
     n00 = sum(genotypes .== 0x00) 
@@ -96,14 +102,22 @@ end
     # 3 homozygous allele 2
     # 1 is for missing 
 
-function alt_dosages!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex) where T <: Real
-    # @assert size(s.snparray) == size(arr)
-    copyto!(arr, @view(s.snparray[:, snpindex.index]))
+function GeneticVariantBase.alt_dosages!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex) where T <: Real
+    GeneticVariantBase.alt_genotypes!(arr, s, snpindex)
     return arr 
 end
 
-function alt_genotypes!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex) where T <: Real
-    # @assert size(s.snparray) == size(arr)
-    copyto!(arr, @view(s.snparray[:, snpindex.index]))
+# make sure you can read in all genotypes for a sample
+# filtering SNPS
+function GeneticVariantBase.alt_genotypes!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex) where T <: Real
+    Base.copyto!(arr, @view(s.snparray[:, snpindex.index]); impute=true, center=true)   
     return arr 
 end
+
+function n_samples(s::SnpData)::Int
+    return size(s.snparray,1)
+end 
+
+function n_variants(s::SnpData)::Int
+    return size(s.snparray,2)
+end 

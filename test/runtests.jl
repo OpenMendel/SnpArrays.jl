@@ -763,33 +763,45 @@ const EUR = SnpArray(SnpArrays.datadir("EUR_subset.bed")) # no missing genotypes
 # @test mouse2[777, 16384] == mouse[777, 16384 - 10150]
 # end
 
-using Random, Mmap
+using Random, Mmap, GeneticVariantBase
 abstract type VariantIterator end
 abstract type Variant end
-include(joinpath(@__DIR__, "..", "src", "iterator.jl"))
+#include(joinpath(@__DIR__, "..", "src", "iterator.jl"))
 
 # # need to export outside of module 
 
 const EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
+# ind = SnpArrays.SnpArrayIndex(1)
+# snp_iter = SnpArrays.SnpArrayIterator(EUR_data)
+
+# @testset "n_variant and n_samples" begin
+#     @test GeneticVariantBase.n_samples(EUR_data) == 379
+#     @test GeneticVariantBase.n_variants(EUR_data) == 54051
+# end
+
+
 
 # @testset "SNP Array Tests" begin
 #     # Initialize necessary variables
-#     snp_iter = SnpArrayIterator(EUR_data)
+#     snp_iter = SnpArrays.SnpArrayIterator(EUR_data)
 #     num_snps = length(snp_iter)
 #     @test length(snp_iter) == 54051
     
 #     # Iterate through each SNP in the SNP array
-#     for i in 1:num_snps
+#     for i in 1:10
 #         # Obtain the SnpArrayIndex object at the current iteration
 #         snp_index, _ = iterate(snp_iter, i)
         
 #         # Test each function with the SNP data
-#         @test chrom(EUR_data, snp_index) == EUR_data.snp_info[i,:chromosome]
-#         @test pos(EUR_data, snp_index) == EUR_data.snp_info[i,:position]
-#         @test rsid(EUR_data, snp_index) == EUR_data.snp_info[i,:snpid]
-#         @test alleles(EUR_data, snp_index) == [EUR_data.snp_info[i,:allele1],EUR_data.snp_info[i,:allele2]]
-#         @test alt_allele(EUR_data, snp_index) == EUR_data.snp_info[i,:allele2]
-#         @test ref_allele(EUR_data, snp_index) == EUR_data.snp_info[i,:allele1]
+#         # @test chrom(EUR_data, snp_index) == EUR_data.snp_info[i,:chromosome]
+#         # println(chrom(EUR_data, snp_index))
+#         # @test pos(EUR_data, snp_index) == EUR_data.snp_info[i,:position]
+#         # @test rsid(EUR_data, snp_index) == EUR_data.snp_info[i,:snpid]
+#         # @test alleles(EUR_data, snp_index) == [EUR_data.snp_info[i,:allele1],EUR_data.snp_info[i,:allele2]]
+#         # @test alt_allele(EUR_data, snp_index) == EUR_data.snp_info[i,:allele2]
+#         # println(alt_allele(EUR_data, snp_index))
+#         # @test ref_allele(EUR_data, snp_index) == EUR_data.snp_info[i,:allele1]
+#         # println(ref_allele(EUR_data, snp_index))
 #     end
 # end
 
@@ -799,15 +811,17 @@ const EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
 # Compute the MAF values using maf
 
 # @testset "MAF Values" begin
-#     snp_iterator = iterator(EUR_data)
-#     maf_values = maf(EUR)
-#     maf_data = calculate_maf_data(EUR_data)
-#     test = SnpArrayIndex(1)
-#     maf_index(maf_data, test)
+#     snp_iterator = SnpArrays.SnpArrayIterator(EUR_data)
+#     maf_values = SnpArrays.maf(EUR)
+#     maf_data = SnpArrays.calculate_maf_data(EUR_data)
+#     test = SnpArrays.SnpArrayIndex(1)
+#     SnpArrays.maf_index(maf_data, test)
 
 #     for idx in eachindex(maf_values)
-#         s = SnpArrayIndex(idx)
-#         @test maf_index(maf_data, s) == maf_values[idx]
+#         s = SnpArrays.SnpArrayIndex(idx)
+#         println("index: $idx")
+#         @test SnpArrays.maf_index(maf_data, s) == maf_values[idx]
+#         @test GeneticVariantBase.maf(EUR_data,s) == maf_values[idx]
 #     end
 # end
 
