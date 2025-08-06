@@ -102,22 +102,26 @@ end
     # 3 homozygous allele 2
     # 1 is for missing 
 
-function GeneticVariantBase.alt_dosages!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex) where T <: Real
-    GeneticVariantBase.alt_genotypes!(arr, s, snpindex)
+function GeneticVariantBase.alt_dosages!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex; mean_impute=true) where T <: Real
+    GeneticVariantBase.alt_genotypes!(arr, s, snpindex; mean_impute=true)
     return arr 
 end
 
 # make sure you can read in all genotypes for a sample
 # filtering SNPS
-function GeneticVariantBase.alt_genotypes!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex) where T <: Real
-    Base.copyto!(arr, @view(s.snparray[:, snpindex.index]); impute=true, center=true)   
+
+
+function GeneticVariantBase.alt_genotypes!(arr::AbstractArray{T}, s::SnpData, snpindex::SnpArrayIndex; mean_impute=true) where T <: Real
+    Base.copyto!(arr, @view(s.snparray[:, snpindex.index]); impute=mean_impute, center=mean_impute, scale=mean_impute)   # change impute to mean_impute 
     return arr 
 end
 
-function n_samples(s::SnpData)::Int
+# are we reusing the same arr 
+
+function GeneticVariantBase.n_samples(s::SnpData)::Int
     return size(s.snparray,1)
 end 
 
-function n_variants(s::SnpData)::Int
+function GeneticVariantBase.n_variants(s::SnpData)::Int
     return size(s.snparray,2)
 end 

@@ -770,7 +770,7 @@ abstract type Variant end
 
 # # need to export outside of module 
 
-const EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
+# const EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
 # ind = SnpArrays.SnpArrayIndex(1)
 # snp_iter = SnpArrays.SnpArrayIterator(EUR_data)
 
@@ -862,4 +862,19 @@ const EUR_data = SnpData(SnpArrays.datadir("EUR_subset"))
 #     alt_genotypes!(v,EUR_data,s)
 #     @test v == v2 
 
+# end
+
+# EUR_data = SnpData(joinpath(SnpArrays.datadir(), "EUR_subset"))
+# @testset "n_sample and n_variants" begin
+#     expected_n_samples = size(EUR, 1)
+#     expected_n_variants = size(EUR, 2)
+
+#     @test GeneticVariantBase.n_samples(EUR_data) == expected_n_samples
+#     @test GeneticVariantBase.n_variants(EUR_data) == expected_n_variants
+
+#     @test isa(n_samples(EUR_data), Int)
+#     @test isa(n_variants(EUR_data), Int)
+
+#     @test n_samples(EUR_data) > 0
+#     @test n_variants(EUR_data) > 0
 # end
