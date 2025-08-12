@@ -67,23 +67,59 @@ end
 
 # fold into GeneticVariantBase.maf function name 
 
-function calculate_maf_data(s::SnpData)
-    maf_vector = maf(s.snparray)
-    result = MAFData(maf_vector)
-    return result 
+# function calculate_maf_data(s::SnpData)
+#     maf_vector = maf(s.snparray)
+#     result = MAFData(maf_vector)
+#     return result 
+# end
+
+# function maf_index(maf_data::MAFData, snpindex::SnpArrayIndex)
+#     return maf_data.maf_vector[snpindex.index]
+# end
+
+# function GeneticVariantBase.maf(s::SnpData, snpindex::SnpArrayIndex) # This is calculating maf every call 
+#     # maf_vector = calculate_maf_data(s)
+#     maf_vector = maf(s.snparray) # This allocates a lot
+#     # Calculate MAF for one variant if the index is given you might be able to calculate 
+#     # Boolean vector indicating which samples to be used default argument selecting which 
+#     return maf_vector[snpindex.index] 
+#     # return maf_vector[snpindex.index]
+# end 
+
+# Global cache: maps SnpData => MAF vector
+const _maf_cache = IdDict{SnpData, Vector{Float64}}()
+
+"""
+    calculate_maf_data!(s::SnpData)
+
+Precompute and cache MAF values for `s`.
+"""
+function calculate_maf_data!(s::SnpData)
+    _maf_cache[s] = maf(s.snparray)
+    return nothing
 end
 
-function maf_index(maf_data::MAFData, snpindex::SnpArrayIndex)
-    return maf_data.maf_vector[snpindex.index]
-end
+"""
+    maf_index(s::SnpData, snpindex::SnpArrayIndex)
 
-
-function GeneticVariantBase.maf(s::SnpData, snpindex::SnpArrayIndex)
-    # maf_vector = calculate_maf_data(s)
-    maf_vector = maf(s.snparray)
+Fetches the MAF for `snpindex` from the cache.
+Assumes `calculate_maf_data!` has been called beforehand.
+"""
+function maf_index(s::SnpData, snpindex::SnpArrayIndex)
+    maf_vector = _maf_cache[s]
     return maf_vector[snpindex.index]
-    # return maf_vector[snpindex.index]
-end 
+end
+
+# Override without changing args
+function GeneticVariantBase.maf(s::SnpData, snpindex::SnpArrayIndex)
+    maf_vector = get!(_maf_cache, s) do
+        # compute and store if missing
+        maf(s.snparray)
+    end
+    return maf_vector[snpindex.index]
+end
+
+
 
 function GeneticVariantBase.hwepval(s::SnpData, snpindex::SnpArrayIndex)
     genotypes = s.snparray[:,snpindex.index]
