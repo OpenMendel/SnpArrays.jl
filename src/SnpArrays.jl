@@ -45,8 +45,6 @@ include("reorder.jl")
 include("vcf2plink.jl")
 include("admixture.jl")
 include("simulation.jl")
-AbstractSnpArray = Union{SnpArray, SubArray{UInt8, 1, SnpArray}, SubArray{UInt8, 2, SnpArray}, 
-    StackedSnpArray, SubArray{UInt8, 1, StackedSnpArray}, SubArray{UInt8, 2, StackedSnpArray}}
 
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 
