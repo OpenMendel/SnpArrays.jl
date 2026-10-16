@@ -5,12 +5,12 @@ containing metadata on the columns. The `.fam` and `.bim` files are in tab-separ
 
 The table contains the observed allelic type at `n` [*single nucleotide polymorphism*](https://en.wikipedia.org/wiki/Single-nucleotide_polymorphism) (SNP) positions for `m` individuals. A SNP corresponds to a nucleotide position on the genome where some degree of variation has been observed in a population, with each individual have one of two possible *alleles* at that position on each of a pair of chromosomes. Three possible genotypes and corresponding coding are
 
-| Genotype | Plink/SnpArray |  
-|:---:|:---:|  
-| A1,A1 | 0x00 |  
+| Genotype | Plink/SnpArray |
+|:---:|:---:|
+| A1,A1 | 0x00 |
 | missing | 0x01 |
-| A1,A2 | 0x02 |  
-| A2,A2 | 0x03 |  
+| A1,A2 | 0x02 |
+| A2,A2 | 0x03 |
 
 ## Installation
 
@@ -23,13 +23,13 @@ The package can be installed by running the following code:
 using Pkg
 pkg"add SnpArrays"
 ```
-For running the examples below, the following are also necessary. 
+For running the examples below, the following are also necessary.
 ```julia
 pkg"add BenchmarkTools DelimitedFiles Glob"
 pkg"add https://github.com/OpenMendel/ADMIXTURE.jl"
 ```
 
-For optional use on a CUDA-enabled GPU, the following is also needed. 
+For optional use on a CUDA-enabled GPU, the following is also needed.
 ```julia
 pkg"add Adapt CUDA"
 ```
@@ -58,7 +58,7 @@ Sys.islinux() && (using CUDA);
 
 ## Example data
 
-There are two example data sets attached to this package. They are availabe in the `data` folder of the package.
+There are two example data sets attached to this package. They are available in the `data` folder of the package.
 
 
 ```julia
@@ -114,7 +114,7 @@ Data from recent studies, which have samples from tens of thousands of individua
 
 There are various ways to initialize a SnpArray.
 
-#### Intitialize from Plink file set
+#### Initialize from Plink file set
 
 SnpArray can be initialized from the Plink bed file. The corresponding `.fam` needs to be present, which is used to determine the number of individuals.
 
@@ -140,7 +140,7 @@ const mouse = SnpArray(SnpArrays.datadir("mouse.bed"))
      0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
      0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
-        ⋮                             ⋮  ⋱           ⋮                    
+        ⋮                             ⋮  ⋱           ⋮
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
      0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
@@ -190,7 +190,7 @@ mouse[1, 1] = 0x00
 
     ReadOnlyMemoryError()
 
-    
+
 
     Stacktrace:
 
@@ -246,7 +246,7 @@ SnpArray(SnpArrays.datadir("mouse.bed"), 1940)
      0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
      0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
-        ⋮                             ⋮  ⋱           ⋮                    
+        ⋮                             ⋮  ⋱           ⋮
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
      0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
@@ -313,7 +313,7 @@ SnpArray(SnpArrays.datadir("mouse.bed.gz"))
      0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
      0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
-        ⋮                             ⋮  ⋱           ⋮                    
+        ⋮                             ⋮  ⋱           ⋮
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
      0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
@@ -354,7 +354,7 @@ SnpArray(SnpArrays.datadir("mouse.bed.gz"), 1940)
      0x03  0x03  0x03  0x03  0x03  0x03  …  0x00  0x00  0x00  0x00  0x00  0x00
      0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x00  0x00  0x00  0x00  0x00  0x00
-        ⋮                             ⋮  ⋱           ⋮                    
+        ⋮                             ⋮  ⋱           ⋮
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x03  0x03  0x03  0x03
      0x02  0x02  0x02  0x02  0x02  0x02  …  0x03  0x03  0x03  0x03  0x03  0x03
@@ -515,12 +515,12 @@ Most common usage of SnpArray is to convert genotypes to numeric values for stat
 
 `model` keyword specifies the SNP model for conversion. By default `convert` function translates genotypes according to the *additive* SNP model, which essentially counts the number of **A2** allele (0, 1 or 2) per genotype. Other SNP models are *dominant* and *recessive*, both in terms of the **A2** allele.
 
-| Genotype | `SnpArray` | `model=ADDITIVE_MODEL` | `model=DOMINANT_MODEL` | `model=RECESSIVE_MODEL` |    
-|:---:|:---:|:---:|:---:|:---:|  
-| A1,A1 | 0x00 | 0 | 0 | 0 |  
+| Genotype | `SnpArray` | `model=ADDITIVE_MODEL` | `model=DOMINANT_MODEL` | `model=RECESSIVE_MODEL` |
+|:---:|:---:|:---:|:---:|:---:|
+| A1,A1 | 0x00 | 0 | 0 | 0 |
 | missing | 0x01 | NaN | NaN | NaN |
-| A1,A2 | 0x02 | 1 | 1 | 0 |  
-| A2,A2 | 0x03 | 2 | 1 | 1 |  
+| A1,A2 | 0x02 | 1 | 1 | 0 |
+| A2,A2 | 0x03 | 2 | 1 | 1 |
 
 `center=true` tells `convert` to center each column by its mean. Default is `false`.
 
@@ -552,7 +552,7 @@ convert(Matrix{Float64}, mouse)
      2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0  …    0.0    0.0    0.0    0.0    0.0
      1.0  1.0  1.0  1.0  2.0  1.0  2.0  1.0       2.0    2.0    2.0    2.0    2.0
      2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       0.0    0.0    0.0    0.0    0.0
-     ⋮                        ⋮              ⋱    ⋮                         
+     ⋮                        ⋮              ⋱    ⋮
      2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       2.0    2.0    2.0    2.0    2.0
      2.0  2.0  2.0  2.0  2.0  2.0  2.0  2.0       2.0    2.0    2.0    2.0    2.0
      1.0  1.0  1.0  1.0  1.0  1.0  1.0  2.0  …    2.0    2.0    2.0    2.0    2.0
@@ -568,10 +568,10 @@ convert(Matrix{Float64}, mouse)
 
 
 
-!!! note  
+!!! note
 
     When `convert` or `copyto!` a slice or subarray of SnpArray, using `view`, `@view` or `views` is necessary for both correctness and efficiency. Without view, it's simply converting the UInt8 coding in original bed file.
-    
+
 
 Convert a column to Float64 vector using defaults (`model=ADDITIVE_MODEL`, `center=false`, `scale=false`, `impute=false`).
 
@@ -658,7 +658,7 @@ Different SNP models (`ADDITIVE_MODEL` vs `DOMINANT_MODEL` vs `RECESSIVE_MODEL`)
      2.0  1.0  1.0
      1.0  1.0  0.0
      2.0  1.0  1.0
-     ⋮         
+     ⋮
      2.0  1.0  1.0
      2.0  1.0  1.0
      1.0  1.0  0.0
@@ -832,7 +832,7 @@ copyto!(v2, @view(mouse[:, 1:2]))
      2.0  2.0
      1.0  1.0
      2.0  2.0
-     ⋮    
+     ⋮
      2.0  2.0
      2.0  2.0
      1.0  1.0
@@ -899,7 +899,7 @@ copyto!(v, @view(mouse[:, 1]), center=true, scale=true)
 
 
 ```julia
-# more cost becoz of extra pass for center, scale, and/or impute
+# more cost because of extra pass for center, scale, and/or impute
 @btime(copyto!($v, $(@view(mouse[:, 1])), center=true, scale=true));
 ```
 
@@ -941,10 +941,10 @@ Step 1: Calculate the ancestry estimate and allele frequencies using ADMIXTURE.j
 
 
 ```julia
-# install ADMIXTURE package first 
+# install ADMIXTURE package first
 using ADMIXTURE
 if isfile("mouse.3.P") && isfile("mouse.3.Q")
-    P = readdlm("mouse.3.P", ' ', Float64) 
+    P = readdlm("mouse.3.P", ' ', Float64)
     Q = readdlm("mouse.3.Q", ' ', Float64)
 else
     # run ADMIXTURE using 4 threads
@@ -959,7 +959,7 @@ end;
     ****                                                            ****
     ****                 Please cite our paper!                     ****
     ****   Information at www.genetics.ucla.edu/software/admixture  ****
-    
+
     Parallel execution requested.  Will use 4 threads.
     Random seed: 43
     Point estimation method: Block relaxation algorithm
@@ -1001,14 +1001,14 @@ end;
     15 (QN/Block) 	Elapsed: 4.599	Loglikelihood: -2.07072e+07	(delta): 0.00178787
     16 (QN/Block) 	Elapsed: 4.622	Loglikelihood: -2.07072e+07	(delta): 0.000387926
     17 (QN/Block) 	Elapsed: 4.616	Loglikelihood: -2.07072e+07	(delta): 8.44523e-06
-    Summary: 
+    Summary:
     Converged in 17 iterations (85.726 sec)
     Loglikelihood: -20707210.979063
-    Fst divergences between estimated populations: 
-    	Pop0	Pop1	
-    Pop0	
-    Pop1	0.141	
-    Pop2	0.120	0.128	
+    Fst divergences between estimated populations:
+    	Pop0	Pop1
+    Pop0
+    Pop1	0.141
+    Pop2	0.120	0.128
     Writing output files.
 
 
@@ -1038,7 +1038,7 @@ convert(Matrix{Float64}, mouse, Pt, Qt)
      2.0  2.0  2.0  2.0  2.0  2.0  2.0  …  0.0      0.0      0.0      0.0
      1.0  1.0  1.0  1.0  2.0  1.0  2.0     2.0      2.0      2.0      2.0
      2.0  2.0  2.0  2.0  2.0  2.0  2.0     0.0      0.0      0.0      0.0
-     ⋮                        ⋮         ⋱                             
+     ⋮                        ⋮         ⋱
      2.0  2.0  2.0  2.0  2.0  2.0  2.0     2.0      2.0      2.0      2.0
      2.0  2.0  2.0  2.0  2.0  2.0  2.0     2.0      2.0      2.0      2.0
      1.0  1.0  1.0  1.0  1.0  1.0  1.0  …  2.0      2.0      2.0      2.0
@@ -1087,7 +1087,7 @@ counts(mouse, dims=1)
 
 
 Column 2 has no missing values (code `0x01`, the second row in the column-counts table).
-In that SNP position for this sample, 359 indivduals are homozygous allele 1 (`G` according to the `.bim` file), 1004 are heterozygous, and 577 are homozygous allele 2 (`A`).
+In that SNP position for this sample, 359 individuals are homozygous allele 1 (`G` according to the `.bim` file), 1004 are heterozygous, and 577 are homozygous allele 2 (`A`).
 
 The counts by column and by row are cached in the `SnpArray` object. Accesses after the first are extremely fast.
 
@@ -1414,9 +1414,9 @@ view(counts(mouse, dims=1), 2:2, :)
 
 ## Genetic relationship matrix (GRM)
 
-### Homogenous population
+### Homogeneous population
 
-For homogenous population, `grm` function computes the empirical kinship matrix using either the classical genetic relationship matrix, `grm(A, model=:GRM)`, or the method of moment method, `grm(A, model=:MoM)`, or the robust method, `grm(A, model=:Robust)`. See the section _Kinship Comparison_ of the [manuscript](http://hua-zhou.github.io/media/pdf/Zhou19OpenMendel.pdf) for the formulae and references for these methods. 
+For homogeneous population, `grm` function computes the empirical kinship matrix using either the classical genetic relationship matrix, `grm(A, model=:GRM)`, or the method of moment method, `grm(A, model=:MoM)`, or the robust method, `grm(A, model=:Robust)`. See the section _Kinship Comparison_ of the [manuscript](http://hua-zhou.github.io/media/pdf/Zhou19OpenMendel.pdf) for the formulae and references for these methods.
 
 Classical genetic relation matrix
 
@@ -1444,7 +1444,7 @@ g = grm(mouse, method=:GRM)
      -0.0142307    0.00270989  -0.0235504    …  -0.0223563   -0.028408
      -0.0306022    0.197743    -0.00244269       0.0213998   -0.0478472
      -0.0131463   -0.0226707    0.0223522       -0.037288     0.0493662
-      ⋮                                      ⋱               
+      ⋮                                      ⋱
       0.0176725   -0.0165609    0.0378308        0.0238751   -0.0420143
       0.0024949   -0.0411137    0.0154847       -0.0380656   -0.0650806
       0.0952286    0.00894298  -0.0163446    …  -0.0202633   -0.0219594
@@ -1492,7 +1492,7 @@ grm(mouse, method=:GRM, t=Float32)
      -0.0142307    0.0027099   -0.0235504    …  -0.0223563   -0.028408
      -0.0306022    0.197743    -0.00244268       0.0213998   -0.0478472
      -0.0131463   -0.0226707    0.0223522       -0.037288     0.0493662
-      ⋮                                      ⋱               
+      ⋮                                      ⋱
       0.0176725   -0.016561     0.0378308        0.0238751   -0.0420143
       0.00249492  -0.0411137    0.0154847       -0.0380656   -0.0650806
       0.0952286    0.00894297  -0.0163446    …  -0.0202633   -0.0219594
@@ -1516,11 +1516,11 @@ grm(mouse, method=:GRM, t=Float32)
       304.821 ms (16 allocations: 14.60 MiB)
 
 
-By default, `grm` exlcudes SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
+By default, `grm` excludes SNPs with minor allele frequency below 0.01. This can be changed by the keyword argument `minmaf`.
 
 
 ```julia
-# compute GRM excluding SNPs with MAF≤0.05 
+# compute GRM excluding SNPs with MAF≤0.05
 grm(mouse, minmaf=0.05)
 ```
 
@@ -1541,7 +1541,7 @@ grm(mouse, minmaf=0.05)
      -0.0142674    0.00268319  -0.0235927    …  -0.0223978   -0.0284489
      -0.0306486    0.197832    -0.00247243       0.0213842   -0.0478996
      -0.0131824   -0.0227124    0.0223371       -0.0373384    0.0493713
-      ⋮                                      ⋱               
+      ⋮                                      ⋱
       0.0176546   -0.016599     0.0378249        0.0238609   -0.0420633
       0.00246808  -0.0411663    0.0154656       -0.0381165   -0.0651432
       0.0952566    0.00891997  -0.0163826    …  -0.0203036   -0.0219965
@@ -1582,7 +1582,7 @@ grm(mouse, cinds=1:2:size(mouse, 2))
      -0.00800735  -0.00149824   -0.019791    …  -0.024124     -0.0289397
      -0.0272944    0.19894      -0.00534771      0.0209384    -0.0511051
      -0.011388    -0.0281003     0.0273853      -0.0360047     0.0459359
-      ⋮                                      ⋱                
+      ⋮                                      ⋱
       0.0169431   -0.0136989     0.0340794       0.0272811    -0.041189
       0.00201325  -0.0426611     0.0124353      -0.0387982    -0.0656181
       0.097587     0.0058123    -0.0160698   …  -0.021457     -0.023226
@@ -1600,11 +1600,11 @@ grm(mouse, cinds=1:2:size(mouse, 2))
 
 ### Inhomogenous/admixed populations
 
-For inhomogenous/admixed population, we recommend first estimate the ancestry and pupulation allele frequencies using the ADMIXTURE software. See [ADMIXTURE.jl](https://github.com/OpenMendel/ADMIXTURE.jl) for usage. Then compute the kinship coefficients using the `P` (allele frequencies) and `Q` (ancestry fractions) matrix from the output of ADMIXTURE. This is essentially what the [REAP software](http://faculty.washington.edu/tathornt/software/REAP) does, except our implementation runs much faster than REAP (>50 fold speedup). 
+For inhomogenous/admixed population, we recommend first estimate the ancestry and population allele frequencies using the ADMIXTURE software. See [ADMIXTURE.jl](https://github.com/OpenMendel/ADMIXTURE.jl) for usage. Then compute the kinship coefficients using the `P` (allele frequencies) and `Q` (ancestry fractions) matrix from the output of ADMIXTURE. This is essentially what the [REAP software](http://faculty.washington.edu/tathornt/software/REAP) does, except our implementation runs much faster than REAP (>50 fold speedup).
 
 
 ```julia
-# first read in the P and Q matrix output from ADMIXTURE and tranpose them
+# first read in the P and Q matrix output from ADMIXTURE and transpose them
 Pt = readdlm("mouse.3.P", ' ', Float64) |> transpose |> Matrix
 Qt = readdlm("mouse.3.Q", ' ', Float64) |> transpose |> Matrix;
 ```
@@ -1637,7 +1637,7 @@ SnpArrays.grm_admixture(mouse, Pt, Qt)
       0.00337643    0.00227661   -0.00875794  …  -0.0258833    -0.0459813
      -0.0177263     0.145081      0.030058       -0.0133901    -0.0327255
       0.000957239  -0.00906892    0.029328       -0.0270566     0.0232713
-      ⋮                                       ⋱                
+      ⋮                                       ⋱
      -0.00488414    0.000742334   0.0151452       0.0414038    -0.0193765
      -0.0206989    -0.0165344    -0.0109315      -0.0255689    -0.0508724
       0.0604748     0.0196283    -0.0426789   …  -0.0174937     0.027048
@@ -1668,7 +1668,7 @@ Before GWAS, we often need to filter SNPs and/or samples according to genotyping
 SnpArrays.filter
 ```
 
-By default, it outputs row and column index vectors such that sample-wise and SNP-wise genotyping success rate are at least 0.98 and minor allele frequencies are at least 0.01. User can opt to filter according to Hardy-Weinberg test by setting the minumum p-value `min_hwe_pval`.
+By default, it outputs row and column index vectors such that sample-wise and SNP-wise genotyping success rate are at least 0.98 and minor allele frequencies are at least 0.01. User can opt to filter according to Hardy-Weinberg test by setting the minimum p-value `min_hwe_pval`.
 
 
 ```julia
@@ -1760,7 +1760,7 @@ SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
      0x03  0x03  0x03  0x03  0x03  0x03  …  0x03  0x03  0x00  0x03  0x00  0x03
      0x02  0x02  0x02  0x02  0x03  0x02     0x03  0x03  0x03  0x00  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x00  0x00  0x03  0x03  0x03
-        ⋮                             ⋮  ⋱                             ⋮  
+        ⋮                             ⋮  ⋱                             ⋮
      0x03  0x03  0x03  0x03  0x03  0x03     0x03  0x03  0x00  0x03  0x03  0x03
      0x03  0x03  0x03  0x03  0x03  0x03  …  0x03  0x03  0x03  0x00  0x00  0x00
      0x02  0x02  0x02  0x02  0x02  0x02     0x03  0x03  0x03  0x00  0x03  0x03
@@ -1801,7 +1801,7 @@ rm(SnpArrays.datadir("mouse.filtered.bim"), force=true)
 
 ## Concatenating `SnpArray`s
 
-Concatenation of `SnpArray`s is implemented in `hcat`, `vcat`, and `hvcat` functions. By default, the resulting `.bed` file is saved as a file beginning with `tmp_` in the working directory. You can specify destination using keyword `des`. 
+Concatenation of `SnpArray`s is implemented in `hcat`, `vcat`, and `hvcat` functions. By default, the resulting `.bed` file is saved as a file beginning with `tmp_` in the working directory. You can specify destination using keyword `des`.
 
 For concatenation, `SnpArray` arguments do not deal with `.fam` or `.bim` files at all. You can use `SnpData` as the arguments to create those files (see below).
 
@@ -1978,10 +1978,10 @@ In some applications we want to perform linear algebra using SnpArray directly w
 `SnpLinAlg` and `SnpBitMatrix` use Chris Elrod's [LoopVectorization.jl](https://github.com/chriselrod/LoopVectorization.jl) internally. It is much faster on machines with AVX support. `CuSnpArray` uses [CUDA.jl](https://juliagpu.gitlab.io/CUDA.jl/) internally.
 
 !!! warning "deprecated SnpBitMatrix"
-    `SnpBitMatrix` is now deprecated in favor of `SnpLinAlg`. 
+    `SnpBitMatrix` is now deprecated in favor of `SnpLinAlg`.
     `SnpBitMatrix` will be removed on next minor release.
-    
-The implementation assumes that the matrix corresponding to SnpArray is the matrix of the A2 allele counts. `SnpLinAlg` and `CuSnpArray` impute any missing genotype with its column mean by default. They can also configured to impute missing genotypes with zero. `SnpBitMatrix` can only impute missing values with zero. 
+
+The implementation assumes that the matrix corresponding to SnpArray is the matrix of the A2 allele counts. `SnpLinAlg` and `CuSnpArray` impute any missing genotype with its column mean by default. They can also configured to impute missing genotypes with zero. `SnpBitMatrix` can only impute missing values with zero.
 
 ### Constructor
 
@@ -2067,7 +2067,7 @@ const EURsla_ = SnpLinAlg{Float64}(EUR, model=ADDITIVE_MODEL, center=true, scale
 
 
 The constructor shares the same keyword arguments as the `convert` or `copyto!` functions. The type parameter, `Float64` in this example, indicates the SnpLinAlg acts like a Float64 matrix.
-SnpLinAlg directly uses the SnpArray for computation and does not expand into full numeric array. 
+SnpLinAlg directly uses the SnpArray for computation and does not expand into full numeric array.
 
 
 ```julia
@@ -2083,7 +2083,7 @@ Base.summarysize(EUR), Base.summarysize(EURsla)
 
 ### `mul!`
 
-SnpLinAlg act similar to a regular matrix and responds to `size`, `eltype`, SnpLinAlg-vector multiplication, and SnpLinAlg-matrix multiplications. Other linear algebra operations (e.g. `qr()`) should work on a SnpLinAlg, but will be much slower. 
+SnpLinAlg act similar to a regular matrix and responds to `size`, `eltype`, SnpLinAlg-vector multiplication, and SnpLinAlg-matrix multiplications. Other linear algebra operations (e.g. `qr()`) should work on a SnpLinAlg, but will be much slower.
 
 
 ```julia
@@ -2138,11 +2138,11 @@ See Linear Algebra Benchmarks on the left for performance comparison among BLAS,
 + CuSnpArray-vector multiplications on the GPU is 50x faster than BLAS, and
 + SnpLinAlg-matrix multiplication is competitive with BLAS if the right hand matrix is "tall and thin".
 
-Note that SnpLinAlg does not allocate additional memory, and can impute missing values with column means. 
+Note that SnpLinAlg does not allocate additional memory, and can impute missing values with column means.
 
 ### `copyto!`, `convert`, and `subarrays`
 
-`copyto!` and `convert` are also supported on `SnpLinAlg`s, but without the `impute`, `scale`, `center` keyword arguments. The destination array will be scaled/centered if the `SnpLinAlg` was scaled/centered. 
+`copyto!` and `convert` are also supported on `SnpLinAlg`s, but without the `impute`, `scale`, `center` keyword arguments. The destination array will be scaled/centered if the `SnpLinAlg` was scaled/centered.
 
 
 ```julia
@@ -2183,7 +2183,7 @@ copyto!(v, @view(EURsla[:, 1:2:20]))
       0.46516  0.306468   0.97438    1.09159   …   0.238721  -1.53818    0.301719
       0.46516  0.306468   0.97438    1.09159       0.238721   0.551318   0.301719
       0.46516  0.306468  -0.539104   1.09159       0.238721   0.551318   0.301719
-      ⋮                                        ⋱                        
+      ⋮                                        ⋱
       0.46516  0.306468  -0.539104  -0.370294      0.238721   0.551318   0.301719
       0.46516  0.306468  -0.539104  -0.370294      0.238721   0.551318   0.301719
       0.46516  0.306468  -0.539104  -0.370294     -4.06963    0.551318   0.301719
@@ -2213,7 +2213,7 @@ all(v .≈ Atrue[:, 1:2:20])
 
 ### GPU support: CuSnpArray (optional)
 
-On machines with Nvidia GPU, matrix-vector multiplications can be performed on it via CuSnpArray. The input vectors should be CuVectors. 
+On machines with Nvidia GPU, matrix-vector multiplications can be performed on it via CuSnpArray. The input vectors should be CuVectors.
 
 
 ```julia
@@ -2314,7 +2314,7 @@ splitted_sex = SnpArrays.split_plink(EUR_data, :sex; prefix="tmp.split.sex.")
 
 ### Concatenation
 
-`hcat`, `vcat`, and `hvcat` are also implemented for `SnpData`. All of `.bed`, `.bim`, `.fam` files are created. Simple concatenation expression can be used (with the side effect of creation of temporary plink files). One may also set the desitination using the keyword argument `des`. 
+`hcat`, `vcat`, and `hvcat` are also implemented for `SnpData`. All of `.bed`, `.bim`, `.fam` files are created. Simple concatenation expression can be used (with the side effect of creation of temporary plink files). One may also set the destination using the keyword argument `des`.
 
 
 ```julia
@@ -2404,7 +2404,7 @@ SnpArrays.jl includes a function to transform a (gzipped) VCF file to PLINK-form
 
 ```julia
 # Download an example VCF file
-isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz", 
+isfile("test.08Jun17.d8b.vcf.gz") || download("http://faculty.washington.edu/browning/beagle/test.08Jun17.d8b.vcf.gz",
     joinpath(pwd(), "test.08Jun17.d8b.vcf.gz"));
 ```
 
@@ -2428,7 +2428,7 @@ for ft in ["bim", "fam", "bed"]
     end
     rm("tmp.merged." * ft, force=true)
     rm("tmp.merged.2." * ft, force=true)
-    
+
     rm("tmp.hcat." * ft, force=true)
     rm("tmp.vcat." * ft, force=true)
     rm("tmp.hvcat." * ft, force=true)
