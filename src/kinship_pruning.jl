@@ -1,7 +1,7 @@
 """
     kinship_pruning(grm::Matrix; method=:bottom_up, cutoff=0.125, min_samples=0)
 
-Return a BitVector indicating which samples remains after kinship pruning. 
+Return a BitVector indicating which samples remains after kinship pruning.
 Valid values for `method` are `:bottom_up`, `:top_down`, `:gcta`, and `:plink`.
 When `min_samples` is defined, pruning stops if that number of samples remain.
 
@@ -10,7 +10,7 @@ When `min_samples` is defined, pruning stops if that number of samples remain.
 - `:gcta` runs the method implemented in GCTA.
 - `:plink` runs the method implemented in PLINK.
 
-In general, `:bottom_up` greedy method performs the best (keeping the hightest number of subjects) and has a guaranteed approximamtion ratio.
+In general, `:bottom_up` greedy method performs the best (keeping the highest number of subjects) and has a guaranteed approximamtion ratio.
 With `min_samples` defined, `:top_down` greedy method keeps the least number of off-diagonal values.
 """
 function kinship_pruning(grm::AbstractMatrix; method=:bottom_up, cutoff=0.125, min_samples=0)
@@ -64,31 +64,31 @@ function _eliminate_node!(i::Integer, grm::AbstractMatrix, r::BitVector, degrees
             degrees[j] -= 1
         end
     end
-    nothing 
+    nothing
 end
 
 function _kinship_pruning_gcta(grm::AbstractMatrix; cutoff=0.125)
     m = size(grm, 1)
     degrees = _count_degrees(grm; cutoff=cutoff)
-    
+
     r = trues(m)
     @inbounds for i in 1:m, j in (i+1):m
         if j == i; continue; end
         if grm[i, j] > cutoff
-            if degrees[i] > degrees[j] 
+            if degrees[i] > degrees[j]
                 r[i] = false
             else
                 r[j] = false
             end
         end
-    end 
+    end
     r
 end
 
 function _kinship_pruning_plink(grm::AbstractMatrix; cutoff=0.125, min_samples=0)
     m = size(grm, 1)
-    degrees = _count_degrees(grm; cutoff=cutoff) 
-    r = trues(m) 
+    degrees = _count_degrees(grm; cutoff=cutoff)
+    r = trues(m)
     nbs = [0]
     while sum(degrees) > 0 && count(r) > min_samples
         if any(degrees .== 1)
@@ -97,12 +97,12 @@ function _kinship_pruning_plink(grm::AbstractMatrix; cutoff=0.125, min_samples=0
             _eliminate_node!(to_eliminate[1], grm, r, degrees; cutoff=cutoff)
         else
            to_eliminate = findfirst(x -> x == maximum(degrees), degrees)
-            _eliminate_node!(to_eliminate, grm, r, degrees; cutoff=cutoff) 
+            _eliminate_node!(to_eliminate, grm, r, degrees; cutoff=cutoff)
         end
     end
     if sum(degrees) != 0
         @warn "not all edges were removed: $(sum(degrees) ÷ 2) edges remain"
-    end        
+    end
     r
 end
 
@@ -128,7 +128,7 @@ function _kinship_pruning_bottomup(grm::AbstractMatrix; cutoff=0.125, min_sample
     while sum(degrees) > 0 && count(r) > min_samples
         minpositive = minimum(degrees[degrees .> 0])
         to_add = findfirst(x -> x == minpositive, degrees)
-        to_eliminate = _find_neighbors!(nbs, to_add, grm, r, degrees[to_add]; cutoff=cutoff) 
+        to_eliminate = _find_neighbors!(nbs, to_add, grm, r, degrees[to_add]; cutoff=cutoff)
         @inbounds for i in 1:degrees[to_add]
             _eliminate_node!(to_eliminate[i], grm, r, degrees; cutoff=cutoff)
         end
