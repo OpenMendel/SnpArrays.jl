@@ -58,7 +58,7 @@ Sys.islinux() && (using CUDA);
 
 ## Example data
 
-There are two example data sets attached to this package. They are available in the `data` folder of the package.
+There are two example data sets attached to this package. They are distributed as a lazy [artifact](https://pkgdocs.julialang.org/v1/artifacts/), downloaded the first time `SnpArrays.datadir` is called (this needs network access once) and shared by all installed versions of SnpArrays.
 
 
 ```julia
@@ -68,7 +68,7 @@ datapath = normpath(SnpArrays.datadir())
 
 
 
-    "/home/xyz/.julia/dev/SnpArrays/data"
+    "/home/xyz/.julia/artifacts/c869f85973f5844aafa096157ef22aeaf179d71f"
 
 
 
@@ -81,9 +81,9 @@ readdir(glob"mouse.*", datapath)
 
 
     3-element Vector{String}:
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.bed"
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.bim"
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.fam"
+     "/home/xyz/.julia/artifacts/c869f85973f5844aafa096157ef22aeaf179d71f/mouse.bed"
+     "/home/xyz/.julia/artifacts/c869f85973f5844aafa096157ef22aeaf179d71f/mouse.bim"
+     "/home/xyz/.julia/artifacts/c869f85973f5844aafa096157ef22aeaf179d71f/mouse.fam"
 
 
 
@@ -98,9 +98,24 @@ readdir(glob"EUR_subset.*", datapath)
 
 
     3-element Vector{String}:
-     "/home/xyz/.julia/dev/SnpArrays/data/EUR_subset.bed"
-     "/home/xyz/.julia/dev/SnpArrays/data/EUR_subset.bim"
-     "/home/xyz/.julia/dev/SnpArrays/data/EUR_subset.fam"
+     "/home/xyz/.julia/artifacts/c869f85973f5844aafa096157ef22aeaf179d71f/EUR_subset.bed"
+     "/home/xyz/.julia/artifacts/c869f85973f5844aafa096157ef22aeaf179d71f/EUR_subset.bim"
+     "/home/xyz/.julia/artifacts/c869f85973f5844aafa096157ef22aeaf179d71f/EUR_subset.fam"
+
+
+
+The data folder is shared and should be treated as read-only. Examples below that write files put them in a temporary directory:
+
+
+```julia
+tmpdir = mktempdir()
+```
+
+
+
+
+    "/tmp/jl_7Qm2Xb"
+
 
 
 
@@ -215,9 +230,13 @@ mouse[1, 1] = 0x00
        @ Base ./loading.jl:1116
 
 
-To possibly change genoytpes in a bed file, open with write permission
+To possibly change genotypes in a bed file, open it with `"r+"` (read and write) permission. The example data are read-only, so work on a writable copy:
 ```julia
-mouse = SnpArray(SnpArrays.datadir("mouse.bed"), "w")
+for ft in ["bed", "fam"]
+    cp(SnpArrays.datadir("mouse." * ft), joinpath(tmpdir, "mouse." * ft); force=true)
+    chmod(joinpath(tmpdir, "mouse." * ft), 0o644)
+end
+mouse_rw = SnpArray(joinpath(tmpdir, "mouse.bed"), "r+")
 ```
 
 #### Initialize from only bed file
@@ -274,17 +293,17 @@ Let us first compress the mouse data in gz format. We see gz format takes less t
 
 
 ```julia
-compress_plink(SnpArrays.datadir("mouse"), "gz")
-readdir(glob"mouse.*.gz", datapath)
+compress_plink(SnpArrays.datadir("mouse"), "gz", joinpath(tmpdir, "mouse"))
+readdir(glob"mouse.*.gz", tmpdir)
 ```
 
 
 
 
     3-element Vector{String}:
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.bed.gz"
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.bim.gz"
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.fam.gz"
+     "/tmp/jl_7Qm2Xb/mouse.bed.gz"
+     "/tmp/jl_7Qm2Xb/mouse.bim.gz"
+     "/tmp/jl_7Qm2Xb/mouse.fam.gz"
 
 
 
@@ -293,7 +312,7 @@ To initialize SnpArray from gzipped Plink file, simply used the bed file with na
 
 ```julia
 # requires corresponding `.fam.gz` file
-SnpArray(SnpArrays.datadir("mouse.bed.gz"))
+SnpArray(joinpath(tmpdir, "mouse.bed.gz"))
 ```
 
 
@@ -334,7 +353,7 @@ or
 
 ```julia
 # does not require corresponding `.fam.gz` file
-SnpArray(SnpArrays.datadir("mouse.bed.gz"), 1940)
+SnpArray(joinpath(tmpdir, "mouse.bed.gz"), 1940)
 ```
 
 
@@ -373,9 +392,9 @@ SnpArray(SnpArrays.datadir("mouse.bed.gz"), 1940)
 
 ```julia
 # clean up
-rm(SnpArrays.datadir("mouse.bed.gz"), force=true)
-rm(SnpArrays.datadir("mouse.fam.gz"), force=true)
-rm(SnpArrays.datadir("mouse.bim.gz"), force=true)
+rm(joinpath(tmpdir, "mouse.bed.gz"), force=true)
+rm(joinpath(tmpdir, "mouse.fam.gz"), force=true)
+rm(joinpath(tmpdir, "mouse.bim.gz"), force=true)
 ```
 
 #### Initialize and create bed file
@@ -969,7 +988,7 @@ end;
 
 
     ┌ Info: ADMIXTURE command:
-    │ `/home/xyz/.julia/artifacts/316b9c66aef8f67001d54aa86a244d1e769c1e1a/dist/admixture_linux-1.3.0/admixture /home/xyz/.julia/dev/SnpArrays/data/mouse.bed 3 -j4`
+    │ `/home/xyz/.julia/artifacts/316b9c66aef8f67001d54aa86a244d1e769c1e1a/dist/admixture_linux-1.3.0/admixture /home/xyz/.julia/artifacts/c869f85973f5844aafa096157ef22aeaf179d71f/mouse.bed 3 -j4`
     └ @ ADMIXTURE /home/xyz/.julia/packages/ADMIXTURE/TuI9H/src/ADMIXTURE.jl:59
     ┌ Info: Output directory: /home/xyz
     └ @ ADMIXTURE /home/xyz/.julia/packages/ADMIXTURE/TuI9H/src/ADMIXTURE.jl:60
@@ -1704,7 +1723,7 @@ count(rowmask), count(colmask)
 
 One may use the `rowmask` and `colmask` to filter and save filtering result as Plink files.
 ```julia
-SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
+SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask; des=joinpath(tmpdir, "mouse.filtered"))
 ```
 
 ### Filter Plink files
@@ -1713,7 +1732,7 @@ Filter a set of Plink files according to row indices and column indices. By resu
 
 
 ```julia
-SnpArrays.filter(SnpArrays.datadir("mouse"), 1:5, 1:5)
+SnpArrays.filter(SnpArrays.datadir("mouse"), 1:5, 1:5; des=joinpath(tmpdir, "mouse.filtered"))
 ```
 
 
@@ -1731,16 +1750,16 @@ SnpArrays.filter(SnpArrays.datadir("mouse"), 1:5, 1:5)
 
 ```julia
 # clean up
-rm(SnpArrays.datadir("mouse.filtered.bed"), force=true)
-rm(SnpArrays.datadir("mouse.filtered.fam"), force=true)
-rm(SnpArrays.datadir("mouse.filtered.bim"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.bed"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.fam"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.bim"), force=true)
 ```
 
 Filter a set of Plink files according to logical vectors.
 
 
 ```julia
-SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
+SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask; des=joinpath(tmpdir, "mouse.filtered"))
 ```
 
 
@@ -1778,25 +1797,25 @@ SnpArrays.filter(SnpArrays.datadir("mouse"), rowmask, colmask)
 
 
 ```julia
-readdir(glob"mouse.filtered.*", datapath)
+readdir(glob"mouse.filtered.*", tmpdir)
 ```
 
 
 
 
     3-element Vector{String}:
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.filtered.bed"
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.filtered.bim"
-     "/home/xyz/.julia/dev/SnpArrays/data/mouse.filtered.fam"
+     "/tmp/jl_7Qm2Xb/mouse.filtered.bed"
+     "/tmp/jl_7Qm2Xb/mouse.filtered.bim"
+     "/tmp/jl_7Qm2Xb/mouse.filtered.fam"
 
 
 
 
 ```julia
 # clean up
-rm(SnpArrays.datadir("mouse.filtered.bed"), force=true)
-rm(SnpArrays.datadir("mouse.filtered.fam"), force=true)
-rm(SnpArrays.datadir("mouse.filtered.bim"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.bed"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.fam"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.bim"), force=true)
 ```
 
 ## Concatenating `SnpArray`s
@@ -1807,7 +1826,7 @@ For concatenation, `SnpArray` arguments do not deal with `.fam` or `.bim` files 
 
 
 ```julia
-s = SnpArrays.filter(SnpArrays.datadir("mouse"), 1:2, 1:3)
+s = SnpArrays.filter(SnpArrays.datadir("mouse"), 1:2, 1:3; des=joinpath(tmpdir, "mouse.filtered"))
 s
 ```
 
@@ -1906,7 +1925,7 @@ In order to set the destination `.bed` file, you can add the keyword argument `d
 
 
 ```julia
-hcat(s, s, s; des=SnpArrays.datadir("mouse.test.hcat"))
+hcat(s, s, s; des=joinpath(tmpdir, "mouse.test.hcat"))
 ```
 
 
@@ -1920,7 +1939,7 @@ hcat(s, s, s; des=SnpArrays.datadir("mouse.test.hcat"))
 
 
 ```julia
-vcat(s, s, s; des=SnpArrays.datadir("mouse.test.vcat"))
+vcat(s, s, s; des=joinpath(tmpdir, "mouse.test.vcat"))
 ```
 
 
@@ -1938,7 +1957,7 @@ vcat(s, s, s; des=SnpArrays.datadir("mouse.test.vcat"))
 
 
 ```julia
-hvcat((3, 3), s, s, s, s, s, s; des=SnpArrays.datadir("mouse.test.hvcat"))
+hvcat((3, 3), s, s, s, s, s, s; des=joinpath(tmpdir, "mouse.test.hvcat"))
 ```
 
 
@@ -1955,16 +1974,16 @@ hvcat((3, 3), s, s, s, s, s, s; des=SnpArrays.datadir("mouse.test.hvcat"))
 
 ```julia
 # clean up
-rm(SnpArrays.datadir("mouse.filtered.bed"), force=true)
-rm(SnpArrays.datadir("mouse.filtered.fam"), force=true)
-rm(SnpArrays.datadir("mouse.filtered.bim"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.bed"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.fam"), force=true)
+rm(joinpath(tmpdir, "mouse.filtered.bim"), force=true)
 tmplist = readdir(glob"tmp_*.bed", ".")
 for f in tmplist
     rm(f, force=true)
 end
-rm(SnpArrays.datadir("mouse.test.hcat.bed"), force=true)
-rm(SnpArrays.datadir("mouse.test.vcat.bed"), force=true)
-rm(SnpArrays.datadir("mouse.test.hvcat.bed"), force=true)
+rm(joinpath(tmpdir, "mouse.test.hcat.bed"), force=true)
+rm(joinpath(tmpdir, "mouse.test.vcat.bed"), force=true)
+rm(joinpath(tmpdir, "mouse.test.hvcat.bed"), force=true)
 ```
 
 ## Linear Algebra
@@ -2369,9 +2388,11 @@ Order of subjects can be changed using the function `reorder!`.
 
 ```julia
 const mouse_prefix = SnpArrays.datadir("mouse")
-run(`cp $(mouse_prefix * ".bed") mouse_reorder.bed`)
-run(`cp $(mouse_prefix * ".bim") mouse_reorder.bim`)
-run(`cp $(mouse_prefix * ".fam") mouse_reorder.fam`)
+for ft in ["bed", "bim", "fam"]
+    # the example data are read-only; the copy must be writable for "r+"
+    cp(mouse_prefix * "." * ft, "mouse_reorder." * ft; force=true)
+    chmod("mouse_reorder." * ft, 0o644)
+end
 ```
 
 
