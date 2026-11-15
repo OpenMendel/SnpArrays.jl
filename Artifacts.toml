@@ -1,0 +1,11 @@
+# Example datasets behind `SnpArrays.datadir`. The tarball is a release asset under the
+# non-version tag `data-v1`. Never delete or replace it: released versions pin it by hash.
+# To change the data, upload a new tarball under a new tag (`data-v2`, ...) and update this
+# entry with ArtifactUtils: add_artifact!("Artifacts.toml", "snparrays_data", url; lazy=true, force=true)
+[snparrays_data]
+git-tree-sha1 = "c869f85973f5844aafa096157ef22aeaf179d71f"
+lazy = true
+
+    [[snparrays_data.download]]
+    sha256 = "2269d480df47eeab3a8a3e295458f5f81fc89046a5329caebd49255952bbb821"
+    url = "https://github.com/OpenMendel/SnpArrays.jl/releases/download/data-v1/snparrays_data-v1.tar.gz"

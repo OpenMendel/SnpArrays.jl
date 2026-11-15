@@ -13,7 +13,7 @@ Linear algebra operations on the PLINK formatted data now support multi-threadin
 
 ## Installation
 
-This package requires Julia v1.5 or later, which can be obtained from
+This package requires Julia v1.6 or later, which can be obtained from
 https://julialang.org/downloads/ or by building Julia from the sources in the
 https://github.com/JuliaLang/julia repository.
 
@@ -23,6 +23,33 @@ using Pkg
 pkg"add SnpArrays"
 ```
 Use the backspace key to return to the Julia REPL.
+
+## Example datasets
+
+Two example PLINK datasets are available through `SnpArrays.datadir`:
+
+* `EUR_subset.{bed,bim,fam}`: 379 individuals and 54,051 SNPs, with no missing genotypes.
+* `mouse.{bed,bim,fam}`: 1,940 heterogeneous stock mice and 10,150 SNPs, with missing genotypes.
+  `mouse/pheno_10_causals.txt` holds a phenotype for the same mice (FID, IID, value).
+
+```julia
+using SnpArrays
+mouse = SnpArray(SnpArrays.datadir("mouse.bed"))
+```
+
+The datasets are not part of the installed package. They are a lazy
+[artifact](https://pkgdocs.julialang.org/v1/artifacts/) (`snparrays_data`, see `Artifacts.toml`),
+downloaded the first time `datadir` is called and shared by every installed version of SnpArrays.
+That first call needs network access. On an offline machine, copy the
+`~/.julia/artifacts/<git-tree-sha1>` folder from a machine that has downloaded it. The folder is
+read-only: write derived files (for example from `compress_plink` or `SnpArrays.filter`) somewhere
+else, such as a `mktempdir()`.
+
+If you use the mouse data in your research, please cite the following three papers:
+
+1. Valdar W, Solberg LC, Gauguier D, Burnett S, Klenerman P, Cookson WO, Taylor MS, Rawlins JN, Mott R, Flint J. (2006) Genome-wide genetic association of complex traits in heterogeneous stock mice. Nat Genet. 2006 Aug;38(8):879-87.
+2. Valdar W, Solberg LC, Gauguier D, Cookson WO, Rawlins NJ, Mott R, Flint J. (2006) Genetic and environmental effects on complex traits in mice. Genetics. 2006 Aug 3 [Epub ahead of print].
+3. Solberg LC, Valdar W, Gauguier D, Nunez G, Taylor A, Burnett S, Arboledas-Hita C, Hernandez-Pliego P, Davidson S, Burns P, Bhattacharya S, Hough T, Higgs D, Klenerman P, Cookson WO, Zhang Y, Deacon RM, Rawlins JN, Mott R, Flint J. (2006) A protocol for high-throughput phenotyping, suitable for quantitative trait analysis in mice. Mamm Genome. 17(2):129-46.
 
 ## Citation
 

@@ -5,6 +5,7 @@ module SnpArrays
 using CodecZlib, CodecXz, CodecBzip2, CodecZstd,  TranscodingStreams
 using Adapt, Glob, LinearAlgebra, LoopVectorization, Missings, Mmap, Printf
 using Requires, SparseArrays, Statistics, StatsBase, Random
+using LazyArtifacts
 import Base: IndexStyle, convert, copyto!, eltype, getindex, setindex!, length, size, wait
 import DataFrames: DataFrame, rename!, eachrow
 import DelimitedFiles: readdlm, writedlm
@@ -46,7 +47,13 @@ include("vcf2plink.jl")
 include("admixture.jl")
 include("simulation.jl")
 
-datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
+"""
+    datadir(parts...)
+
+Path to the example datasets (`EUR_subset.*`, `mouse.*`), joined with `parts`. The data are
+the lazy artifact `snparrays_data`, downloaded on first use. Treat the folder as read-only.
+"""
+datadir(parts...) = joinpath(artifact"snparrays_data", parts...)
 
 function __init__()
     @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" include("cuda.jl")

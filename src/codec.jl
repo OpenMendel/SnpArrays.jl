@@ -62,7 +62,7 @@ function compress_plink(
         fname = plinkfile * suffix
         if isfile(fname)
             open(fname) do input
-                makestream(fname * "." * format, "w") do output
+                makestream(outfile * suffix * "." * format, "w") do output
                     write(output, input)
                 end
             end

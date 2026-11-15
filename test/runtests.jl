@@ -198,17 +198,15 @@ rm("tmp.fam", force=true)
 rowmask, colmask =  SnpArrays.filter(mouse, min_success_rate_per_row=0.99,
     min_success_rate_per_col=0.99, min_maf=0.01, min_hwe_pval=1e-8)
 @test (count(rowmask), count(colmask)) == (1911, 9510)
-compress_plink(SnpArrays.datadir("mouse"), "gz")
-SnpArrays.filter(SnpArrays.datadir("mouse.bed.gz"), SnpArrays.datadir("mouse.bim.gz"),
-SnpArrays.datadir("mouse.fam.gz"), 1:5, 1:3; des="tmp")
+mouse_gz = joinpath(mktempdir(), "mouse") # datadir() is read-only
+compress_plink(SnpArrays.datadir("mouse"), "gz", mouse_gz)
+SnpArrays.filter(mouse_gz * ".bed.gz", mouse_gz * ".bim.gz",
+mouse_gz * ".fam.gz", 1:5, 1:3; des="tmp")
 tmpbf = SnpArray("tmp.bed")
 @test size(tmpbf) == (5, 3)
 @test isfile("tmp.bed")
 @test isfile("tmp.fam")
 @test isfile("tmp.bim")
-rm(SnpArrays.datadir("mouse.bed.gz"), force=true)
-rm(SnpArrays.datadir("mouse.fam.gz"), force=true)
-rm(SnpArrays.datadir("mouse.bim.gz"), force=true)
 Sys.iswindows() || rm("tmp.bed", force=true)
 rm("tmp.bim", force=true)
 rm("tmp.fam", force=true)
@@ -621,14 +619,16 @@ end
 end
 
 @testset "(de)compress" begin
+tmpdir = mktempdir() # datadir() is read-only
 for format in SnpArrays.ALLOWED_FORMAT
     # compress mouse Plink files
-    compress_plink(SnpArrays.datadir("mouse"), format)
-    @test isfile(SnpArrays.datadir("mouse.bed." * format))
-    @test isfile(SnpArrays.datadir("mouse.fam." * format))
-    @test isfile(SnpArrays.datadir("mouse.bim." * format))
+    mouse_comp = joinpath(tmpdir, "mouse")
+    compress_plink(SnpArrays.datadir("mouse"), format, mouse_comp)
+    @test isfile(mouse_comp * ".bed." * format)
+    @test isfile(mouse_comp * ".fam." * format)
+    @test isfile(mouse_comp * ".bim." * format)
     # read in compressed Plink files
-    mouse_zip = SnpArray(SnpArrays.datadir("mouse.bed." * format))
+    mouse_zip = SnpArray(mouse_comp * ".bed." * format)
     fill!(mouse.rowcounts, 0)
     fill!(mouse.columncounts, 0)
     @time begin
@@ -646,20 +646,21 @@ for format in SnpArrays.ALLOWED_FORMAT
     @test norm(mouse.columncounts - mouse_zip.columncounts) < 1e-8
     @test norm(mouse.data - mouse_zip.data) < 1e-8
     # Decompress Plink files
-    decompress_plink(SnpArrays.datadir("mouse"), format, SnpArrays.datadir("mouse2"))
+    mouse2 = joinpath(tmpdir, "mouse2")
+    decompress_plink(mouse_comp, format, mouse2)
     @test stat(SnpArrays.datadir("mouse") * ".bed").size ==
-    stat(SnpArrays.datadir("mouse2") * ".bed").size
+    stat(mouse2 * ".bed").size
     @test stat(SnpArrays.datadir("mouse") * ".fam").size ==
-    stat(SnpArrays.datadir("mouse2") * ".fam").size
+    stat(mouse2 * ".fam").size
     @test stat(SnpArrays.datadir("mouse") * ".bim").size ==
-    stat(SnpArrays.datadir("mouse2") * ".bim").size
+    stat(mouse2 * ".bim").size
     # clean up
-    rm(SnpArrays.datadir("mouse.bed." * format), force=true)
-    rm(SnpArrays.datadir("mouse.fam." * format), force=true)
-    rm(SnpArrays.datadir("mouse.bim." * format), force=true)
-    rm(SnpArrays.datadir("mouse2.bed"), force=true)
-    rm(SnpArrays.datadir("mouse2.fam"), force=true)
-    rm(SnpArrays.datadir("mouse2.bim"), force=true)
+    rm(mouse_comp * ".bed." * format, force=true)
+    rm(mouse_comp * ".fam." * format, force=true)
+    rm(mouse_comp * ".bim." * format, force=true)
+    rm(mouse2 * ".bed", force=true)
+    rm(mouse2 * ".fam", force=true)
+    rm(mouse2 * ".bim", force=true)
 end
 @test_throws ArgumentError SnpArray(SnpArrays.datadir("mouse.bed.zip"))
 end
@@ -706,9 +707,11 @@ end
 
 @testset "reorder" begin
 mouse_prefix = SnpArrays.datadir("mouse")
-run(`cp $(mouse_prefix * ".bed") mouse_testreorder.bed`)
-run(`cp $(mouse_prefix * ".bim") mouse_testreorder.bim`)
-run(`cp $(mouse_prefix * ".fam") mouse_testreorder.fam`)
+for ft in ["bed", "bim", "fam"]
+    # artifact files are read-only; the copies must be writable for "r+"
+    cp(mouse_prefix * "." * ft, "mouse_testreorder." * ft; force=true)
+    chmod("mouse_testreorder." * ft, 0o644)
+end
 
 mouse_data = SnpData(mouse_prefix)
 mouse_toreorder = SnpData("mouse_testreorder", "r+")
